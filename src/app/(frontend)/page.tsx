@@ -1,59 +1,26 @@
-import { headers as getHeaders } from 'next/headers.js'
-import Image from 'next/image'
 import { getPayload } from 'payload'
-import React from 'react'
-import { fileURLToPath } from 'url'
-
-import config from '@/payload.config'
-import './styles.css'
+import config from '@payload-config'
+import Link from 'next/link'
 
 export default async function HomePage() {
-  const headers = await getHeaders()
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
-  const { user } = await payload.auth({ headers })
-
-  const fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`
+  const payload = await getPayload({ config: await config })
+  const home = await payload.findGlobal({ slug: 'home-page' })
 
   return (
-    <div className="home">
-      <div className="content">
-        <picture>
-          <source srcSet="https://raw.githubusercontent.com/payloadcms/payload/3.x/packages/ui/src/assets/payload-favicon.svg" />
-          <Image
-            alt="Payload Logo"
-            height={65}
-            src="https://raw.githubusercontent.com/payloadcms/payload/3.x/packages/ui/src/assets/payload-favicon.svg"
-            width={65}
-          />
-        </picture>
-        {!user && <h1>Welcome to your new project.</h1>}
-        {user && <h1>Welcome back, {user.email}</h1>}
-        <div className="links">
-          <a
-            className="admin"
-            href={payloadConfig.routes.admin}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Go to admin panel
-          </a>
-          <a
-            className="docs"
-            href="https://payloadcms.com/docs"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Documentation
-          </a>
-        </div>
-      </div>
-      <div className="footer">
-        <p>Update this page by editing</p>
-        <a className="codeLink" href={fileURL}>
-          <code>app/(frontend)/page.tsx</code>
-        </a>
-      </div>
+    <div>
+      <section style={{ padding: '48px 0' }}>
+        {home.heroKicker && <div className="pp-kicker">{home.heroKicker}</div>}
+        <h1 style={{ fontSize: 44, margin: '12px 0' }}>{home.heroHeadline}</h1>
+        {home.heroSubtext && <p style={{ maxWidth: 560, color: 'var(--pp-muted)' }}>{home.heroSubtext}</p>}
+        <Link href="/classes" className="pp-btn" style={{ marginTop: 16 }}>Explore classes</Link>
+      </section>
+
+      {home.sections?.map((s, i) => (
+        <section key={i} style={{ padding: '24px 0', borderTop: '1px solid #e2d8cc' }}>
+          <h2>{s.heading}</h2>
+          <p style={{ color: 'var(--pp-muted)' }}>{s.body}</p>
+        </section>
+      ))}
     </div>
   )
 }
