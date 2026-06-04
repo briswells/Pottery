@@ -1,0 +1,16 @@
+@import './theme.css';
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--pp-cream); color: var(--pp-charcoal); }
+.pp-container { max-width: var(--pp-max); margin: 0 auto; padding: 0 20px; }
+h1, h2, h3 { font-family: var(--font-fraunces), Georgia, serif; line-height: 1.1; }
+body, p, a, li, button { font-family: var(--font-inter), system-ui, sans-serif; }
+a { color: var(--pp-terracotta); }
+.pp-kicker { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--pp-terracotta); }
+.pp-btn { display: inline-block; background: var(--pp-terracotta); color: #fff; padding: 11px 22px;
+  border-radius: var(--pp-radius); text-decoration: none; letter-spacing: .5px; }
+.pp-header, .pp-footer { background: var(--pp-cream); }
+.pp-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 0; }
+.pp-logo { font-family: var(--font-fraunces), serif; font-weight: 700; color: var(--pp-terracotta); text-decoration: none; font-size: 20px; }
+.pp-nav a { margin-left: 18px; color: var(--pp-charcoal); text-decoration: none; font-size: 14px; }
+.pp-footer { border-top: 1px solid #e2d8cc; margin-top: 60px; padding: 30px 0; color: var(--pp-muted); font-size: 14px; }

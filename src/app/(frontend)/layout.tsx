@@ -1,18 +1,22 @@
-import React from 'react'
-import './styles.css'
+import { Fraunces, Inter } from 'next/font/google'
+import { getPayload } from 'payload'
+import config from '@payload-config'
+import { Header } from './components/Header'
+import { Footer } from './components/Footer'
+import '../../styles/globals.css'
 
-export const metadata = {
-  description: 'A blank template using Payload in a Next.js app.',
-  title: 'Payload Blank Template',
-}
+const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces' })
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
-export default async function RootLayout(props: { children: React.ReactNode }) {
-  const { children } = props
-
+export default async function FrontendLayout({ children }: { children: React.ReactNode }) {
+  const payload = await getPayload({ config: await config })
+  const settings = await payload.findGlobal({ slug: 'site-settings' })
   return (
-    <html lang="en">
+    <html lang="en" className={`${fraunces.variable} ${inter.variable}`}>
       <body>
-        <main>{children}</main>
+        <Header studioName={settings.studioName ?? 'Portside Pottery'} />
+        <main className="pp-container">{children}</main>
+        <Footer phone={settings.phone} email={settings.email} addressLine={settings.addressLine} hours={settings.hours} />
       </body>
     </html>
   )
