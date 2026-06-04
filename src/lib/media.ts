@@ -13,3 +13,9 @@ export function mediaUrl(ref: MediaRef, size?: 'card' | 'hero'): string | null {
 export function mediaAlt(ref: MediaRef): string {
   return ref && typeof ref === 'object' ? (ref.alt ?? '') : ''
 }
+
+/** Returns width/height (aspect ratio) of a Payload upload, or null. */
+export function mediaAspect(ref: number | Media | null | undefined): number | null {
+  if (!ref || typeof ref !== 'object' || !ref.width || !ref.height) return null
+  return ref.width / ref.height
+}
