@@ -9,8 +9,6 @@ export function NewsletterBand() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!email.trim()) return
-    // Front-end only — open mailto as fallback, show thanks state
-    window.location.href = `mailto:getcreative@portsidepottery.com?subject=Newsletter%20Signup&body=Please%20add%20me%20to%20your%20newsletter%3A%20${encodeURIComponent(email)}`
     setSubmitted(true)
   }
 
@@ -22,7 +20,7 @@ export function NewsletterBand() {
         <p className="pp-newsletter-thanks">Thanks! We&apos;ll be in touch soon.</p>
       ) : (
         <form className="pp-newsletter-form" onSubmit={handleSubmit} aria-label="Email signup form">
-          <label htmlFor="newsletter-email" style={{ display: 'none' }}>Email address</label>
+          <label htmlFor="newsletter-email" className="sr-only">Email address</label>
           <input
             id="newsletter-email"
             type="email"

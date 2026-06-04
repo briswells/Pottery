@@ -32,7 +32,6 @@ export function MobileNav() {
       <nav
         className={`pp-nav${open ? ' pp-nav--open' : ''}`}
         aria-label="Mobile navigation"
-        style={{ position: 'absolute', top: '100%', left: 0, right: 0, display: open ? 'flex' : 'none', flexDirection: 'column' }}
       >
         <Link href="/" onClick={() => setOpen(false)}>Home</Link>
         <Link href="/classes" onClick={() => setOpen(false)}>Classes</Link>

@@ -45,7 +45,7 @@ export default async function VisitPage() {
           <div className="pp-visit-info-row">
             {settings.hours && settings.hours.length > 0 && (
               <div className="pp-visit-info-block">
-                <h3>Hours</h3>
+                <h2>Hours</h2>
                 <ul className="pp-hours-list">
                   {settings.hours.map((h, i) => (
                     <li key={i}>
@@ -59,14 +59,14 @@ export default async function VisitPage() {
 
             {settings.phone && (
               <div className="pp-visit-info-block">
-                <h3>Phone</h3>
+                <h2>Phone</h2>
                 <a href={`tel:${settings.phone.replace(/\D/g, '')}`}>{settings.phone}</a>
               </div>
             )}
 
             {settings.email && (
               <div className="pp-visit-info-block">
-                <h3>Email</h3>
+                <h2>Email</h2>
                 <a href={`mailto:${settings.email}`}>{settings.email}</a>
               </div>
             )}

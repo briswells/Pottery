@@ -17,10 +17,10 @@ export function Header({
   socials?: Socials | null
 }) {
   // Short hours summary for utility bar — take first entry or default
-  const hoursLine =
-    hours && hours.length > 0
-      ? `Open ${hours[0].days} ${hours[0].time}`
-      : 'Open 7 days · 24/7 for members'
+  const h = hours?.[0] ?? null
+  const hoursLine = h && (h.days || h.time)
+    ? `Open ${[h.days, h.time].filter(Boolean).join(' ')}`
+    : null
 
   return (
     <div className="pp-site-header">
@@ -31,8 +31,12 @@ export function Header({
             {phone && (
               <a href={`tel:${phone.replace(/\D/g, '')}`}>{phone}</a>
             )}
-            <span className="pp-utility-sep">·</span>
-            <span>{hoursLine}</span>
+            {hoursLine && (
+              <>
+                <span className="pp-utility-sep">·</span>
+                <span>{hoursLine}</span>
+              </>
+            )}
           </div>
           <div className="pp-utility-right">
             {socials?.map((s, i) =>
@@ -62,7 +66,7 @@ export function Header({
         </Link>
 
         {/* Desktop nav */}
-        <nav className="pp-nav" aria-label="Main navigation" style={{ display: 'flex' }}>
+        <nav className="pp-nav" aria-label="Main navigation">
           <Link href="/">Home</Link>
           <Link href="/classes">Classes</Link>
           <Link href="/membership">Membership</Link>
@@ -73,9 +77,7 @@ export function Header({
         </nav>
 
         {/* Mobile nav (client component for toggle) */}
-        <div style={{ position: 'relative' }}>
-          <MobileNav />
-        </div>
+        <MobileNav />
       </div>
     </div>
   )
