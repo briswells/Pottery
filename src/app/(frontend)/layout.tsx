@@ -16,9 +16,23 @@ export default async function FrontendLayout({ children }: { children: React.Rea
   return (
     <html lang="en" className={`${fraunces.variable} ${inter.variable}`}>
       <body>
-        <Header studioName={settings.studioName ?? 'Portside Pottery'} logoUrl={logoUrl} />
+        <Header
+          studioName={settings.studioName ?? 'Portside Pottery'}
+          logoUrl={logoUrl}
+          phone={settings.phone}
+          hours={settings.hours}
+          socials={settings.socials}
+        />
         <main className="pp-container">{children}</main>
-        <Footer phone={settings.phone} email={settings.email} addressLine={settings.addressLine} hours={settings.hours} />
+        <Footer
+          studioName={settings.studioName ?? 'Portside Pottery'}
+          logoUrl={logoUrl}
+          phone={settings.phone}
+          email={settings.email}
+          addressLine={settings.addressLine}
+          hours={settings.hours}
+          socials={settings.socials}
+        />
       </body>
     </html>
   )
