@@ -8,7 +8,7 @@ export default async function HomePage() {
   const home = await payload.findGlobal({ slug: 'home-page', depth: 2 })
 
   const heroImgUrl = mediaUrl(home.heroImage, 'hero')
-  const heroImgAlt = mediaAlt(home.heroImage)
+  const heroImgAlt = mediaAlt(home.heroImage) || home.heroHeadline || 'Portside Pottery studio'
 
   return (
     <div>
@@ -50,7 +50,7 @@ export default async function HomePage() {
         const imgAlt = mediaAlt(s.image)
         const isReverse = i % 2 !== 0
         return (
-          <section key={i} className={`pp-row${isReverse ? ' pp-row--reverse' : ''}`}>
+          <section key={i} className={`pp-row${imgUrl ? (isReverse ? ' pp-row--reverse' : '') : ' pp-row--full'}`}>
             {imgUrl && (
               <div className="pp-row-img">
                 <img src={imgUrl} alt={imgAlt} loading="lazy" />

@@ -1,7 +1,7 @@
 @import './theme.css';
 
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--pp-cream); color: var(--pp-charcoal); }
+body { margin: 0; background: var(--pp-cream); color: var(--pp-charcoal); overflow-x: hidden; }
 img { max-width: 100%; display: block; }
 .pp-container { max-width: var(--pp-max); margin: 0 auto; padding: 0 20px; }
 h1, h2, h3 { font-family: var(--font-fraunces), Georgia, serif; line-height: 1.1; }
@@ -121,6 +121,8 @@ a { color: var(--pp-terracotta); }
 /* Reverse order for odd-indexed rows */
 .pp-row--reverse { direction: rtl; }
 .pp-row--reverse > * { direction: ltr; }
+/* A row with no image renders full-width text instead of a blank half */
+.pp-row--full { grid-template-columns: 1fr; }
 
 /* ─── GALLERY (CSS MASONRY — TRUE SHAPE, ZERO CROP) ─────────── */
 .pp-gallery-section { padding: 56px 0; border-top: 1px solid #e2d8cc; }
