@@ -1,7 +1,7 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { notFound } from 'next/navigation'
-import { usd } from '../../../../lib/format'
+import { usd, CATEGORY_LABELS } from '../../../../lib/format'
 
 export default async function ClassDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -12,7 +12,7 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ sl
 
   return (
     <div style={{ padding: '40px 0', maxWidth: 640 }}>
-      <div className="pp-kicker">{cls.category}</div>
+      <div className="pp-kicker">{CATEGORY_LABELS[cls.category] ?? cls.category}</div>
       <h1>{cls.title}</h1>
       <div style={{ color: 'var(--pp-muted)' }}>{cls.scheduleText}</div>
       {cls.skillLevel && <div style={{ color: 'var(--pp-muted)' }}>Skill level: {cls.skillLevel}</div>}
