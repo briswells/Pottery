@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    classes: Class;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,6 +79,7 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    classes: ClassesSelect<false> | ClassesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -197,6 +199,36 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "classes".
+ */
+export interface Class {
+  id: number;
+  title: string;
+  /**
+   * Auto-filled from title; edit to override
+   */
+  slug?: string | null;
+  category: 'wheel-series' | 'day-camp' | 'raku' | 'daytime-multiweek';
+  skillLevel?: string | null;
+  description?: string | null;
+  image?: (number | null) | Media;
+  /**
+   * Price in cents, e.g. 22000 = $220.00
+   */
+  priceCents: number;
+  capacity: number;
+  startDate?: string | null;
+  /**
+   * e.g. "Tuesdays 6–8pm for 6 weeks"
+   */
+  scheduleText: string;
+  instructor?: (number | null) | User;
+  status?: ('active' | 'archived') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -226,6 +258,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'classes';
+        value: number | Class;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -339,6 +375,26 @@ export interface MediaSelect<T extends boolean = true> {
               filename?: T;
             };
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "classes_select".
+ */
+export interface ClassesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  category?: T;
+  skillLevel?: T;
+  description?: T;
+  image?: T;
+  priceCents?: T;
+  capacity?: T;
+  startDate?: T;
+  scheduleText?: T;
+  instructor?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
