@@ -43,8 +43,8 @@ async function run() {
   const stock3 = await ensureMedia(payload, 'stock-3.jpg', 'Hands forming clay on a potter\'s wheel')
   const stock4 = await ensureMedia(payload, 'stock-4.jpg', 'Potter shaping a vase from clay')
   const stock5 = await ensureMedia(payload, 'stock-5.jpg', 'Potter\'s hands working clay on a wheel')
-  const staff1 = await ensureMedia(payload, 'staff-1.jpg', 'Portside Pottery instructor portrait')
-  const staff2 = await ensureMedia(payload, 'staff-2.jpg', 'Portside Pottery instructor portrait')
+  const ericPhoto = await ensureMedia(payload, 'eric.jpg', 'Eric, Studio Manager & Instructor')
+  const naiomiPhoto = await ensureMedia(payload, 'naiomi.jpg', 'Naiomi, Studio Technician & Instructor')
 
   // Users
   await ensureUser(payload, 'eric@portsidepottery.com', {
@@ -63,11 +63,11 @@ async function run() {
   // Update staff photos (idempotent — ensureUser skips existing users)
   const eric = await payload.find({ collection: 'users', where: { email: { equals: 'eric@portsidepottery.com' } }, limit: 1 })
   if (eric.totalDocs > 0) {
-    await payload.update({ collection: 'users', id: eric.docs[0].id, data: { photo: staff1.id } } as Parameters<Payload['update']>[0])
+    await payload.update({ collection: 'users', id: eric.docs[0].id, data: { photo: ericPhoto.id } } as Parameters<Payload['update']>[0])
   }
   const naiomi = await payload.find({ collection: 'users', where: { email: { equals: 'naiomi@portsidepottery.com' } }, limit: 1 })
   if (naiomi.totalDocs > 0) {
-    await payload.update({ collection: 'users', id: naiomi.docs[0].id, data: { photo: staff2.id } } as Parameters<Payload['update']>[0])
+    await payload.update({ collection: 'users', id: naiomi.docs[0].id, data: { photo: naiomiPhoto.id } } as Parameters<Payload['update']>[0])
   }
 
   await upsertGlobal(payload, 'site-settings', {
