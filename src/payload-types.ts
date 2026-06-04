@@ -123,6 +123,19 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
+  name: string;
+  roles?: ('admin' | 'editor')[] | null;
+  /**
+   * Shown on the Meet the Staff page
+   */
+  title?: string | null;
+  bio?: string | null;
+  photo?: (number | null) | Media;
+  showOnStaffPage?: boolean | null;
+  /**
+   * Sort order on the Staff page
+   */
+  order?: number | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -240,6 +253,13 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  name?: T;
+  roles?: T;
+  title?: T;
+  bio?: T;
+  photo?: T;
+  showOnStaffPage?: T;
+  order?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
