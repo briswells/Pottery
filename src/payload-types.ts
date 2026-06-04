@@ -468,6 +468,7 @@ export interface SiteSetting {
         id?: string | null;
       }[]
     | null;
+  logo?: (number | null) | Media;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -489,6 +490,7 @@ export interface HomePage {
         id?: string | null;
       }[]
     | null;
+  gallery?: (number | Media)[] | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -533,6 +535,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         url?: T;
         id?: T;
       };
+  logo?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
@@ -554,6 +557,7 @@ export interface HomePageSelect<T extends boolean = true> {
         image?: T;
         id?: T;
       };
+  gallery?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

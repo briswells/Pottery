@@ -16,5 +16,6 @@ export const HomePage: GlobalConfig = {
       { name: 'body', type: 'textarea', required: true },
       { name: 'image', type: 'upload', relationTo: 'media' },
     ] },
+    { name: 'gallery', type: 'upload', relationTo: 'media', hasMany: true },
   ],
 }

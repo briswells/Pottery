@@ -19,5 +19,6 @@ export const SiteSettings: GlobalConfig = {
       { name: 'platform', type: 'text' },
       { name: 'url', type: 'text' },
     ] },
+    { name: 'logo', type: 'upload', relationTo: 'media' },
   ],
 }

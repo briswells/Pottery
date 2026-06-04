@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import path from 'path'
 import { getPayload, Payload } from 'payload'
 import config from '../payload.config'
 
@@ -18,9 +19,34 @@ async function ensureClass(payload: Payload, slug: string, data: Record<string, 
   return payload.create({ collection: 'classes', data } as Parameters<Payload['create']>[0])
 }
 
+async function ensureMedia(payload: Payload, filename: string, alt: string) {
+  const found = await payload.find({ collection: 'media', where: { filename: { equals: filename } }, limit: 1 })
+  if (found.totalDocs > 0) return found.docs[0]
+  return payload.create({
+    collection: 'media',
+    filePath: path.resolve(process.cwd(), 'src/seed/assets', filename),
+    data: { alt },
+  } as Parameters<Payload['create']>[0])
+}
+
 async function run() {
   const payload = await getPayload({ config: await config })
 
+  // Upload all seed image assets
+  const logo = await ensureMedia(payload, 'portside-logo.jpg', 'Portside Pottery logo')
+  const banner = await ensureMedia(payload, 'banner.jpg', 'Portside Pottery studio banner')
+  const studio1 = await ensureMedia(payload, 'studio-1.jpg', 'Pottery at Portside studio')
+  const studio2 = await ensureMedia(payload, 'studio-2.jpg', 'Pottery at Portside studio')
+  const studio3 = await ensureMedia(payload, 'studio-3.jpg', 'Pottery at Portside studio')
+  const stock1 = await ensureMedia(payload, 'stock-1.jpg', 'Ceramicist shaping clay on a pottery wheel')
+  const stock2 = await ensureMedia(payload, 'stock-2.jpg', 'Throwing a cup on the pottery wheel')
+  const stock3 = await ensureMedia(payload, 'stock-3.jpg', 'Hands forming clay on a potter\'s wheel')
+  const stock4 = await ensureMedia(payload, 'stock-4.jpg', 'Potter shaping a vase from clay')
+  const stock5 = await ensureMedia(payload, 'stock-5.jpg', 'Potter\'s hands working clay on a wheel')
+  const staff1 = await ensureMedia(payload, 'staff-1.jpg', 'Portside Pottery instructor portrait')
+  const staff2 = await ensureMedia(payload, 'staff-2.jpg', 'Portside Pottery instructor portrait')
+
+  // Users
   await ensureUser(payload, 'eric@portsidepottery.com', {
     name: 'Eric', password: 'changeme-eric', roles: ['admin'],
     title: 'Studio Manager & Instructor',
@@ -34,6 +60,16 @@ async function run() {
     showOnStaffPage: true, order: 2,
   })
 
+  // Update staff photos (idempotent — ensureUser skips existing users)
+  const eric = await payload.find({ collection: 'users', where: { email: { equals: 'eric@portsidepottery.com' } }, limit: 1 })
+  if (eric.totalDocs > 0) {
+    await payload.update({ collection: 'users', id: eric.docs[0].id, data: { photo: staff1.id } } as Parameters<Payload['update']>[0])
+  }
+  const naiomi = await payload.find({ collection: 'users', where: { email: { equals: 'naiomi@portsidepottery.com' } }, limit: 1 })
+  if (naiomi.totalDocs > 0) {
+    await payload.update({ collection: 'users', id: naiomi.docs[0].id, data: { photo: staff2.id } } as Parameters<Payload['update']>[0])
+  }
+
   await upsertGlobal(payload, 'site-settings', {
     studioName: 'Portside Pottery',
     phone: '360-838-3246',
@@ -45,17 +81,20 @@ async function run() {
       { days: 'Sun', time: 'By appointment' },
     ],
     socials: [{ platform: 'Facebook', url: 'https://www.facebook.com/p/Portside-pottery-61578019084110/' }],
+    logo: logo.id,
   })
 
   await upsertGlobal(payload, 'home-page', {
     heroKicker: "Vancouver's Community Pottery",
     heroHeadline: 'Where clay meets community',
     heroSubtext: 'Wheel throwing, hand-building, and 24/7 studio access for makers of every level.',
+    heroImage: banner.id,
     sections: [
-      { heading: 'Our Purpose', body: 'We make pottery accessible to everyone and celebrate the healing joy of clay.' },
-      { heading: 'Our Studio', body: 'Professional equipment, multiple firing options, and flexible 24/7 member access.' },
-      { heading: 'Our Members', body: 'A diverse, collaborative community of makers learning together.' },
+      { heading: 'Our Purpose', body: 'We make pottery accessible to everyone and celebrate the healing joy of clay.', image: studio1.id },
+      { heading: 'Our Studio', body: 'Professional equipment, multiple firing options, and flexible 24/7 member access.', image: studio2.id },
+      { heading: 'Our Members', body: 'A diverse, collaborative community of makers learning together.', image: studio3.id },
     ],
+    gallery: [studio1.id, studio2.id, studio3.id, stock1.id, stock2.id, stock3.id],
   })
 
   await upsertGlobal(payload, 'membership-page', {
@@ -69,6 +108,7 @@ async function run() {
     ],
   })
 
+  // Classes
   await ensureClass(payload, '6wk-wheel-throwing-tuesdays', {
     title: '6wk Wheel Throwing (Tuesdays)', slug: '6wk-wheel-throwing-tuesdays', category: 'wheel-series', skillLevel: 'All levels',
     description: 'Six weeks of wheel-throwing fundamentals.', priceCents: 22000, capacity: 8,
@@ -79,6 +119,16 @@ async function run() {
     description: 'A fun day of clay and pizza for kids.', priceCents: 6500, capacity: 12,
     scheduleText: 'Single day, 10am–2pm', status: 'active',
   })
+
+  // Update class images (idempotent — ensureClass skips existing)
+  const wheelClass = await payload.find({ collection: 'classes', where: { slug: { equals: '6wk-wheel-throwing-tuesdays' } }, limit: 1 })
+  if (wheelClass.totalDocs > 0) {
+    await payload.update({ collection: 'classes', id: wheelClass.docs[0].id, data: { image: stock4.id } } as Parameters<Payload['update']>[0])
+  }
+  const kidsClass = await payload.find({ collection: 'classes', where: { slug: { equals: 'kids-day-camp-pottery-pizza' } }, limit: 1 })
+  if (kidsClass.totalDocs > 0) {
+    await payload.update({ collection: 'classes', id: kidsClass.docs[0].id, data: { image: stock5.id } } as Parameters<Payload['update']>[0])
+  }
 
   console.log('Seed complete.')
   process.exit(0)
