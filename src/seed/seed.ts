@@ -32,17 +32,18 @@ async function ensureMedia(payload: Payload, filename: string, alt: string) {
 async function run() {
   const payload = await getPayload({ config: await config })
 
-  // Upload all seed image assets
+  // Upload all seed image assets (real photos only, by orientation)
   const logo = await ensureMedia(payload, 'portside-logo.jpg', 'Portside Pottery logo')
-  const banner = await ensureMedia(payload, 'banner.jpg', 'Portside Pottery studio banner')
+  // LANDSCAPE assets
+  const wheelTopdown = await ensureMedia(payload, 'wheel-topdown.jpg', 'Top-down view of hands shaping clay on a pottery wheel')
+  const trimDetail = await ensureMedia(payload, 'trim-detail.jpg', 'Close-up of trimming a bowl on the pottery wheel')
+  const counter = await ensureMedia(payload, 'counter.jpg', 'Freshly thrown pieces drying on the studio counter')
+  const collage = await ensureMedia(payload, 'collage.jpg', 'Collage of pottery work at Portside')
+  const banner = await ensureMedia(payload, 'banner.jpg', 'Studio banner collage')
   const studio1 = await ensureMedia(payload, 'studio-1.jpg', 'Pottery at Portside studio')
   const studio2 = await ensureMedia(payload, 'studio-2.jpg', 'Pottery at Portside studio')
-  const studio3 = await ensureMedia(payload, 'studio-3.jpg', 'Pottery at Portside studio')
-  const stock1 = await ensureMedia(payload, 'stock-1.jpg', 'Ceramicist shaping clay on a pottery wheel')
-  const stock2 = await ensureMedia(payload, 'stock-2.jpg', 'Throwing a cup on the pottery wheel')
-  const stock3 = await ensureMedia(payload, 'stock-3.jpg', 'Hands forming clay on a potter\'s wheel')
-  const stock4 = await ensureMedia(payload, 'stock-4.jpg', 'Potter shaping a vase from clay')
-  const stock5 = await ensureMedia(payload, 'stock-5.jpg', 'Potter\'s hands working clay on a wheel')
+  // PORTRAIT assets
+  const studio3 = await ensureMedia(payload, 'studio-3.jpg', 'Smiling instructor in overalls at Portside studio')
   const ericPhoto = await ensureMedia(payload, 'eric.jpg', 'Eric, Studio Manager & Instructor')
   const naiomiPhoto = await ensureMedia(payload, 'naiomi.jpg', 'Naiomi, Studio Technician & Instructor')
 
@@ -88,13 +89,16 @@ async function run() {
     heroKicker: "Vancouver's Community Pottery",
     heroHeadline: 'Where clay meets community',
     heroSubtext: 'Wheel throwing, hand-building, and 24/7 studio access for makers of every level.',
-    heroImage: banner.id,
+    // LANDSCAPE hero: wheel-topdown (1600×1200) — striking top-down shot
+    heroImage: wheelTopdown.id,
     sections: [
-      { heading: 'Our Purpose', body: 'We make pottery accessible to everyone and celebrate the healing joy of clay.', image: studio1.id },
-      { heading: 'Our Studio', body: 'Professional equipment, multiple firing options, and flexible 24/7 member access.', image: studio2.id },
-      { heading: 'Our Members', body: 'A diverse, collaborative community of makers learning together.', image: studio3.id },
+      // All landscape images for story bands (4:3 slots fit perfectly)
+      { heading: 'Our Purpose', body: 'We make pottery accessible to everyone and celebrate the healing joy of clay.', image: trimDetail.id },
+      { heading: 'Our Studio', body: 'Professional equipment, multiple firing options, and flexible 24/7 member access.', image: studio1.id },
+      { heading: 'Our Members', body: 'A diverse, collaborative community of makers learning together.', image: studio2.id },
     ],
-    gallery: [studio1.id, studio2.id, studio3.id, stock1.id, stock2.id, stock3.id],
+    // Mixed ratios for varied masonry: portrait + landscapes
+    gallery: [studio3.id, counter.id, collage.id, banner.id, studio1.id, trimDetail.id],
   })
 
   await upsertGlobal(payload, 'membership-page', {
@@ -120,14 +124,14 @@ async function run() {
     scheduleText: 'Single day, 10am–2pm', status: 'active',
   })
 
-  // Update class images (idempotent — ensureClass skips existing)
+  // Update class images (landscape photos fit 4:3 card slots; idempotent)
   const wheelClass = await payload.find({ collection: 'classes', where: { slug: { equals: '6wk-wheel-throwing-tuesdays' } }, limit: 1 })
   if (wheelClass.totalDocs > 0) {
-    await payload.update({ collection: 'classes', id: wheelClass.docs[0].id, data: { image: stock4.id } } as Parameters<Payload['update']>[0])
+    await payload.update({ collection: 'classes', id: wheelClass.docs[0].id, data: { image: studio2.id } } as Parameters<Payload['update']>[0])
   }
   const kidsClass = await payload.find({ collection: 'classes', where: { slug: { equals: 'kids-day-camp-pottery-pizza' } }, limit: 1 })
   if (kidsClass.totalDocs > 0) {
-    await payload.update({ collection: 'classes', id: kidsClass.docs[0].id, data: { image: stock5.id } } as Parameters<Payload['update']>[0])
+    await payload.update({ collection: 'classes', id: kidsClass.docs[0].id, data: { image: counter.id } } as Parameters<Payload['update']>[0])
   }
 
   console.log('Seed complete.')
