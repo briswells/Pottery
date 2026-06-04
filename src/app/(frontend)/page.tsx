@@ -12,21 +12,24 @@ export default async function HomePage() {
 
   return (
     <div>
-      {/* ── HERO ── */}
+      {/* ── HERO (full-bleed editorial) ── */}
       {heroImgUrl ? (
         <section className="pp-hero">
           <img
             className="pp-hero-img"
             src={heroImgUrl}
             alt={heroImgAlt}
-            loading="lazy"
+            loading="eager"
           />
           <div className="pp-hero-scrim" aria-hidden="true" />
           <div className="pp-hero-content">
             {home.heroKicker && <div className="pp-kicker">{home.heroKicker}</div>}
             <h1>{home.heroHeadline}</h1>
             {home.heroSubtext && <p>{home.heroSubtext}</p>}
-            <Link href="/classes" className="pp-btn">Explore classes</Link>
+            <div className="pp-hero-ctas">
+              <Link href="/classes" className="pp-btn">Browse classes</Link>
+              <Link href="/membership" className="pp-btn--ghost">Become a member</Link>
+            </div>
           </div>
         </section>
       ) : (
@@ -34,11 +37,14 @@ export default async function HomePage() {
           {home.heroKicker && <div className="pp-kicker">{home.heroKicker}</div>}
           <h1>{home.heroHeadline}</h1>
           {home.heroSubtext && <p>{home.heroSubtext}</p>}
-          <Link href="/classes" className="pp-btn" style={{ marginTop: 16 }}>Explore classes</Link>
+          <div style={{ display: 'flex', gap: 14, marginTop: 16, flexWrap: 'wrap' }}>
+            <Link href="/classes" className="pp-btn">Browse classes</Link>
+            <Link href="/membership" className="pp-btn">Become a member</Link>
+          </div>
         </section>
       )}
 
-      {/* ── SECTIONS (alternating rows) ── */}
+      {/* ── STORY BANDS (alternating image/text rows) ── */}
       {home.sections?.map((s, i) => {
         const imgUrl = mediaUrl(s.image)
         const imgAlt = mediaAlt(s.image)
@@ -58,7 +64,7 @@ export default async function HomePage() {
         )
       })}
 
-      {/* ── GALLERY ── */}
+      {/* ── GALLERY (true masonry, zero crop) ── */}
       {home.gallery && home.gallery.length > 0 && (
         <section className="pp-gallery-section">
           <h2>From the studio</h2>
@@ -76,6 +82,13 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* ── MEMBERSHIP INVITE BAND ── */}
+      <section className="pp-membership-band">
+        <h2>Ready to make something?</h2>
+        <p>Join Portside Pottery and get 24/7 studio access, professional wheels, and a community of makers.</p>
+        <Link href="/membership" className="pp-btn">Become a member</Link>
+      </section>
     </div>
   )
 }

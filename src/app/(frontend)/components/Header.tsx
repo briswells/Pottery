@@ -16,6 +16,7 @@ export function Header({ studioName, logoUrl }: { studioName: string; logoUrl: s
         )}
       </Link>
       <nav className="pp-nav">
+        <Link href="/">Home</Link>
         <Link href="/classes">Classes</Link>
         <Link href="/membership">Membership</Link>
         <Link href="/staff">Meet the Staff</Link>
