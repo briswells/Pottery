@@ -8,9 +8,27 @@ h1, h2, h3 { font-family: var(--font-fraunces), Georgia, serif; line-height: 1.1
 body, p, a, li, button { font-family: var(--font-inter), system-ui, sans-serif; }
 a { color: var(--pp-terracotta); }
 .pp-kicker { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--pp-terracotta); }
-.pp-btn { display: inline-block; background: var(--pp-terracotta); color: #fff; padding: 11px 22px;
-  border-radius: var(--pp-radius); text-decoration: none; letter-spacing: .5px; }
+.pp-btn {
+  display: inline-block;
+  background: var(--pp-terracotta);
+  color: #fff;
+  padding: 11px 22px;
+  border-radius: var(--pp-radius);
+  text-decoration: none;
+  letter-spacing: .5px;
+}
 .pp-btn:hover { background: var(--pp-clay); color: #fff; }
+.pp-btn--ghost {
+  display: inline-block;
+  background: transparent;
+  color: #fff;
+  border: 2px solid rgba(255,255,255,.75);
+  padding: 9px 22px;
+  border-radius: var(--pp-radius);
+  text-decoration: none;
+  letter-spacing: .5px;
+}
+.pp-btn--ghost:hover { background: rgba(255,255,255,.15); color: #fff; }
 .pp-header, .pp-footer { background: var(--pp-cream); }
 .pp-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 0; }
 .pp-logo { font-family: var(--font-fraunces), serif; font-weight: 700; color: var(--pp-terracotta); text-decoration: none; font-size: 20px; }
@@ -19,15 +37,16 @@ a { color: var(--pp-terracotta); }
 .pp-footer { border-top: 1px solid #e2d8cc; margin-top: 60px; padding: 30px 0; color: var(--pp-muted); font-size: 14px; }
 
 /* ─── HERO ─────────────────────────────────────────────────── */
+/* Full-bleed: break out of .pp-container via negative margins + explicit width */
 .pp-hero {
   position: relative;
-  border-radius: 12px;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  height: clamp(360px, 64vh, 560px);
   overflow: hidden;
-  margin: 40px 0 48px;
-  min-height: 360px;
+  background: var(--pp-charcoal);
   display: flex;
   align-items: flex-end;
-  background: var(--pp-charcoal);
 }
 .pp-hero-img {
   position: absolute;
@@ -37,22 +56,39 @@ a { color: var(--pp-terracotta); }
   object-fit: cover;
   object-position: center;
 }
+/* Left-to-right dark scrim for legibility */
 .pp-hero-scrim {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(46,42,38,.78) 0%, rgba(46,42,38,.18) 55%, transparent 100%);
+  background: linear-gradient(
+    to right,
+    rgba(46,42,38,.82) 0%,
+    rgba(46,42,38,.50) 50%,
+    rgba(46,42,38,.10) 100%
+  );
 }
 .pp-hero-content {
   position: relative;
   z-index: 1;
-  padding: 40px 36px;
+  padding: 48px clamp(20px, 4vw, 60px) 52px;
   color: #fff;
+  max-width: 620px;
 }
-.pp-hero-content .pp-kicker { color: #f4d4b8; }
-.pp-hero-content h1 { color: #fff; font-size: clamp(30px, 5vw, 52px); margin: 10px 0 14px; }
-.pp-hero-content p { color: rgba(255,255,255,.85); max-width: 520px; margin: 0 0 22px; line-height: 1.6; }
-.pp-hero-content .pp-btn { background: #fff; color: var(--pp-terracotta); }
-.pp-hero-content .pp-btn:hover { background: var(--pp-cream); }
+.pp-hero-content .pp-kicker { color: #f4c8a8; margin-bottom: 12px; }
+.pp-hero-content h1 {
+  color: #fff;
+  font-size: clamp(34px, 5vw, 56px);
+  margin: 0 0 16px;
+  line-height: 1.05;
+}
+.pp-hero-content p {
+  color: rgba(255,255,255,.88);
+  max-width: 480px;
+  margin: 0 0 28px;
+  line-height: 1.65;
+  font-size: 16px;
+}
+.pp-hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; }
 
 /* Hero fallback (no image) */
 .pp-hero-text {
@@ -61,13 +97,13 @@ a { color: var(--pp-terracotta); }
 .pp-hero-text h1 { font-size: clamp(30px, 5vw, 52px); margin: 10px 0 14px; }
 .pp-hero-text p { max-width: 560px; color: var(--pp-muted); line-height: 1.6; margin: 0 0 22px; }
 
-/* ─── ALTERNATING SECTION ROWS ──────────────────────────────── */
+/* ─── ALTERNATING STORY-BAND ROWS ──────────────────────────── */
 .pp-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 48px;
+  gap: 56px;
   align-items: center;
-  padding: 48px 0;
+  padding: 56px 0;
   border-top: 1px solid #e2d8cc;
 }
 .pp-row-img {
@@ -80,33 +116,57 @@ a { color: var(--pp-terracotta); }
   height: 100%;
   object-fit: cover;
 }
-.pp-row-body h2 { font-size: clamp(22px, 3vw, 32px); margin: 0 0 14px; }
-.pp-row-body p { color: var(--pp-muted); line-height: 1.7; margin: 0; }
+.pp-row-body h2 { font-size: clamp(24px, 3vw, 34px); margin: 0 0 16px; }
+.pp-row-body p { color: var(--pp-muted); line-height: 1.75; margin: 0; font-size: 16px; }
 /* Reverse order for odd-indexed rows */
 .pp-row--reverse { direction: rtl; }
 .pp-row--reverse > * { direction: ltr; }
 
-/* ─── GALLERY GRID ───────────────────────────────────────────── */
-.pp-gallery-section { padding: 48px 0; border-top: 1px solid #e2d8cc; }
-.pp-gallery-section h2 { margin-bottom: 24px; }
+/* ─── GALLERY (CSS MASONRY — TRUE SHAPE, ZERO CROP) ─────────── */
+.pp-gallery-section { padding: 56px 0; border-top: 1px solid #e2d8cc; }
+.pp-gallery-section h2 { margin-bottom: 28px; font-size: clamp(22px, 3vw, 32px); }
 .pp-gallery {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  columns: 3;
+  column-gap: 12px;
 }
 .pp-gallery-item {
-  border-radius: 8px;
-  overflow: hidden;
-  aspect-ratio: 1;
-  background: #e2d8cc;
+  break-inside: avoid;
+  margin-bottom: 12px;
 }
 .pp-gallery-item img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform .3s ease;
+  height: auto;
+  display: block;
+  border-radius: 10px;
 }
-.pp-gallery-item:hover img { transform: scale(1.04); }
+
+/* ─── MEMBERSHIP INVITE BAND ─────────────────────────────────── */
+.pp-membership-band {
+  background: var(--pp-charcoal);
+  color: #fff;
+  text-align: center;
+  padding: 64px 24px;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  margin-top: 0;
+}
+.pp-membership-band h2 {
+  color: #fff;
+  font-size: clamp(26px, 4vw, 40px);
+  margin: 0 0 10px;
+}
+.pp-membership-band p {
+  color: rgba(255,255,255,.78);
+  margin: 0 auto 28px;
+  max-width: 480px;
+  font-size: 16px;
+  line-height: 1.65;
+}
+.pp-membership-band .pp-btn {
+  background: var(--pp-terracotta);
+  color: #fff;
+}
+.pp-membership-band .pp-btn:hover { background: var(--pp-clay); }
 
 /* ─── CLASS CARDS ────────────────────────────────────────────── */
 .pp-cards-grid {
@@ -147,7 +207,7 @@ a { color: var(--pp-terracotta); }
 .pp-detail-banner {
   border-radius: 10px;
   overflow: hidden;
-  height: 320px;
+  aspect-ratio: 16/9;
   margin-bottom: 32px;
   background: #e2d8cc;
 }
@@ -157,42 +217,41 @@ a { color: var(--pp-terracotta); }
   object-fit: cover;
 }
 
-/* ─── STAFF CARDS ────────────────────────────────────────────── */
+/* ─── STAFF CARDS (natural-ratio photos, no circle crop) ──────── */
 .pp-staff-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 32px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 36px;
   margin-top: 28px;
 }
 .pp-staff-card {
   background: #fff;
   border-radius: 12px;
-  padding: 28px 24px;
-  box-shadow: 0 2px 8px rgba(46,42,38,.08);
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(46,42,38,.09);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
 }
-.pp-avatar {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
+/* Natural-ratio photo container — aspect ratio set inline via style prop */
+.pp-staff-photo {
+  width: 100%;
   overflow: hidden;
-  margin-bottom: 16px;
   background: #e2d8cc;
-  flex-shrink: 0;
 }
-.pp-avatar img {
+.pp-staff-photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
-.pp-staff-card h2 { font-size: 20px; margin: 0 0 4px; }
-.pp-staff-card .pp-kicker { margin-bottom: 10px; }
-.pp-staff-card p { color: var(--pp-muted); font-size: 14px; line-height: 1.6; margin: 0; }
+.pp-staff-body {
+  padding: 22px 24px 26px;
+}
+.pp-staff-card h2 { font-size: clamp(20px, 2.5vw, 26px); margin: 0 0 6px; }
+.pp-staff-card .pp-kicker { margin-bottom: 12px; }
+.pp-staff-card p { color: var(--pp-muted); font-size: 14px; line-height: 1.65; margin: 0; }
 
-/* ─── MEMBERSHIP ─────────────────────────────────────────────── */
+/* ─── MEMBERSHIP PAGE ────────────────────────────────────────── */
 .pp-membership-price {
   display: inline-block;
   background: #fff;
@@ -239,14 +298,15 @@ a { color: var(--pp-terracotta); }
 
 /* ─── RESPONSIVE ─────────────────────────────────────────────── */
 @media (max-width: 700px) {
-  .pp-row { grid-template-columns: 1fr; }
+  .pp-row { grid-template-columns: 1fr; gap: 28px; }
   .pp-row--reverse { direction: ltr; }
   .pp-cards-grid { grid-template-columns: 1fr 1fr; }
-  .pp-gallery { grid-template-columns: repeat(2, 1fr); }
+  .pp-gallery { columns: 2; }
   .pp-benefits-grid { grid-template-columns: 1fr; }
   .pp-membership-price { padding: 20px 24px; }
+  .pp-staff-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) {
   .pp-cards-grid { grid-template-columns: 1fr; }
-  .pp-gallery { grid-template-columns: repeat(2, 1fr); }
+  .pp-gallery { columns: 1; }
 }
