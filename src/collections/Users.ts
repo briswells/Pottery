@@ -30,6 +30,8 @@ export const Users: CollectionConfig = {
       ],
       saveToJWT: true,
       access: { update: adminOnlyField },
+      validate: (val: unknown) =>
+        (Array.isArray(val) && val.length > 0) || 'At least one role is required.',
     },
     { name: 'title', type: 'text', admin: { description: 'Shown on the Meet the Staff page' } },
     { name: 'bio', type: 'textarea' },

@@ -37,4 +37,15 @@ describe('Users RBAC', () => {
     expect(user.title).toBe('Studio Manager')
     expect(user.showOnStaffPage).toBe(true)
   })
+
+  it('rejects updating a user to an empty roles array', async () => {
+    const payload = await getTestPayload()
+    const user = await payload.create({
+      collection: 'users',
+      data: { name: 'RoleGuard', email: `roleguard-${Date.now()}@test.local`, password: 'test12345' },
+    })
+    await expect(
+      payload.update({ collection: 'users', id: user.id, data: { roles: [] } }),
+    ).rejects.toThrow()
+  })
 })
