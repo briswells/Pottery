@@ -5,7 +5,7 @@ export const testUser = {
   name: 'Dev User',
   email: 'dev@payloadcms.com',
   password: 'test',
-  roles: ['admin'] as string[],
+  roles: ['admin'] as ('admin' | 'editor')[],
 }
 
 /**
