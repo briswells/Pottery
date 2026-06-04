@@ -1,21 +1,21 @@
 import 'dotenv/config'
-import { getPayload } from 'payload'
+import { getPayload, Payload } from 'payload'
 import config from '../payload.config'
 
-async function upsertGlobal(payload: any, slug: string, data: any) {
-  await payload.updateGlobal({ slug, data })
+async function upsertGlobal(payload: Payload, slug: string, data: Record<string, unknown>) {
+  await payload.updateGlobal({ slug, data } as Parameters<Payload['updateGlobal']>[0])
 }
 
-async function ensureUser(payload: any, email: string, data: any) {
+async function ensureUser(payload: Payload, email: string, data: Record<string, unknown>) {
   const found = await payload.find({ collection: 'users', where: { email: { equals: email } }, limit: 1 })
   if (found.totalDocs > 0) return found.docs[0]
-  return payload.create({ collection: 'users', data: { email, ...data } })
+  return payload.create({ collection: 'users', data: { email, ...data } } as Parameters<Payload['create']>[0])
 }
 
-async function ensureClass(payload: any, slug: string, data: any) {
+async function ensureClass(payload: Payload, slug: string, data: Record<string, unknown>) {
   const found = await payload.find({ collection: 'classes', where: { slug: { equals: slug } }, limit: 1 })
   if (found.totalDocs > 0) return found.docs[0]
-  return payload.create({ collection: 'classes', data })
+  return payload.create({ collection: 'classes', data } as Parameters<Payload['create']>[0])
 }
 
 async function run() {

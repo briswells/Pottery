@@ -1,35 +1,35 @@
-import { dirname } from 'path'
-import { fileURLToPath } from 'url'
-import { FlatCompat } from '@eslint/eslintrc'
+import nextConfig from 'eslint-config-next'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-})
+// Extract the @typescript-eslint plugin from the next/typescript block so we
+// can reference it in our own rules object (flat config requires plugin to be
+// in the same config entry as its rules).
+const tsBlock = nextConfig.find((c) => c.name === 'next/typescript')
+const tsPlugin = tsBlock?.plugins?.['@typescript-eslint']
 
 const eslintConfig = [
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
-  {
-    rules: {
-      '@typescript-eslint/ban-ts-comment': 'warn',
-      '@typescript-eslint/no-empty-object-type': 'warn',
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
+  ...nextConfig,
+  ...(tsPlugin
+    ? [
         {
-          vars: 'all',
-          args: 'after-used',
-          ignoreRestSiblings: false,
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          destructuredArrayIgnorePattern: '^_',
-          caughtErrorsIgnorePattern: '^(_|ignore)',
+          plugins: { '@typescript-eslint': tsPlugin },
+          rules: {
+            '@typescript-eslint/no-explicit-any': 'warn',
+            '@typescript-eslint/no-unused-vars': [
+              'warn',
+              {
+                vars: 'all',
+                args: 'after-used',
+                ignoreRestSiblings: false,
+                argsIgnorePattern: '^_',
+                varsIgnorePattern: '^_',
+                destructuredArrayIgnorePattern: '^_',
+                caughtErrorsIgnorePattern: '^(_|ignore)',
+              },
+            ],
+          },
         },
-      ],
-    },
-  },
+      ]
+    : []),
   {
     ignores: ['.next/', 'src/payload-types.ts', 'src/payload-generated-schema.ts'],
   },
