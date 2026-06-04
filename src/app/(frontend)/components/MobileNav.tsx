@@ -30,7 +30,7 @@ export function MobileNav() {
         </svg>
       </button>
       <nav
-        className={`pp-nav${open ? ' pp-nav--open' : ''}`}
+        className={`pp-mobile-nav${open ? ' pp-nav--open' : ''}`}
         aria-label="Mobile navigation"
       >
         <Link href="/" onClick={() => setOpen(false)}>Home</Link>

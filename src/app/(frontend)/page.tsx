@@ -11,24 +11,17 @@ export default async function HomePage() {
   const heroImgUrl = mediaUrl(home.heroImage, 'hero')
   const heroImgAlt = mediaAlt(home.heroImage) || home.heroHeadline || 'Portside Pottery studio'
 
-  // Pull gallery images for category cards (first few studio photos)
+  // Deliberate, clean single photo per category card.
+  // NOTE: do NOT use gallery[2] (collage.jpg) — it's a multi-photo collage and looks broken in a card.
   const galleryItems = home.gallery ?? []
-  const cardImg0 = galleryItems[0] ? mediaUrl(galleryItems[0]) : null
-  const cardImg1 = galleryItems[1] ? mediaUrl(galleryItems[1]) : null
-  const cardImg2 = galleryItems[2] ? mediaUrl(galleryItems[2]) : null
-  const cardAlt0 = galleryItems[0] ? mediaAlt(galleryItems[0]) : 'Pottery class'
-  const cardAlt1 = galleryItems[1] ? mediaAlt(galleryItems[1]) : 'Studio membership'
-  const cardAlt2 = galleryItems[2] ? mediaAlt(galleryItems[2]) : 'Visit the studio'
-
-  // Fallback: use section images for category cards if gallery is sparse
   const sections = home.sections ?? []
-  const fallback0 = sections[0] ? mediaUrl(sections[0].image) : null
-  const fallback1 = sections[1] ? mediaUrl(sections[1].image) : null
-  const fallback2 = sections[2] ? mediaUrl(sections[2].image) : null
-
-  const cat0 = cardImg0 || fallback0
-  const cat1 = cardImg1 || fallback1
-  const cat2 = cardImg2 || fallback2
+  // Take a class → the instructor/people shot; Become a member & Visit → clean studio shots
+  const cat0 = (galleryItems[0] ? mediaUrl(galleryItems[0]) : null) || (sections[0]?.image ? mediaUrl(sections[0].image) : null)
+  const cat1 = (sections[1]?.image ? mediaUrl(sections[1].image) : null) || (galleryItems[4] ? mediaUrl(galleryItems[4]) : null)
+  const cat2 = (sections[2]?.image ? mediaUrl(sections[2].image) : null) || (galleryItems[1] ? mediaUrl(galleryItems[1]) : null)
+  const cardAlt0 = (galleryItems[0] ? mediaAlt(galleryItems[0]) : '') || 'A pottery class at Portside'
+  const cardAlt1 = (sections[1]?.image ? mediaAlt(sections[1].image) : '') || 'Inside the Portside studio'
+  const cardAlt2 = (sections[2]?.image ? mediaAlt(sections[2].image) : '') || 'Visit Portside Pottery'
 
   return (
     <div>
@@ -69,7 +62,19 @@ export default async function HomePage() {
         <div className="pp-kicker">What we offer</div>
         <h2>Find your place in clay</h2>
         <div className="pp-category-cards">
-          {/* Card 1: Take a class */}
+          {/* Card 1: Visit the studio */}
+          <Link href="/visit" className="pp-category-card">
+            {cat2 && <img src={cat2} alt={cardAlt2} loading="lazy" />}
+            <div className="pp-category-card-scrim" aria-hidden="true" />
+            <div className="pp-category-card-body">
+              <div className="pp-kicker">Come in</div>
+              <h3>Visit the studio</h3>
+              <p>Located in Vancouver, WA — come see the space and meet the team.</p>
+              <span className="pp-category-card-arrow">Plan your visit →</span>
+            </div>
+          </Link>
+
+          {/* Card 2: Take a class */}
           <Link href="/classes" className="pp-category-card">
             {cat0 && <img src={cat0} alt={cardAlt0} loading="lazy" />}
             <div className="pp-category-card-scrim" aria-hidden="true" />
@@ -81,7 +86,7 @@ export default async function HomePage() {
             </div>
           </Link>
 
-          {/* Card 2: Become a member */}
+          {/* Card 3: Become a member */}
           <Link href="/membership" className="pp-category-card">
             {cat1 && <img src={cat1} alt={cardAlt1} loading="lazy" />}
             <div className="pp-category-card-scrim" aria-hidden="true" />
@@ -90,18 +95,6 @@ export default async function HomePage() {
               <h3>Become a member</h3>
               <p>24/7 studio access, professional wheels, and a community of makers.</p>
               <span className="pp-category-card-arrow">Learn more →</span>
-            </div>
-          </Link>
-
-          {/* Card 3: Visit the studio */}
-          <Link href="/visit" className="pp-category-card">
-            {cat2 && <img src={cat2} alt={cardAlt2} loading="lazy" />}
-            <div className="pp-category-card-scrim" aria-hidden="true" />
-            <div className="pp-category-card-body">
-              <div className="pp-kicker">Come in</div>
-              <h3>Visit the studio</h3>
-              <p>Located in Vancouver, WA — come see the space and meet the team.</p>
-              <span className="pp-category-card-arrow">Plan your visit →</span>
             </div>
           </Link>
         </div>
