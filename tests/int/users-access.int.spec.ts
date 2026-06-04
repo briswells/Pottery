@@ -1,19 +1,7 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { getTestPayload } from './helpers'
 
 describe('Users RBAC', () => {
-  beforeAll(async () => {
-    const payload = await getTestPayload()
-    const existing = await payload.find({ collection: 'users', limit: 1, where: { email: { equals: 'admin@test.local' } } })
-    if (existing.totalDocs === 0) {
-      await payload.create({
-        collection: 'users',
-        draft: false,
-        data: { name: 'Admin', email: 'admin@test.local', password: 'test12345', roles: ['admin'] },
-      })
-    }
-  })
-
   it('defaults new users to the editor role', async () => {
     const payload = await getTestPayload()
     const user = await payload.create({
@@ -35,7 +23,13 @@ describe('Users RBAC', () => {
       },
     })
     expect(user.title).toBe('Studio Manager')
+    expect(user.bio).toBe('Potter for 30+ years.')
     expect(user.showOnStaffPage).toBe(true)
+  })
+
+  it('does not expose users to unauthenticated (overrideAccess:false) reads', async () => {
+    const payload = await getTestPayload()
+    await expect(payload.find({ collection: 'users', overrideAccess: false })).rejects.toThrow()
   })
 
   it('rejects updating a user to an empty roles array', async () => {
