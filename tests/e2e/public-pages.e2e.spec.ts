@@ -20,3 +20,24 @@ test('staff page shows Eric and Naiomi', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Eric' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Naiomi' })).toBeVisible()
 })
+
+test('home renders a hero image from media API', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('img[src*="/api/media/file/"]').first()).toBeVisible()
+})
+
+test('home gallery renders multiple media images', async ({ page }) => {
+  await page.goto('/')
+  const count = await page.locator('img[src*="/api/media/file/"]').count()
+  expect(count).toBeGreaterThan(3)
+})
+
+test('staff page renders staff photos from media API', async ({ page }) => {
+  await page.goto('/staff')
+  await expect(page.locator('img[src*="/api/media/file/"]').first()).toBeVisible()
+})
+
+test('classes page renders a class thumbnail image', async ({ page }) => {
+  await page.goto('/classes')
+  await expect(page.locator('img[src*="/api/media/file/"]').first()).toBeVisible()
+})

@@ -31,6 +31,12 @@ const eslintConfig = [
       ]
     : []),
   {
+    rules: {
+      // Project intentionally uses plain <img> tags for Payload media (no next/image)
+      '@next/next/no-img-element': 'off',
+    },
+  },
+  {
     ignores: ['.next/', 'src/payload-types.ts', 'src/payload-generated-schema.ts'],
   },
 ]
