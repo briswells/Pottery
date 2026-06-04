@@ -34,7 +34,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm dev',
+    command: 'cross-env NODE_OPTIONS=--no-deprecation next dev',
     url: 'http://localhost:3000',
     reuseExistingServer: true,
     timeout: 120000,
