@@ -1,5 +1,11 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { getTestPayload } from './helpers'
+
+beforeEach(async () => {
+  const payload = await getTestPayload()
+  const existing = await payload.find({ collection: 'classes', limit: 1000 })
+  await Promise.all(existing.docs.map((d) => payload.delete({ collection: 'classes', id: d.id })))
+})
 
 describe('Classes', () => {
   it('auto-generates a slug from the title when none is provided', async () => {
