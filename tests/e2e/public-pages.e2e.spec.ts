@@ -41,3 +41,22 @@ test('classes page renders a class thumbnail image', async ({ page }) => {
   await page.goto('/classes')
   await expect(page.locator('img[src*="/api/media/file/"]').first()).toBeVisible()
 })
+
+test('visit page shows address', async ({ page }) => {
+  await page.goto('/visit')
+  // Address appears in the main content area (not just the footer)
+  await expect(page.locator('main').getByText(/Vancouver, WA/).first()).toBeVisible()
+})
+
+test('header nav contains Visit Us link', async ({ page }) => {
+  await page.goto('/')
+  // The desktop nav is the first nav element (role=navigation, label=Main navigation)
+  const header = page.locator('nav[aria-label="Main navigation"]')
+  await expect(header.getByRole('link', { name: 'Visit Us' })).toBeVisible()
+})
+
+test('gallery page renders studio images', async ({ page }) => {
+  await page.goto('/gallery')
+  await expect(page.getByRole('heading', { name: 'Gallery' })).toBeVisible()
+  await expect(page.locator('img[src*="/api/media/file/"]').first()).toBeVisible()
+})
