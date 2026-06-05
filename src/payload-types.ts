@@ -102,11 +102,13 @@ export interface Config {
     'site-settings': SiteSetting;
     'home-page': HomePage;
     'membership-page': MembershipPage;
+    'firings-page': FiringsPage;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     'home-page': HomePageSelect<false> | HomePageSelect<true>;
     'membership-page': MembershipPageSelect<false> | MembershipPageSelect<true>;
+    'firings-page': FiringsPageSelect<false> | FiringsPageSelect<true>;
   };
   locale: null;
   widgets: {
@@ -788,6 +790,24 @@ export interface MembershipPage {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "firings-page".
+ */
+export interface FiringsPage {
+  id: number;
+  headline: string;
+  intro?: string | null;
+  steps?:
+    | {
+        step: string;
+        id?: string | null;
+      }[]
+    | null;
+  pricingNote?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
@@ -850,6 +870,24 @@ export interface MembershipPageSelect<T extends boolean = true> {
         item?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "firings-page_select".
+ */
+export interface FiringsPageSelect<T extends boolean = true> {
+  headline?: T;
+  intro?: T;
+  steps?:
+    | T
+    | {
+        step?: T;
+        id?: T;
+      };
+  pricingNote?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

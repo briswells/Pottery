@@ -16,6 +16,7 @@ import { FiringRequests } from './collections/FiringRequests'
 import { SiteSettings } from './globals/SiteSettings'
 import { HomePage } from './globals/HomePage'
 import { MembershipPage } from './globals/MembershipPage'
+import { FiringsPage } from './globals/FiringsPage'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -28,7 +29,7 @@ export default buildConfig({
     },
   },
   collections: [Users, Members, Media, Classes, Bookings, Payments, FiringRequests],
-  globals: [SiteSettings, HomePage, MembershipPage],
+  globals: [SiteSettings, HomePage, MembershipPage, FiringsPage],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
