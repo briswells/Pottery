@@ -11,6 +11,9 @@ function num(v: FormDataEntryValue | null): number | undefined {
 }
 
 export async function POST(req: Request) {
+  // NOTE: this is a public, unauthenticated endpoint. We cap the photo at 10 MB
+  // below, but req.formData() buffers the whole body first; rely on the host/proxy
+  // request-size limit as the outer guard (add one explicitly if abuse appears).
   let form: FormData
   try {
     form = await req.formData()
@@ -48,19 +51,29 @@ export async function POST(req: Request) {
     photoId = media.id
   }
 
-  const request = await payload.create({
-    collection: 'firing-requests',
-    overrideAccess: true,
-    data: {
-      name, email, phone, description, notes,
-      heightIn: num(form.get('heightIn')),
-      widthIn: num(form.get('widthIn')),
-      depthIn: num(form.get('depthIn')),
-      quantity: num(form.get('quantity')) ?? 1,
-      photo: photoId,
-      status: 'submitted',
-    },
-  })
+  let request
+  try {
+    request = await payload.create({
+      collection: 'firing-requests',
+      overrideAccess: true,
+      data: {
+        name, email, phone, description, notes,
+        heightIn: num(form.get('heightIn')),
+        widthIn: num(form.get('widthIn')),
+        depthIn: num(form.get('depthIn')),
+        quantity: num(form.get('quantity')) ?? 1,
+        photo: photoId,
+        status: 'submitted',
+      },
+    })
+  } catch (e) {
+    // Don't leave the just-uploaded photo orphaned if the request fails to save.
+    if (photoId) {
+      try { await payload.delete({ collection: 'media', id: photoId, overrideAccess: true }) } catch { /* best effort */ }
+    }
+    console.error('Firing request create failed:', e)
+    return Response.json({ error: 'Could not save your request. Please try again.' }, { status: 500 })
+  }
 
   const dims = [num(form.get('heightIn')), num(form.get('widthIn')), num(form.get('depthIn'))]
     .map((d) => (d == null ? '?' : d)).join(' × ')

@@ -81,6 +81,9 @@ export async function POST(req: Request) {
       // No membership subscription → this may be a one-off firing invoice.
       const firing = await findFiringByInvoiceId(invoice?.id)
       if (firing && firing.status !== 'paid') {
+        if (!firing.quotedPriceCents) {
+          console.warn(`Firing ${firing.id} paid but has no quotedPriceCents; recording $0.`)
+        }
         await payload.update({
           collection: 'firing-requests', id: firing.id, overrideAccess: true,
           context: { fromFiringHook: true },
