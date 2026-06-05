@@ -1,6 +1,7 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { WebhooksHelper } from 'square'
+import { sendEmail } from '../../../../lib/email'
 
 export async function POST(req: Request) {
   const requestBody = await req.text() // raw body required for signature verification
@@ -37,6 +38,12 @@ export async function POST(req: Request) {
     })
   }
 
+  async function findMemberBySubscription(subscriptionId: string | undefined) {
+    if (!subscriptionId) return null
+    const { docs } = await payload.find({ collection: 'members', where: { squareSubscriptionId: { equals: subscriptionId } }, limit: 1 })
+    return docs[0] ?? null
+  }
+
   if (event.type === 'payment.updated') {
     // A captured payment that gets voided lands in CANCELED; a failed capture in FAILED.
     const payment = event.data?.object?.payment
@@ -49,8 +56,50 @@ export async function POST(req: Request) {
     const refund = event.data?.object?.refund
     const status: string | undefined = refund?.status // PENDING | COMPLETED | REJECTED | FAILED
     await reconcileBooking(refund?.payment_id, status === 'COMPLETED' ? 'refunded' : undefined)
+  } else if (event.type === 'invoice.payment_made') {
+    const invoice = event.data?.object?.invoice
+    const member = await findMemberBySubscription(invoice?.subscriptionId)
+    if (member) {
+      await payload.update({ collection: 'members', id: member.id, overrideAccess: true, data: {
+        status: 'active', subscriptionStatus: 'ACTIVE',
+        lastPaymentDate: new Date().toISOString(), lastPaymentStatus: 'PAID',
+      } })
+      await payload.create({ collection: 'payments', overrideAccess: true, data: {
+        type: 'membership', member: member.id, amountCents: 20000, // TODO: source from invoice if price changes
+        squareId: invoice?.id ?? `inv-${invoice?.subscriptionId ?? 'unknown'}`, status: 'PAID', paidAt: new Date().toISOString(),
+      } })
+    }
+  } else if (event.type === 'invoice.updated') {
+    const invoice = event.data?.object?.invoice
+    const status: string | undefined = invoice?.status // UNPAID | PAYMENT_PENDING | CANCELED | ...
+    if (status === 'UNPAID' || status === 'PAYMENT_PENDING') {
+      const member = await findMemberBySubscription(invoice?.subscriptionId)
+      if (member && member.status !== 'past_due') {
+        await payload.update({ collection: 'members', id: member.id, overrideAccess: true, data: {
+          status: 'past_due', lastPaymentStatus: 'FAILED',
+        } })
+        // Notify staff + member; no automatic lockout (per design decision).
+        await sendEmail({ to: process.env.STAFF_NOTIFY_EMAIL!, subject: `Membership payment failed: ${member.name}`,
+          html: `<p>${member.name} (${member.email}) has a failed/overdue membership payment. Square will retry; follow up as needed.</p>` })
+        await sendEmail({ to: member.email, subject: 'Your Portside Pottery payment needs attention',
+          html: `<p>Hi ${member.name}, we couldn't process your latest membership payment. Please update your card or contact the studio. Your access is unchanged for now.</p>` })
+      }
+    }
+  } else if (event.type === 'subscription.updated') {
+    const sub = event.data?.object?.subscription
+    const member = await findMemberBySubscription(sub?.id)
+    if (member && sub?.status) {
+      const map: Record<string, string> = { ACTIVE: 'active', PAUSED: 'paused', CANCELED: 'cancelled', DEACTIVATED: 'cancelled' }
+      const nextStatus = map[sub.status] ?? member.status
+      // Idempotent: only write when something actually changes (also avoids
+      // needless churn through the Members afterChange → Square hook).
+      if (member.subscriptionStatus !== sub.status || member.status !== nextStatus) {
+        await payload.update({ collection: 'members', id: member.id, overrideAccess: true, data: {
+          subscriptionStatus: sub.status, status: nextStatus as typeof member.status,
+        } })
+      }
+    }
   }
 
-  // Membership events (invoice.*, subscription.updated) are handled in Plan 3.
   return new Response('ok', { status: 200 })
 }
