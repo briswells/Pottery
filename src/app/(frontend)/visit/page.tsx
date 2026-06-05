@@ -7,6 +7,8 @@ export const metadata = {
   description: 'Find Portside Pottery in Vancouver, WA. Get directions, hours, and contact info.',
 }
 
+export const dynamic = 'force-dynamic'
+
 export default async function VisitPage() {
   const payload = await getPayload({ config: await config })
   const settings = await payload.findGlobal({ slug: 'site-settings', depth: 2 })

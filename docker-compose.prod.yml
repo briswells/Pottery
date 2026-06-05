@@ -1,0 +1,35 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env.production
+    depends_on: [db]
+    expose: ["3000"]
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    # Read POSTGRES_PASSWORD from the same .env.production as the app, rather than
+    # ${POSTGRES_PASSWORD} (which Compose would interpolate from the shell/.env,
+    # not from env_file). Keep it in sync with the password inside DATABASE_URL.
+    env_file: .env.production
+    environment:
+      POSTGRES_USER: portside
+      POSTGRES_DB: portside
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [app]
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

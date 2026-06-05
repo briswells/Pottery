@@ -2,6 +2,8 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { mediaUrl, mediaAlt, mediaAspect } from '../../../lib/media'
 
+export const dynamic = 'force-dynamic'
+
 export default async function StaffPage() {
   const payload = await getPayload({ config: await config })
   const { docs } = await payload.find({

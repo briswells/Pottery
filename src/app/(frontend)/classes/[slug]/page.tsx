@@ -6,6 +6,8 @@ import { mediaUrl, mediaAlt } from '../../../../lib/media'
 import { seatsRemaining } from '../../../../lib/occupancy'
 import { BookingForm } from './BookingForm'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ClassDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const payload = await getPayload({ config: await config })

@@ -1,0 +1,4 @@
+portsidepottery.com, www.portsidepottery.com {
+    encode gzip
+    reverse_proxy app:3000
+}
