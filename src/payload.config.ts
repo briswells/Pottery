@@ -12,9 +12,11 @@ import { Media } from './collections/Media'
 import { Classes } from './collections/Classes'
 import { Bookings } from './collections/Bookings'
 import { Payments } from './collections/Payments'
+import { FiringRequests } from './collections/FiringRequests'
 import { SiteSettings } from './globals/SiteSettings'
 import { HomePage } from './globals/HomePage'
 import { MembershipPage } from './globals/MembershipPage'
+import { FiringsPage } from './globals/FiringsPage'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -26,8 +28,8 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Members, Media, Classes, Bookings, Payments],
-  globals: [SiteSettings, HomePage, MembershipPage],
+  collections: [Users, Members, Media, Classes, Bookings, Payments, FiringRequests],
+  globals: [SiteSettings, HomePage, MembershipPage, FiringsPage],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

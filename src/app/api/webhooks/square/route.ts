@@ -44,6 +44,12 @@ export async function POST(req: Request) {
     return docs[0] ?? null
   }
 
+  async function findFiringByInvoiceId(invoiceId: string | undefined) {
+    if (!invoiceId) return null
+    const { docs } = await payload.find({ collection: 'firing-requests', where: { squareInvoiceId: { equals: invoiceId } }, limit: 1 })
+    return docs[0] ?? null
+  }
+
   if (event.type === 'payment.updated') {
     // A captured payment that gets voided lands in CANCELED; a failed capture in FAILED.
     const payment = event.data?.object?.payment
@@ -71,6 +77,27 @@ export async function POST(req: Request) {
         type: 'membership', member: member.id, amountCents: 20000, // TODO: source from invoice if price changes
         squareId: invoice?.id ?? `inv-${subscriptionId ?? 'unknown'}`, status: 'PAID', paidAt: new Date().toISOString(),
       } })
+    } else {
+      // No membership subscription → this may be a one-off firing invoice.
+      const firing = await findFiringByInvoiceId(invoice?.id)
+      if (firing && firing.status !== 'paid') {
+        if (!firing.quotedPriceCents) {
+          console.warn(`Firing ${firing.id} paid but has no quotedPriceCents; recording $0.`)
+        }
+        await payload.update({
+          collection: 'firing-requests', id: firing.id, overrideAccess: true,
+          context: { fromFiringHook: true },
+          data: { status: 'paid', paidAt: new Date().toISOString() },
+        })
+        await payload.create({
+          collection: 'payments', overrideAccess: true, data: {
+            type: 'firing', firingRequest: firing.id,
+            amountCents: firing.quotedPriceCents ?? 0,
+            squareId: invoice?.id ?? `firing-inv-${firing.id}`,
+            status: 'PAID', paidAt: new Date().toISOString(),
+          },
+        })
+      }
     }
   } else if (event.type === 'invoice.updated') {
     const invoice = event.data?.object?.invoice
