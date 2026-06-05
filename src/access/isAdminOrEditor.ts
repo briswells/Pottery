@@ -4,6 +4,6 @@ import type { Access } from 'payload'
 export const isAdminOrEditor: Access = ({ req: { user } }) =>
   Boolean(
     user &&
-      'roles' in user &&
-      (user as { roles?: string[] }).roles?.some((r) => r === 'admin' || r === 'editor'),
+      user.collection === 'users' &&
+      user.roles?.some((r) => r === 'admin' || r === 'editor'),
   )

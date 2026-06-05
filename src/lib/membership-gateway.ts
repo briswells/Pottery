@@ -7,6 +7,10 @@ export interface MembershipGateway {
   createSubscription(input: { customerId: string; cardId: string }): Promise<{ subscriptionId: string; status: string }>
 }
 
+// NOTE: the customer → card → subscription sequence has no rollback. A failure
+// partway through leaves the earlier objects (customer, card) orphaned in Square.
+// Acceptable for now (idempotency keys make retries safe and sandbox orphans are
+// free); revisit with cleanup/reconciliation if it ever matters in production.
 export const squareMembershipGateway: MembershipGateway = {
   async createCustomer({ name, email, phone }) {
     const client = getSquareClient()
