@@ -18,7 +18,8 @@ async function run() {
   })
   const subscriptions = search.subscriptions ?? []
   let created = 0,
-    skipped = 0
+    skipped = 0,
+    failed = 0
 
   const statusMap: Record<string, MemberStatus> = {
     ACTIVE: 'active',
@@ -52,26 +53,39 @@ async function run() {
     const email = c?.emailAddress ?? `${sub.customerId}@imported.portsidepottery.com`
     const name = [c?.givenName, c?.familyName].filter(Boolean).join(' ') || 'Imported Member'
 
-    await payload.create({
-      collection: 'members',
-      overrideAccess: true,
-      data: {
-        name,
-        email,
-        password: randomBytes(24).toString('hex'),
-        phone: c?.phoneNumber,
-        status: statusMap[sub.status ?? 'ACTIVE'] ?? 'active',
-        joinedDate: sub.startDate,
-        squareCustomerId: sub.customerId,
-        squareSubscriptionId: sub.id,
-        subscriptionStatus: sub.status,
-      },
-    })
-    created++
+    try {
+      await payload.create({
+        collection: 'members',
+        overrideAccess: true,
+        data: {
+          name,
+          email,
+          password: randomBytes(24).toString('hex'),
+          phone: c?.phoneNumber,
+          status: statusMap[sub.status ?? 'ACTIVE'] ?? 'active',
+          joinedDate: sub.startDate,
+          squareCustomerId: sub.customerId,
+          squareSubscriptionId: sub.id,
+          subscriptionStatus: sub.status,
+        },
+      })
+      created++
+    } catch (e) {
+      // Most likely a unique-email collision with an existing member (member
+      // emails are unique). Skip and keep going rather than aborting the run.
+      failed++
+      console.error(`Failed to import subscription ${sub.id} (${email}):`, e instanceof Error ? e.message : e)
+    }
   }
 
-  console.log(`Import complete. Created ${created}, skipped ${skipped}.`)
-  process.exit(0)
+  // The search only returned the first page; warn if more exist so an operator
+  // isn't misled by "Import complete" on a large account.
+  if (search.cursor) {
+    console.warn('WARNING: more subscriptions exist beyond the first page — pagination is not implemented, so some members were NOT imported.')
+  }
+
+  console.log(`Import complete. Created ${created}, skipped ${skipped}, failed ${failed}.`)
+  process.exit(failed > 0 ? 1 : 0)
 }
 
 run().catch((e) => {
