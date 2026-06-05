@@ -15,6 +15,7 @@ export const Payments: CollectionConfig = {
       { label: 'Booking', value: 'booking' },
       { label: 'Membership', value: 'membership' },
     ] },
+    { name: 'member', type: 'relationship', relationTo: 'members' },
     { name: 'booking', type: 'relationship', relationTo: 'bookings' },
     { name: 'amountCents', type: 'number', required: true },
     { name: 'squareId', type: 'text', required: true, index: true, admin: { description: 'Square payment or invoice id' } },
