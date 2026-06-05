@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { isAdmin } from '../access/isAdmin'
 import { isAdminOrEditor } from '../access/isAdminOrEditor'
+import { sendFiringInvoice } from '../hooks/sendFiringInvoice'
 
 export const FiringRequests: CollectionConfig = {
   slug: 'firing-requests',
@@ -14,6 +15,9 @@ export const FiringRequests: CollectionConfig = {
     create: () => false, // created server-side via /api/firings (overrideAccess)
     update: isAdminOrEditor,
     delete: isAdmin,
+  },
+  hooks: {
+    afterChange: [sendFiringInvoice],
   },
   fields: [
     { name: 'name', type: 'text', required: true },
