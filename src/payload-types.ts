@@ -268,6 +268,9 @@ export interface Payment {
    * Square payment or invoice id
    */
   squareId: string;
+  /**
+   * Mirrors the raw Square payment/invoice status (e.g. COMPLETED).
+   */
   status: string;
   paidAt?: string | null;
   updatedAt: string;

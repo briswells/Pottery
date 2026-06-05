@@ -18,7 +18,7 @@ export const Payments: CollectionConfig = {
     { name: 'booking', type: 'relationship', relationTo: 'bookings' },
     { name: 'amountCents', type: 'number', required: true },
     { name: 'squareId', type: 'text', required: true, index: true, admin: { description: 'Square payment or invoice id' } },
-    { name: 'status', type: 'text', required: true },
+    { name: 'status', type: 'text', required: true, admin: { description: 'Mirrors the raw Square payment/invoice status (e.g. COMPLETED).' } },
     { name: 'paidAt', type: 'date' },
   ],
 }
