@@ -34,8 +34,14 @@ export function BookingForm({
     formRef.current = form
   }, [form])
 
+  // Single choke point for card + every wallet. Guard against a second submit
+  // (e.g. tapping a wallet while a charge is in flight) so we never double-charge.
+  const busyRef = useRef(false)
+
   const completeBooking = useCallback(
     async (sourceId: string) => {
+      if (busyRef.current) return
+      busyRef.current = true
       setBusy(true)
       setMsg(null)
       try {
@@ -58,6 +64,7 @@ export function BookingForm({
         setMsg(err.message)
       } finally {
         setBusy(false)
+        busyRef.current = false
       }
     },
     [classId],
@@ -148,6 +155,7 @@ export function BookingForm({
               payments={payments}
               priceCents={priceCents}
               referenceId={`booking-${classId}`}
+              disabled={busy}
               onToken={completeBooking}
               onError={setMsg}
             />
