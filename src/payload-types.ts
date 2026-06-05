@@ -70,6 +70,8 @@ export interface Config {
     users: User;
     media: Media;
     classes: Class;
+    bookings: Booking;
+    payments: Payment;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -80,6 +82,8 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     classes: ClassesSelect<false> | ClassesSelect<true>;
+    bookings: BookingsSelect<false> | BookingsSelect<true>;
+    payments: PaymentsSelect<false> | PaymentsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -237,6 +241,40 @@ export interface Class {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "bookings".
+ */
+export interface Booking {
+  id: number;
+  class: number | Class;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string | null;
+  status: 'pending' | 'paid' | 'cancelled' | 'refunded';
+  amountCents: number;
+  squarePaymentId?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payments".
+ */
+export interface Payment {
+  id: number;
+  type: 'booking' | 'membership';
+  booking?: (number | null) | Booking;
+  amountCents: number;
+  /**
+   * Square payment or invoice id
+   */
+  squareId: string;
+  status: string;
+  paidAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -270,6 +308,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'classes';
         value: number | Class;
+      } | null)
+    | ({
+        relationTo: 'bookings';
+        value: number | Booking;
+      } | null)
+    | ({
+        relationTo: 'payments';
+        value: number | Payment;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -401,6 +447,35 @@ export interface ClassesSelect<T extends boolean = true> {
   scheduleText?: T;
   instructor?: T;
   status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "bookings_select".
+ */
+export interface BookingsSelect<T extends boolean = true> {
+  class?: T;
+  customerName?: T;
+  customerEmail?: T;
+  customerPhone?: T;
+  status?: T;
+  amountCents?: T;
+  squarePaymentId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payments_select".
+ */
+export interface PaymentsSelect<T extends boolean = true> {
+  type?: T;
+  booking?: T;
+  amountCents?: T;
+  squareId?: T;
+  status?: T;
+  paidAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
