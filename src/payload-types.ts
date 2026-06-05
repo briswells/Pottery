@@ -322,7 +322,13 @@ export interface Booking {
 export interface Payment {
   id: number;
   type: 'booking' | 'membership';
+  /**
+   * Set for membership payments
+   */
   member?: (number | null) | Member;
+  /**
+   * Set for class booking payments
+   */
   booking?: (number | null) | Booking;
   amountCents: number;
   /**
