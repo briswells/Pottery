@@ -58,7 +58,10 @@ export async function POST(req: Request) {
     await reconcileBooking(refund?.payment_id, status === 'COMPLETED' ? 'refunded' : undefined)
   } else if (event.type === 'invoice.payment_made') {
     const invoice = event.data?.object?.invoice
-    const member = await findMemberBySubscription(invoice?.subscriptionId)
+    // Square delivers webhook JSON in snake_case (we parse the raw body, not via
+    // the SDK), so read subscription_id; fall back to camelCase just in case.
+    const subscriptionId = invoice?.subscription_id ?? invoice?.subscriptionId
+    const member = await findMemberBySubscription(subscriptionId)
     if (member) {
       await payload.update({ collection: 'members', id: member.id, overrideAccess: true, data: {
         status: 'active', subscriptionStatus: 'ACTIVE',
@@ -66,14 +69,15 @@ export async function POST(req: Request) {
       } })
       await payload.create({ collection: 'payments', overrideAccess: true, data: {
         type: 'membership', member: member.id, amountCents: 20000, // TODO: source from invoice if price changes
-        squareId: invoice?.id ?? `inv-${invoice?.subscriptionId ?? 'unknown'}`, status: 'PAID', paidAt: new Date().toISOString(),
+        squareId: invoice?.id ?? `inv-${subscriptionId ?? 'unknown'}`, status: 'PAID', paidAt: new Date().toISOString(),
       } })
     }
   } else if (event.type === 'invoice.updated') {
     const invoice = event.data?.object?.invoice
     const status: string | undefined = invoice?.status // UNPAID | PAYMENT_PENDING | CANCELED | ...
     if (status === 'UNPAID' || status === 'PAYMENT_PENDING') {
-      const member = await findMemberBySubscription(invoice?.subscriptionId)
+      const subscriptionId = invoice?.subscription_id ?? invoice?.subscriptionId
+      const member = await findMemberBySubscription(subscriptionId)
       if (member && member.status !== 'past_due') {
         await payload.update({ collection: 'members', id: member.id, overrideAccess: true, data: {
           status: 'past_due', lastPaymentStatus: 'FAILED',
