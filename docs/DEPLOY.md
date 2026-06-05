@@ -151,3 +151,26 @@ Notes that will bite you if skipped:
   cancel from Square, to confirm the member flips to cancelled without an echo loop).
 - **Image size (~1.6 GB):** the runner keeps full `node_modules` + `src` so `pnpm migrate`
   / `import:members` can run inside the container. Fine for a single-VPS deploy.
+
+---
+
+## Apple Pay on the class booking form (production)
+
+Apple Pay only appears on HTTPS + Safari/Apple devices; Google Pay and Cash App Pay need
+no extra setup. To enable Apple Pay:
+
+1. In the **Square Dashboard → Apple Pay**, register your production domain (the exact
+   public hostname customers use — e.g. the Cloudflare-tunnel domain).
+2. Square provides a **domain-association file**. Put its contents in the
+   `APPLE_PAY_DOMAIN_ASSOCIATION` env var (in `.env.production`). The app serves it at
+   `https://<domain>/.well-known/apple-developer-merchantid-domain-association`.
+3. Confirm `https://<domain>/.well-known/apple-developer-merchantid-domain-association`
+   returns the file over HTTPS, then complete verification in the Square dashboard.
+
+**Cloudflare tunnel:** serving the app over HTTP behind a Cloudflare tunnel that
+terminates TLS is fine — Apple only sees the public `https://<domain>`. BUT the storefront
+and especially the `/.well-known/...` path must be **publicly reachable, NOT behind a
+Cloudflare Access (Zero-Trust login) policy**, or Apple/Square's verification fetch hits
+the login page and fails (and customers couldn't shop). The tunnel for connectivity is
+fine; an Access auth gate on public routes is not. The Apple-Pay-registered domain,
+`PUBLIC_BASE_URL`, and the Square webhook URL should all be that same public hostname.

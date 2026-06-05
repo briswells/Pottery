@@ -873,3 +873,19 @@ a { color: var(--pp-terracotta); }
   .pp-cards-grid { grid-template-columns: 1fr; }
   .pp-gallery { columns: 1; }
 }
+
+/* Booking form: payment-method divider + Apple Pay button target */
+.pp-or-divider {
+  text-align: center;
+  color: var(--pp-muted);
+  font-size: 13px;
+  margin: 14px 0;
+}
+#apple-pay-button {
+  -webkit-appearance: -apple-pay-button;
+  -apple-pay-button-type: plain;
+  -apple-pay-button-style: black;
+  height: 44px;
+  border-radius: 8px;
+  cursor: pointer;
+}
