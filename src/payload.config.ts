@@ -41,7 +41,7 @@ export default buildConfig({
   }),
   sharp,
   plugins:
-    process.env.S3_BUCKET && process.env.S3_ACCESS_KEY_ID
+    process.env.S3_BUCKET && process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY
       ? [
           s3Storage({
             collections: { media: true },
@@ -52,7 +52,7 @@ export default buildConfig({
               forcePathStyle: true,
               credentials: {
                 accessKeyId: process.env.S3_ACCESS_KEY_ID,
-                secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+                secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
               },
             },
           }),
