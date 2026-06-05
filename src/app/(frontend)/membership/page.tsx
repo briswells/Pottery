@@ -1,5 +1,6 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import { MembershipForm } from './MembershipForm'
 
 export default async function MembershipPage() {
   const payload = await getPayload({ config: await config })
@@ -26,9 +27,7 @@ export default async function MembershipPage() {
         </>
       )}
 
-      <a className="pp-btn" href="mailto:getcreative@portsidepottery.com?subject=Membership">
-        Ask about membership
-      </a>
+      <MembershipForm priceLabel={m.priceLabel} />
     </div>
   )
 }
