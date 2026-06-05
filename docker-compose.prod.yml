@@ -9,9 +9,12 @@ services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    # Read POSTGRES_PASSWORD from the same .env.production as the app, rather than
+    # ${POSTGRES_PASSWORD} (which Compose would interpolate from the shell/.env,
+    # not from env_file). Keep it in sync with the password inside DATABASE_URL.
+    env_file: .env.production
     environment:
       POSTGRES_USER: portside
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: portside
     volumes:
       - pgdata:/var/lib/postgresql/data
