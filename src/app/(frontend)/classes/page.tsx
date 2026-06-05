@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usd } from '../../../lib/format'
 import { mediaUrl, mediaAlt } from '../../../lib/media'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ClassesPage() {
   const payload = await getPayload({ config: await config })
   const { docs } = await payload.find({

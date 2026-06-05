@@ -9,6 +9,10 @@ import '../../styles/globals.css'
 const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces' })
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
+// Header/footer come from CMS site-settings; render per-request so the build
+// never needs a database connection and staff edits show without a rebuild.
+export const dynamic = 'force-dynamic'
+
 export default async function FrontendLayout({ children }: { children: React.ReactNode }) {
   const payload = await getPayload({ config: await config })
   const settings = await payload.findGlobal({ slug: 'site-settings', depth: 2 })

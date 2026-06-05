@@ -4,6 +4,10 @@ import Link from 'next/link'
 import { mediaUrl, mediaAlt } from '../../lib/media'
 import { NewsletterBand } from './components/NewsletterBand'
 
+// Content is CMS-managed; render per-request so admin edits appear immediately
+// (and so `next build` doesn't try to prerender these DB-backed pages).
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   const payload = await getPayload({ config: await config })
   const home = await payload.findGlobal({ slug: 'home-page', depth: 2 })

@@ -7,6 +7,8 @@ export const metadata = {
   description: 'A visual look at life in the Portside Pottery studio — the work, the people, the process.',
 }
 
+export const dynamic = 'force-dynamic'
+
 export default async function GalleryPage() {
   const payload = await getPayload({ config: await config })
   const home = await payload.findGlobal({ slug: 'home-page', depth: 2 })

@@ -2,6 +2,8 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { MembershipForm } from './MembershipForm'
 
+export const dynamic = 'force-dynamic'
+
 export default async function MembershipPage() {
   const payload = await getPayload({ config: await config })
   const m = await payload.findGlobal({ slug: 'membership-page' })
