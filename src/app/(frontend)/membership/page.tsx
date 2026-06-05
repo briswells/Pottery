@@ -1,6 +1,5 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import { MembershipForm } from './MembershipForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,7 +28,10 @@ export default async function MembershipPage() {
         </>
       )}
 
-      <MembershipForm priceLabel={m.priceLabel} />
+      {/* Membership requires staff approval — this is a request, not self-serve signup. */}
+      <a className="pp-btn" href="mailto:getcreative@portsidepottery.com?subject=Membership">
+        Ask about membership
+      </a>
     </div>
   )
 }
