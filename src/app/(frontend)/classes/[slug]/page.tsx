@@ -39,7 +39,7 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ sl
       {cls.description && <p style={{ marginTop: 16 }}>{cls.description}</p>}
       <p style={{ fontSize: 22, fontWeight: 600 }}>{usd(cls.priceCents)}</p>
       {remaining > 0 ? (
-        <BookingForm classId={cls.id} priceLabel={usd(cls.priceCents)} />
+        <BookingForm classId={cls.id} priceCents={cls.priceCents} priceLabel={usd(cls.priceCents)} />
       ) : (
         <p style={{ fontWeight: 600 }}>This class is full.</p>
       )}
