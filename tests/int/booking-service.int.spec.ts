@@ -67,4 +67,21 @@ describe('createPaidBooking', () => {
     ] } })
     expect(remaining.totalDocs).toBe(0)
   })
+
+  it('never oversells a class under concurrent booking attempts', async () => {
+    const payload = await getTestPayload()
+    const cls = await makeClass(payload, 1)
+    await Promise.allSettled([
+      createPaidBooking({ payload, ...deps() }, { classId: cls.id, sourceId: 'cnon:p1', customerName: 'P1', customerEmail: 'p1@t.local' }),
+      createPaidBooking({ payload, ...deps() }, { classId: cls.id, sourceId: 'cnon:p2', customerName: 'P2', customerEmail: 'p2@t.local' }),
+    ])
+    const paid = await payload.count({ collection: 'bookings', where: { and: [
+      { class: { equals: cls.id } }, { status: { equals: 'paid' } },
+    ] } })
+    const occupied = await payload.count({ collection: 'bookings', where: { and: [
+      { class: { equals: cls.id } }, { status: { in: ['paid', 'pending'] } },
+    ] } })
+    expect(paid.totalDocs).toBeLessThanOrEqual(1)
+    expect(occupied.totalDocs).toBeLessThanOrEqual(1)
+  })
 })

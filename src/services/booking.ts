@@ -1,7 +1,8 @@
 import type { Payload } from 'payload'
-import { seatsRemaining } from '../lib/occupancy'
+import { seatsRemaining, occupiedSeats } from '../lib/occupancy'
 import type { ChargeInput, ChargeResult } from '../lib/payments'
 import type { EmailInput } from '../lib/email'
+import { usd } from '../lib/format'
 
 export interface BookingDeps {
   payload: Payload
@@ -16,8 +17,6 @@ export interface BookingInput {
   customerEmail: string
   customerPhone?: string
 }
-
-const usd = (cents: number) => `$${(cents / 100).toFixed(2)}`
 
 export async function createPaidBooking(deps: BookingDeps, input: BookingInput) {
   const { payload } = deps
@@ -37,8 +36,9 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
     },
   })
 
-  // Re-check AFTER reserving to catch a race; if we oversold, roll back.
-  if (await seatsRemaining(payload, input.classId) < 0) {
+  // Re-check AFTER reserving to catch a concurrent reservation; if reserving
+  // pushed us over capacity, roll this booking back rather than oversell.
+  if (await occupiedSeats(payload, cls.id) > (cls.capacity ?? 0)) {
     await payload.update({ collection: 'bookings', id: pending.id, overrideAccess: true, data: { status: 'cancelled' } })
     throw new Error('This class is full')
   }
