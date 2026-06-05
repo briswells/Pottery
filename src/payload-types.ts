@@ -74,6 +74,7 @@ export interface Config {
     classes: Class;
     bookings: Booking;
     payments: Payment;
+    'firing-requests': FiringRequest;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -87,6 +88,7 @@ export interface Config {
     classes: ClassesSelect<false> | ClassesSelect<true>;
     bookings: BookingsSelect<false> | BookingsSelect<true>;
     payments: PaymentsSelect<false> | PaymentsSelect<true>;
+    'firing-requests': FiringRequestsSelect<false> | FiringRequestsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -321,7 +323,7 @@ export interface Booking {
  */
 export interface Payment {
   id: number;
-  type: 'booking' | 'membership';
+  type: 'booking' | 'membership' | 'firing';
   /**
    * Set for membership payments
    */
@@ -330,6 +332,10 @@ export interface Payment {
    * Set for class booking payments
    */
   booking?: (number | null) | Booking;
+  /**
+   * Set for firing payments
+   */
+  firingRequest?: (number | null) | FiringRequest;
   amountCents: number;
   /**
    * Square payment or invoice id
@@ -340,6 +346,49 @@ export interface Payment {
    */
   status: string;
   paidAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "firing-requests".
+ */
+export interface FiringRequest {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string | null;
+  description: string;
+  /**
+   * Height in inches
+   */
+  heightIn?: number | null;
+  /**
+   * Width in inches
+   */
+  widthIn?: number | null;
+  /**
+   * Depth in inches
+   */
+  depthIn?: number | null;
+  quantity?: number | null;
+  photo?: (number | null) | Media;
+  /**
+   * Customer notes
+   */
+  notes?: string | null;
+  status: 'submitted' | 'approved' | 'invoiced' | 'invoice_failed' | 'paid' | 'completed' | 'cancelled';
+  /**
+   * Price in cents, set by staff (e.g. 4500 = $45.00). Set this, then status → Approved to send the invoice.
+   */
+  quotedPriceCents?: number | null;
+  adminNotes?: string | null;
+  squareCustomerId?: string | null;
+  squareInvoiceId?: string | null;
+  squareInvoiceUrl?: string | null;
+  invoicedAt?: string | null;
+  paidAt?: string | null;
+  lastInvoiceError?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -390,6 +439,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'payments';
         value: number | Payment;
+      } | null)
+    | ({
+        relationTo: 'firing-requests';
+        value: number | FiringRequest;
       } | null);
   globalSlug?: string | null;
   user:
@@ -590,10 +643,38 @@ export interface PaymentsSelect<T extends boolean = true> {
   type?: T;
   member?: T;
   booking?: T;
+  firingRequest?: T;
   amountCents?: T;
   squareId?: T;
   status?: T;
   paidAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "firing-requests_select".
+ */
+export interface FiringRequestsSelect<T extends boolean = true> {
+  name?: T;
+  email?: T;
+  phone?: T;
+  description?: T;
+  heightIn?: T;
+  widthIn?: T;
+  depthIn?: T;
+  quantity?: T;
+  photo?: T;
+  notes?: T;
+  status?: T;
+  quotedPriceCents?: T;
+  adminNotes?: T;
+  squareCustomerId?: T;
+  squareInvoiceId?: T;
+  squareInvoiceUrl?: T;
+  invoicedAt?: T;
+  paidAt?: T;
+  lastInvoiceError?: T;
   updatedAt?: T;
   createdAt?: T;
 }

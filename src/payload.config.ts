@@ -12,6 +12,7 @@ import { Media } from './collections/Media'
 import { Classes } from './collections/Classes'
 import { Bookings } from './collections/Bookings'
 import { Payments } from './collections/Payments'
+import { FiringRequests } from './collections/FiringRequests'
 import { SiteSettings } from './globals/SiteSettings'
 import { HomePage } from './globals/HomePage'
 import { MembershipPage } from './globals/MembershipPage'
@@ -26,7 +27,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Members, Media, Classes, Bookings, Payments],
+  collections: [Users, Members, Media, Classes, Bookings, Payments, FiringRequests],
   globals: [SiteSettings, HomePage, MembershipPage],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

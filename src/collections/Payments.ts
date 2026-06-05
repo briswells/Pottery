@@ -14,9 +14,11 @@ export const Payments: CollectionConfig = {
     { name: 'type', type: 'select', required: true, options: [
       { label: 'Booking', value: 'booking' },
       { label: 'Membership', value: 'membership' },
+      { label: 'Firing', value: 'firing' },
     ] },
     { name: 'member', type: 'relationship', relationTo: 'members', admin: { description: 'Set for membership payments' } },
     { name: 'booking', type: 'relationship', relationTo: 'bookings', admin: { description: 'Set for class booking payments' } },
+    { name: 'firingRequest', type: 'relationship', relationTo: 'firing-requests', admin: { description: 'Set for firing payments' } },
     { name: 'amountCents', type: 'number', required: true },
     { name: 'squareId', type: 'text', required: true, index: true, admin: { description: 'Square payment or invoice id' } },
     { name: 'status', type: 'text', required: true, admin: { description: 'Mirrors the raw Square payment/invoice status (e.g. COMPLETED).' } },
