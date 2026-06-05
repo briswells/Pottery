@@ -3,6 +3,8 @@ import config from '@payload-config'
 import { notFound } from 'next/navigation'
 import { usd, CATEGORY_LABELS } from '../../../../lib/format'
 import { mediaUrl, mediaAlt } from '../../../../lib/media'
+import { seatsRemaining } from '../../../../lib/occupancy'
+import { BookingForm } from './BookingForm'
 
 export default async function ClassDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -15,6 +17,8 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ sl
   })
   const cls = docs[0]
   if (!cls) notFound()
+
+  const remaining = await seatsRemaining(payload, cls.id)
 
   const bannerUrl = mediaUrl(cls.image, 'hero')
   const bannerAlt = mediaAlt(cls.image)
@@ -32,9 +36,11 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ sl
       {cls.skillLevel && <div style={{ color: 'var(--pp-muted)' }}>Skill level: {cls.skillLevel}</div>}
       {cls.description && <p style={{ marginTop: 16 }}>{cls.description}</p>}
       <p style={{ fontSize: 22, fontWeight: 600 }}>{usd(cls.priceCents)}</p>
-      <a className="pp-btn" href="mailto:getcreative@portsidepottery.com?subject=Class%20registration">
-        Ask about registering
-      </a>
+      {remaining > 0 ? (
+        <BookingForm classId={cls.id} priceLabel={usd(cls.priceCents)} />
+      ) : (
+        <p style={{ fontWeight: 600 }}>This class is full.</p>
+      )}
     </div>
   )
 }
