@@ -1,0 +1,35 @@
+# Unraid deployment — a single app container that reuses your EXISTING Postgres
+# container and your EXISTING Cloudflare tunnel. Run this via the Unraid
+# "Docker Compose Manager" plugin. Full walkthrough: docs/UNRAID.md.
+#
+# Before `up`:
+#   1. Edit `name:` under networks below to your Postgres container's user-defined
+#      Docker network (so the app can reach Postgres by container name). If Postgres
+#      is only on the default bridge, delete the `networks:` blocks here and point
+#      DATABASE_URL at the Unraid host IP:port instead.
+#   2. Create `.env.production` next to this file (copy `.env.production.example`),
+#      with DATABASE_URL host = your Postgres container name (or host IP).
+#   3. Create the media share on the array:  /mnt/user/appdata/pottery/media
+#   4. First run only — apply DB migrations:  docker exec portside-pottery pnpm migrate
+#   5. Point a Cloudflare tunnel route at  http://<unraid-ip>:3000  (published below),
+#      or at  http://portside-pottery:3000  if cloudflared shares this network.
+
+services:
+  app:
+    image: ghcr.io/briswells/pottery:latest
+    container_name: portside-pottery
+    restart: unless-stopped
+    env_file: .env.production
+    ports:
+      - "3000:3000" # published so the Cloudflare tunnel can reach it at <unraid-ip>:3000
+    volumes:
+      # Uploaded media (Payload writes to /app/media). Persist it on the array so it
+      # survives container updates. Without this, uploads are lost on recreate.
+      - /mnt/user/appdata/pottery/media:/app/media
+    networks:
+      - postgres
+
+networks:
+  postgres:
+    external: true
+    name: CHANGE_ME_postgres_network # <- the user-defined network your Postgres container is on
