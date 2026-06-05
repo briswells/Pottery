@@ -23,7 +23,7 @@ export const FiringRequests: CollectionConfig = {
     { name: 'heightIn', type: 'number', admin: { description: 'Height in inches' } },
     { name: 'widthIn', type: 'number', admin: { description: 'Width in inches' } },
     { name: 'depthIn', type: 'number', admin: { description: 'Depth in inches' } },
-    { name: 'quantity', type: 'number', defaultValue: 1 },
+    { name: 'quantity', type: 'number', defaultValue: 1, min: 1 },
     { name: 'photo', type: 'upload', relationTo: 'media' },
     { name: 'notes', type: 'textarea', admin: { description: 'Customer notes' } },
     {

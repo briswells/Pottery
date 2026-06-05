@@ -4,7 +4,7 @@ import { isAdminOrEditor } from '../access/isAdminOrEditor'
 
 export const FiringsPage: GlobalConfig = {
   slug: 'firings-page',
-  admin: { group: 'Content' },
+  admin: { group: 'Pages' },
   access: { read: anyone, update: isAdminOrEditor },
   fields: [
     { name: 'headline', type: 'text', required: true, defaultValue: 'Custom Cone 10 Firings' },
