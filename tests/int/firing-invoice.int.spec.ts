@@ -9,6 +9,7 @@ function fakeGateway(overrides: Partial<FiringInvoiceGateway> = {}): FiringInvoi
       invoiceId: 'inv_1',
       invoiceUrl: 'https://squareup.com/pay/inv_1',
       status: 'UNPAID',
+      customerId: 'cus_1',
     })),
     ...overrides,
   }

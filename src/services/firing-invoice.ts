@@ -40,6 +40,7 @@ export async function createAndSendFiringInvoice(
       context: { fromFiringHook: true },
       data: {
         status: 'invoiced',
+        squareCustomerId: result.customerId,
         squareInvoiceId: result.invoiceId,
         squareInvoiceUrl: result.invoiceUrl,
         invoicedAt: new Date().toISOString(),

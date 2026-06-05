@@ -14,6 +14,7 @@ export interface FiringInvoiceResult {
   invoiceId: string
   invoiceUrl: string
   status: string
+  customerId: string
 }
 
 export interface FiringInvoiceGateway {
@@ -25,6 +26,12 @@ function dueDateString(now: Date): string {
   return d.toISOString().slice(0, 10)
 }
 
+// NOTE: this customer → order → invoice → publish sequence has no rollback. A
+// failure partway through leaves earlier objects (customer, order, an unpublished
+// draft invoice) orphaned in Square. Worse, if publish succeeds but the network
+// drops before we read the response, a retry creates a SECOND published, emailed
+// invoice. Idempotency keys are per-attempt by design (a retry is a fresh invoice),
+// so acceptable for low volume; revisit with reconciliation if it ever matters.
 export const squareFiringInvoiceGateway: FiringInvoiceGateway = {
   async createAndSendInvoice(input) {
     const client = getSquareClient()
@@ -45,6 +52,7 @@ export const squareFiringInvoiceGateway: FiringInvoiceGateway = {
         locationId,
         lineItems: [
           {
+            // Square caps line-item names at 500 chars.
             name: `Cone 10 firing — ${input.description}`.slice(0, 500),
             quantity: '1',
             basePriceMoney: { amount: BigInt(input.amountCents), currency: 'USD' },
@@ -77,10 +85,15 @@ export const squareFiringInvoiceGateway: FiringInvoiceGateway = {
       idempotencyKey: randomUUID(),
     })
     const published = publishedRes.invoice
+    // A published EMAIL invoice must have a public pay URL; treat a missing one as
+    // a failure rather than returning a "successful" invoice with no payment link.
+    const invoiceUrl = published?.publicUrl
+    if (!invoiceUrl) throw new Error('Square invoice published without a public URL')
     return {
       invoiceId: published?.id ?? invoice.id,
-      invoiceUrl: published?.publicUrl ?? '',
+      invoiceUrl,
       status: published?.status ?? 'UNPAID',
+      customerId,
     }
   },
 }
