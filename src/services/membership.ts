@@ -41,11 +41,19 @@ export async function createMembership(deps: MembershipDeps, input: MembershipIn
     },
   })
 
-  await deps.sendEmail({
-    to: input.email,
-    subject: 'Welcome to Portside Pottery',
-    html: `<p>Welcome, ${input.name}! Your $200/month studio membership is active. Stop by and we'll get you set up with a shelf.</p>`,
-  })
+  // The member is already created and their subscription is live at this point.
+  // A failed welcome email must NOT fail the signup (and make the client think
+  // it didn't work), so swallow+log email errors rather than letting them propagate.
+  try {
+    await deps.sendEmail({
+      to: input.email,
+      subject: 'Welcome to Portside Pottery',
+      // TODO: $200/mo is hardcoded here; source it from the membership plan if the price ever changes.
+      html: `<p>Welcome, ${input.name}! Your $200/month studio membership is active. Stop by and we'll get you set up with a shelf.</p>`,
+    })
+  } catch (e) {
+    console.error(`Member ${member.id} welcome email failed:`, e)
+  }
 
   return member
 }

@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, afterAll } from 'vitest'
 import { getTestPayload } from './helpers'
 import { createMembership } from '../../src/services/membership'
+import type { MembershipGateway } from '../../src/lib/membership-gateway'
 
-function fakeGateway(overrides = {}) {
+function fakeGateway(overrides: Partial<MembershipGateway> = {}) {
   return {
     createCustomer: vi.fn(async () => ({ customerId: 'cus_1' })),
     saveCard: vi.fn(async () => ({ cardId: 'card_1' })),
