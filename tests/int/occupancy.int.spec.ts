@@ -1,8 +1,19 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterAll } from 'vitest'
 import { getTestPayload } from './helpers'
 import { seatsRemaining } from '../../src/lib/occupancy'
 
 describe('seatsRemaining', () => {
+  // Bookings hold a required (NOT NULL) relationship to classes, so leaving
+  // them in the shared test DB makes other suites' class cleanup fail. Tear
+  // down children (payments -> bookings) then the classes we created.
+  afterAll(async () => {
+    const payload = await getTestPayload()
+    await payload.delete({ collection: 'payments', where: {} })
+    await payload.delete({ collection: 'bookings', where: {} })
+    await payload.delete({ collection: 'classes', where: {} })
+  })
+
+
   it('counts paid and pending bookings against capacity', async () => {
     const payload = await getTestPayload()
     const cls = await payload.create({
