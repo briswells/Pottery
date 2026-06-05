@@ -50,6 +50,7 @@ export const squareFiringInvoiceGateway: FiringInvoiceGateway = {
       idempotencyKey: randomUUID(),
       order: {
         locationId,
+        referenceId: input.referenceId, // e.g. firing-<id> — traceable on the Square order
         lineItems: [
           {
             // Square caps line-item names at 500 chars.
