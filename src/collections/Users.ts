@@ -4,7 +4,7 @@ import { isAdminOrEditor } from '../access/isAdminOrEditor'
 
 /** Field-level access: only admins may update the roles field. */
 const adminOnlyField: FieldAccess = ({ req: { user } }) =>
-  Boolean(user?.roles?.includes('admin'))
+  Boolean(user && user.collection === 'users' && user.roles?.includes('admin'))
 
 export const Users: CollectionConfig = {
   slug: 'users',

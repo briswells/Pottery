@@ -12,7 +12,8 @@ test('classes page lists a seeded class', async ({ page }) => {
 
 test('membership page shows the price', async ({ page }) => {
   await page.goto('/membership')
-  await expect(page.getByText('$200 / month')).toBeVisible()
+  // Scope to the price label — the signup button also contains the price text.
+  await expect(page.locator('.pp-membership-price-label')).toHaveText('$200 / month')
 })
 
 test('staff page shows Eric and Naiomi', async ({ page }) => {
