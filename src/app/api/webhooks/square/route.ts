@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     const subscriptionId = invoice?.subscription_id ?? invoice?.subscriptionId
     const member = await findMemberBySubscription(subscriptionId)
     if (member) {
-      await payload.update({ collection: 'members', id: member.id, overrideAccess: true, data: {
+      await payload.update({ collection: 'members', id: member.id, overrideAccess: true, context: { fromSquareWebhook: true }, data: {
         status: 'active', subscriptionStatus: 'ACTIVE',
         lastPaymentDate: new Date().toISOString(), lastPaymentStatus: 'PAID',
       } })
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
       const subscriptionId = invoice?.subscription_id ?? invoice?.subscriptionId
       const member = await findMemberBySubscription(subscriptionId)
       if (member && member.status !== 'past_due') {
-        await payload.update({ collection: 'members', id: member.id, overrideAccess: true, data: {
+        await payload.update({ collection: 'members', id: member.id, overrideAccess: true, context: { fromSquareWebhook: true }, data: {
           status: 'past_due', lastPaymentStatus: 'FAILED',
         } })
         // Notify staff + member; no automatic lockout (per design decision).
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
       // Idempotent: only write when something actually changes (also avoids
       // needless churn through the Members afterChange → Square hook).
       if (member.subscriptionStatus !== sub.status || member.status !== nextStatus) {
-        await payload.update({ collection: 'members', id: member.id, overrideAccess: true, data: {
+        await payload.update({ collection: 'members', id: member.id, overrideAccess: true, context: { fromSquareWebhook: true }, data: {
           subscriptionStatus: sub.status, status: nextStatus as typeof member.status,
         } })
       }

@@ -17,7 +17,9 @@ export async function POST(req: Request) {
 
   const payload = await getPayload({ config: await config })
 
-  // Block duplicate active memberships for the same email.
+  // Block signup if any member already exists for this email. Member emails are
+  // unique (auth collection), so a former/cancelled member must be re-activated
+  // by staff in the admin rather than re-signing up here.
   const existing = await payload.find({ collection: 'members', where: { email: { equals: email } }, limit: 1 })
   if (existing.totalDocs > 0) return Response.json({ error: 'A membership already exists for this email' }, { status: 409 })
 
