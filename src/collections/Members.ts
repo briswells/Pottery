@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { isAdmin } from '../access/isAdmin'
 import { isAdminOrEditor } from '../access/isAdminOrEditor'
+import { cancelSquareSubscription } from '../hooks/cancelSquareSubscription'
 
 export const Members: CollectionConfig = {
   slug: 'members',
@@ -16,6 +17,7 @@ export const Members: CollectionConfig = {
     update: isAdminOrEditor,
     delete: isAdmin,
   },
+  hooks: { afterChange: [cancelSquareSubscription] },
   fields: [
     { name: 'name', type: 'text', required: true },
     // email/password are provided by `auth: true`
