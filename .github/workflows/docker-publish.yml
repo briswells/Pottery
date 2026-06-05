@@ -49,5 +49,12 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # Public Square client values are baked into the browser bundle at build
+          # time. Set these as repo Variables (Settings → Secrets and variables →
+          # Actions → Variables). They are public identifiers, not secrets.
+          build-args: |
+            NEXT_PUBLIC_SQUARE_APP_ID=${{ vars.NEXT_PUBLIC_SQUARE_APP_ID }}
+            NEXT_PUBLIC_SQUARE_LOCATION_ID=${{ vars.NEXT_PUBLIC_SQUARE_LOCATION_ID }}
+            NEXT_PUBLIC_SQUARE_ENVIRONMENT=${{ vars.NEXT_PUBLIC_SQUARE_ENVIRONMENT }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

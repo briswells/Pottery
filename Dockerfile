@@ -12,6 +12,15 @@ WORKDIR /app
 RUN corepack enable
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Public (browser) Square values are inlined by `next build`, so they must be present
+# at build time (not runtime). They are NOT secrets — the Square application id,
+# location id, and environment are public client identifiers. Pass via --build-arg.
+ARG NEXT_PUBLIC_SQUARE_APP_ID
+ARG NEXT_PUBLIC_SQUARE_LOCATION_ID
+ARG NEXT_PUBLIC_SQUARE_ENVIRONMENT
+ENV NEXT_PUBLIC_SQUARE_APP_ID=$NEXT_PUBLIC_SQUARE_APP_ID \
+    NEXT_PUBLIC_SQUARE_LOCATION_ID=$NEXT_PUBLIC_SQUARE_LOCATION_ID \
+    NEXT_PUBLIC_SQUARE_ENVIRONMENT=$NEXT_PUBLIC_SQUARE_ENVIRONMENT
 RUN pnpm build
 
 # ---- run ----

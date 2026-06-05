@@ -15,15 +15,28 @@ behind your Cloudflare tunnel. Postgres is reached over a shared Docker network.
 `.github/workflows/docker-publish.yml` builds and pushes `ghcr.io/briswells/pottery:latest`
 on every push to `main`.
 
-1. Push to `main` (or run the workflow manually from the repo's **Actions** tab).
-2. When it finishes, the package appears at **github.com/briswells?tab=packages**. It's
+1. **Set the public Square build values as repo Variables** (github.com → repo →
+   Settings → **Secrets and variables → Actions → Variables** tab). These get baked into
+   the browser bundle at build time — without them the booking/wallet form won't load in
+   production (the rest of the site still works). They are **public** client identifiers,
+   not secrets, so Variables (not Secrets) is correct:
+   - `NEXT_PUBLIC_SQUARE_APP_ID` — e.g. `sandbox-sq0idb-…`
+   - `NEXT_PUBLIC_SQUARE_LOCATION_ID` — e.g. `LMDEFJRFBWN3E`
+   - `NEXT_PUBLIC_SQUARE_ENVIRONMENT` — `sandbox` (or `production` later)
+
+   > Server-side Square values (`SQUARE_ACCESS_TOKEN`, etc.) are read at **runtime** from
+   > `.env.production`, so those are NOT build args and stay out of the image.
+
+2. Push to `main` (or run the workflow manually from the repo's **Actions** tab).
+3. When it finishes, the package appears at **github.com/briswells?tab=packages**. It's
    **private** by default.
-3. Create a **Personal Access Token (classic)** with the **`read:packages`** scope
+4. Create a **Personal Access Token (classic)** with the **`read:packages`** scope
    (github.com → Settings → Developer settings → PATs → Tokens (classic)). You'll use it
    to let Unraid pull the private image.
 
 > The build needs no database — the app's CMS pages render per-request (`force-dynamic`),
-> so CI builds the image cleanly.
+> so CI builds the image cleanly. When you switch Square from sandbox to production, update
+> the three repo Variables above and re-run the workflow so the new values are baked in.
 
 ---
 
@@ -91,11 +104,10 @@ Install the **Docker Compose Manager** plugin (Community Applications) if you ha
    S3_BUCKET=
    APPLE_PAY_DOMAIN_ASSOCIATION=
    ```
-   > `NEXT_PUBLIC_*` values are baked into the image at **build** time, not read from
-   > `.env.production` at run time. The image was built with the values present in CI/at
-   > build — for a self-hosted build these come from the repo's build. If you change a
-   > `NEXT_PUBLIC_*` value you must rebuild the image (re-run the workflow). The sandbox
-   > app id/location id are safe to bake in; they're public by design.
+   > The `NEXT_PUBLIC_SQUARE_*` lines in `.env.production` are **ignored at runtime** —
+   > those three are baked into the image at build time from the repo **Variables** you
+   > set in step 0. Setting them here too is harmless for clarity, but the build-time
+   > Variables are what actually take effect. Everything else here is read at runtime.
 
 5. **Compose up** the stack.
 
