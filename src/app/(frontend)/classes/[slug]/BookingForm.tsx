@@ -17,10 +17,12 @@ const SDK_URL =
 // Theme the Square card iframe to match the cream/terracotta brand. The Web
 // Payments SDK only honors the selectors/properties below; the iframe is
 // cross-origin so it cannot read our CSS variables — values are inlined.
+// NB: do NOT set `fontFamily` here — Square's card iframe rejects arbitrary
+// font stacks (only its own hosted allowlist is valid) and throws
+// InvalidStylesError, which kills the whole card field. Let it use its default.
 const CARD_STYLE = {
   input: {
     color: '#2E2A26',
-    fontFamily: 'Inter, system-ui, sans-serif',
     fontSize: '16px',
   },
   'input::placeholder': { color: '#6b5d52' },
@@ -57,7 +59,10 @@ export function BookingForm({
     formRef.current = form
   }, [form])
 
-  const hasIdentity = form.customerName.trim() !== '' && form.customerEmail.trim() !== ''
+  // Reveal payment options only once a full, well-formed email is present —
+  // not on the first keystroke. Keeps wallets/card from flickering in mid-typing.
+  const hasIdentity =
+    form.customerName.trim() !== '' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail.trim())
 
   // Single choke point for card + every wallet. Guard against a second submit
   // (e.g. tapping a wallet while a charge is in flight) so we never double-charge.
