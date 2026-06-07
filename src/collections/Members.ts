@@ -24,7 +24,7 @@ export const Members: CollectionConfig = {
   hooks: { afterChange: [cancelSquareSubscription] },
   fields: [
     { name: 'name', type: 'text', required: true },
-    // email/password are provided by `auth: true`
+    // email is provided by the auth config (local login disabled — see `auth` above)
     { name: 'phone', type: 'text' },
     { name: 'status', type: 'select', required: true, defaultValue: 'active', options: [
       { label: 'Active', value: 'active' },
