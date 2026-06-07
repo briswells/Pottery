@@ -1,4 +1,3 @@
-import { randomBytes } from 'crypto'
 import type { Payload } from 'payload'
 import type { MembershipGateway } from '../lib/membership-gateway'
 import type { EmailInput } from '../lib/email'
@@ -14,7 +13,6 @@ export interface MembershipInput {
   email: string
   phone?: string
   sourceId: string
-  password?: string // optional now; member sets/uses it when the portal launches
 }
 
 export async function createMembership(deps: MembershipDeps, input: MembershipInput) {
@@ -31,7 +29,6 @@ export async function createMembership(deps: MembershipDeps, input: MembershipIn
     data: {
       name: input.name,
       email: input.email,
-      password: input.password ?? randomPassword(),
       phone: input.phone,
       status: 'active',
       joinedDate: new Date().toISOString(),
@@ -56,9 +53,4 @@ export async function createMembership(deps: MembershipDeps, input: MembershipIn
   }
 
   return member
-}
-
-function randomPassword(): string {
-  // Members don't log in yet; a strong placeholder password satisfies the auth collection.
-  return randomBytes(24).toString('hex')
 }

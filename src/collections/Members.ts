@@ -5,7 +5,11 @@ import { cancelSquareSubscription } from '../hooks/cancelSquareSubscription'
 
 export const Members: CollectionConfig = {
   slug: 'members',
-  auth: true, // foundation for the future member portal; staff-managed for now
+  // No member login yet: disable the local (email/password) strategy so no password
+  // is required and the login UI is hidden. enableFields keeps the email + auth
+  // columns so the DB/types don't change (no migration). optionalPassword makes
+  // password non-required. Re-enable a strategy later for a member portal.
+  auth: { disableLocalStrategy: { enableFields: true, optionalPassword: true } },
   admin: {
     group: 'People',
     useAsTitle: 'name',
