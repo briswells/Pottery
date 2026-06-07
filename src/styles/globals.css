@@ -881,11 +881,17 @@ a { color: var(--pp-terracotta); }
   font-size: 13px;
   margin: 14px 0;
 }
+/* Normalize the three wallet buttons to one full-width, rounded shape. */
+#apple-pay-button,
+#google-pay-button,
+#cash-app-pay {
+  width: 100%;
+}
 #apple-pay-button {
   -webkit-appearance: -apple-pay-button;
   -apple-pay-button-type: plain;
   -apple-pay-button-style: black;
-  height: 44px;
+  height: 48px;
   border-radius: 8px;
   cursor: pointer;
 }
@@ -906,10 +912,9 @@ a { color: var(--pp-terracotta); }
   outline: none;
   border-color: var(--pp-terracotta);
 }
+/* No box of our own — Square's card iframe renders its own bordered field
+   (themed via CARD_STYLE). Wrapping it in another border/padding created a
+   box-in-a-box with dead whitespace, so this is just a plain full-width slot. */
 #card-container {
-  background: #fff;
-  border: 1px solid #d9cdbf;
-  border-radius: var(--pp-radius);
-  padding: 4px 12px;
-  min-height: 44px;
+  width: 100%;
 }

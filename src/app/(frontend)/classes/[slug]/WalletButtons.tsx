@@ -60,7 +60,9 @@ export function WalletButtons({
       try {
         const googlePay = await payments.googlePay(makeRequest())
         if (cancelled) return
-        await googlePay.attach('#google-pay-button')
+        // buttonSizeMode 'fill' stretches the button to its container width so it
+        // lines up with Apple Pay / Cash App Pay instead of sizing to its label.
+        await googlePay.attach('#google-pay-button', { buttonSizeMode: 'fill' })
         const btn = document.getElementById('google-pay-button')
         const handler = async (e: Event) => {
           e.preventDefault()
@@ -99,7 +101,9 @@ export function WalletButtons({
           else onError('Cash App Pay was not completed.')
         }
         cashAppPay.addEventListener('ontokenization', listener)
-        await cashAppPay.attach('#cash-app-pay')
+        // width 'full' + semiround corners makes it match the full-width,
+        // rounded-rectangle shape of the Apple Pay / Google Pay buttons.
+        await cashAppPay.attach('#cash-app-pay', { shape: 'semiround', width: 'full' })
         cleanups.push(() => cashAppPay.destroy?.())
         setShown((s) => ({ ...s, cashapp: true }))
       } catch {

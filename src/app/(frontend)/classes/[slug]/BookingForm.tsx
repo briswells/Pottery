@@ -187,6 +187,7 @@ export function BookingForm({
 
   return (
     <div style={{ marginTop: 24, maxWidth: 380 }}>
+      {/* Identity — always visible. Name, email, then phone directly beneath. */}
       <div style={{ display: 'grid', gap: 10 }}>
         <input
           required
@@ -205,6 +206,13 @@ export function BookingForm({
           value={form.customerEmail}
           onChange={(e) => setForm({ ...form, customerEmail: e.target.value })}
         />
+        <input
+          className="pp-input"
+          aria-label="Phone (optional)"
+          placeholder="Phone (optional)"
+          value={form.customerPhone}
+          onChange={(e) => setForm({ ...form, customerPhone: e.target.value })}
+        />
       </div>
 
       {!hasIdentity ? (
@@ -213,8 +221,19 @@ export function BookingForm({
         </p>
       ) : (
         <>
+          {/* Card first, with its Book & pay submit. */}
+          <form onSubmit={submitCard} style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+            <div id="card-container" />
+            <PoweredBySquare />
+            <button className="pp-btn" type="submit" disabled={!ready || busy}>
+              {busy ? 'Processing…' : `Book & pay ${priceLabel}`}
+            </button>
+          </form>
+
+          {/* Wallets below the card. */}
           {payments && (
-            <div style={{ marginTop: 12 }}>
+            <>
+              <div className="pp-or-divider">or pay with</div>
               <WalletButtons
                 payments={payments}
                 priceCents={priceCents}
@@ -223,28 +242,33 @@ export function BookingForm({
                 onToken={completeBooking}
                 onError={setMsg}
               />
-            </div>
+            </>
           )}
-
-          <div className="pp-or-divider">or pay with card</div>
-
-          <form onSubmit={submitCard} style={{ display: 'grid', gap: 10 }}>
-            <input
-              className="pp-input"
-              aria-label="Phone (optional)"
-              placeholder="Phone (optional)"
-              value={form.customerPhone}
-              onChange={(e) => setForm({ ...form, customerPhone: e.target.value })}
-            />
-            <div id="card-container" />
-            <button className="pp-btn" type="submit" disabled={!ready || busy}>
-              {busy ? 'Processing…' : `Book & pay ${priceLabel}`}
-            </button>
-          </form>
         </>
       )}
 
       {msg && <p>{msg}</p>}
+    </div>
+  )
+}
+
+// Small trust signal under the card field so buyers know who processes the payment.
+function PoweredBySquare() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        fontSize: 12,
+        color: 'var(--pp-muted)',
+      }}
+    >
+      <svg width="13" height="13" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+        <path d="M5 0h22a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H5a5 5 0 0 1-5-5V5a5 5 0 0 1 5-5zm1.5 6A1.5 1.5 0 0 0 5 7.5v17A1.5 1.5 0 0 0 6.5 26h19a1.5 1.5 0 0 0 1.5-1.5v-17A1.5 1.5 0 0 0 25.5 6h-19zM13 13h6v6h-6z" />
+      </svg>
+      <span>Powered by Square</span>
     </div>
   )
 }
