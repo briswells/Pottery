@@ -31,7 +31,9 @@ RUN corepack enable
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/package.json ./package.json
-# tsx + source needed for migrate/seed/import scripts at runtime
+# tsx + source + tsconfig needed for migrate/seed/import scripts at runtime.
+# tsconfig.json carries the @payload-config path alias the Payload CLI resolves.
+COPY --from=build /app/tsconfig.json ./tsconfig.json
 COPY --from=build /app/src ./src
 COPY --from=build /app/node_modules ./node_modules
 EXPOSE 3000
