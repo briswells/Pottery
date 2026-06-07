@@ -21,7 +21,18 @@ export const Bookings: CollectionConfig = {
       { label: 'Cancelled', value: 'cancelled' },
       { label: 'Refunded', value: 'refunded' },
     ] },
-    { name: 'amountCents', type: 'number', required: true },
+    {
+      name: 'amountCents',
+      type: 'number',
+      required: true,
+      label: 'Amount',
+      admin: {
+        components: {
+          Field: '/admin/PriceField#PriceField',
+          Cell: '/admin/PriceCell#PriceCell',
+        },
+      },
+    },
     { name: 'squarePaymentId', type: 'text', index: true },
   ],
 }

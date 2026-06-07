@@ -19,7 +19,18 @@ export const Payments: CollectionConfig = {
     { name: 'member', type: 'relationship', relationTo: 'members', admin: { description: 'Set for membership payments' } },
     { name: 'booking', type: 'relationship', relationTo: 'bookings', admin: { description: 'Set for class booking payments' } },
     { name: 'firingRequest', type: 'relationship', relationTo: 'firing-requests', admin: { description: 'Set for firing payments' } },
-    { name: 'amountCents', type: 'number', required: true },
+    {
+      name: 'amountCents',
+      type: 'number',
+      required: true,
+      label: 'Amount',
+      admin: {
+        components: {
+          Field: '/admin/PriceField#PriceField',
+          Cell: '/admin/PriceCell#PriceCell',
+        },
+      },
+    },
     { name: 'squareId', type: 'text', required: true, index: true, admin: { description: 'Square payment or invoice id' } },
     { name: 'status', type: 'text', required: true, admin: { description: 'Mirrors the raw Square payment/invoice status (e.g. COMPLETED).' } },
     { name: 'paidAt', type: 'date' },

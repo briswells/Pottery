@@ -42,7 +42,19 @@ export const FiringRequests: CollectionConfig = {
         { label: 'Cancelled', value: 'cancelled' },
       ],
     },
-    { name: 'quotedPriceCents', type: 'number', min: 0, admin: { description: 'Price in cents, set by staff (e.g. 4500 = $45.00). Set this, then status → Approved to send the invoice.' } },
+    {
+      name: 'quotedPriceCents',
+      type: 'number',
+      min: 0,
+      label: 'Quoted price',
+      admin: {
+        description: 'Price in dollars, set by staff (e.g. 45 for $45.00). Set this, then status → Approved to send the invoice.',
+        components: {
+          Field: '/admin/PriceField#PriceField',
+          Cell: '/admin/PriceCell#PriceCell',
+        },
+      },
+    },
     { name: 'adminNotes', type: 'textarea' },
     { name: 'squareCustomerId', type: 'text', admin: { readOnly: true } },
     { name: 'squareInvoiceId', type: 'text', index: true, admin: { readOnly: true } },
