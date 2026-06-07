@@ -57,6 +57,28 @@ describe('createAndSendFiringInvoice', () => {
     expect(updated.squareInvoiceId ?? null).toBeNull()
   })
 
+  it('threads the caller transaction (req) into its DB writes so it cannot deadlock the parent save', async () => {
+    // Regression: the afterChange hook runs inside the admin save's transaction,
+    // which holds a row lock on the firing-request. If these writes run in a
+    // SEPARATE transaction (no req), they block on that lock forever — the save
+    // hangs and rolls back. Passing req makes them join the parent transaction.
+    const req = { transactionID: 'tx_test' } as any
+    const update = vi.fn(async (args: any) => ({ id: args.id, ...args.data }))
+    const payload = { update } as any
+    const request = {
+      id: 'r1',
+      name: 'X',
+      email: 'x@test.local',
+      phone: null,
+      description: 'd',
+      quotedPriceCents: 4500,
+    } as any
+
+    await createAndSendFiringInvoice({ payload, gateway: fakeGateway(), req }, request)
+
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ req }))
+  })
+
   it('fails without charging when no price is set', async () => {
     const payload = await getTestPayload()
     const req = await makeRequest(payload, undefined)

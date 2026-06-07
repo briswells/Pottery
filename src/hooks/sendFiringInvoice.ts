@@ -10,7 +10,10 @@ export const sendFiringInvoice: CollectionAfterChangeHook<FiringRequest> = async
   if (doc.squareInvoiceId) return doc
 
   try {
-    await createAndSendFiringInvoice({ payload: req.payload, gateway: squareFiringInvoiceGateway }, doc)
+    await createAndSendFiringInvoice(
+      { payload: req.payload, gateway: squareFiringInvoiceGateway, req },
+      doc,
+    )
   } catch (e) {
     console.error(`Firing invoice send failed for request ${doc.id}:`, e)
   }

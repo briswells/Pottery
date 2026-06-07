@@ -1,17 +1,22 @@
-import type { Payload } from 'payload'
+import type { Payload, PayloadRequest } from 'payload'
 import type { FiringInvoiceGateway } from '../lib/firing-invoice-gateway'
 import type { FiringRequest } from '../payload-types'
 
 export interface FiringInvoiceDeps {
   payload: Payload
   gateway: FiringInvoiceGateway
+  // The request from the triggering hook. Threaded into every payload.update so
+  // those writes JOIN the caller's open transaction instead of opening a separate
+  // one — a separate transaction blocks forever on the row lock the parent save
+  // already holds (self-deadlock → the admin save hangs and rolls back).
+  req?: PayloadRequest
 }
 
 export async function createAndSendFiringInvoice(
   deps: FiringInvoiceDeps,
   request: FiringRequest,
 ): Promise<FiringRequest> {
-  const { payload, gateway } = deps
+  const { payload, gateway, req } = deps
 
   const amountCents = request.quotedPriceCents ?? 0
   if (!amountCents || amountCents <= 0) {
@@ -19,6 +24,7 @@ export async function createAndSendFiringInvoice(
       collection: 'firing-requests',
       id: request.id,
       overrideAccess: true,
+      req,
       context: { fromFiringHook: true },
       data: { status: 'invoice_failed', lastInvoiceError: 'Set a quoted price before approving.' },
     })
@@ -37,6 +43,7 @@ export async function createAndSendFiringInvoice(
       collection: 'firing-requests',
       id: request.id,
       overrideAccess: true,
+      req,
       context: { fromFiringHook: true },
       data: {
         status: 'invoiced',
@@ -52,6 +59,7 @@ export async function createAndSendFiringInvoice(
       collection: 'firing-requests',
       id: request.id,
       overrideAccess: true,
+      req,
       context: { fromFiringHook: true },
       data: { status: 'invoice_failed', lastInvoiceError: e instanceof Error ? e.message : String(e) },
     })
