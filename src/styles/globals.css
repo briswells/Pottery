@@ -889,3 +889,27 @@ a { color: var(--pp-terracotta); }
   border-radius: 8px;
   cursor: pointer;
 }
+
+/* Booking form inputs + Square card container */
+.pp-input {
+  width: 100%;
+  padding: 11px 12px;
+  background: #fff;
+  color: var(--pp-charcoal);
+  border: 1px solid #d9cdbf;
+  border-radius: var(--pp-radius);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 16px;
+}
+.pp-input::placeholder { color: var(--pp-muted); }
+.pp-input:focus {
+  outline: none;
+  border-color: var(--pp-terracotta);
+}
+#card-container {
+  background: #fff;
+  border: 1px solid #d9cdbf;
+  border-radius: var(--pp-radius);
+  padding: 4px 12px;
+  min-height: 44px;
+}
