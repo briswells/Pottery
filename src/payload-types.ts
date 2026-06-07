@@ -289,7 +289,7 @@ export interface Class {
   description?: string | null;
   image?: (number | null) | Media;
   /**
-   * Price in cents, e.g. 22000 = $220.00
+   * Price in dollars, e.g. 220 for $220.00
    */
   priceCents: number;
   capacity: number;
@@ -381,7 +381,7 @@ export interface FiringRequest {
   notes?: string | null;
   status: 'submitted' | 'approved' | 'invoiced' | 'invoice_failed' | 'paid' | 'completed' | 'cancelled';
   /**
-   * Price in cents, set by staff (e.g. 4500 = $45.00). Set this, then status → Approved to send the invoice.
+   * Price in dollars, set by staff (e.g. 45 for $45.00). Set this, then status → Approved to send the invoice.
    */
   quotedPriceCents?: number | null;
   adminNotes?: string | null;
