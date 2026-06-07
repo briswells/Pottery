@@ -135,19 +135,22 @@ export function BookingForm({
 
   // Effect B: attach the themed card only once the SDK is ready AND the
   // #card-container is rendered (i.e. identity entered). Re-runs if identity
-  // is cleared/re-entered; cleanup destroys the card so none accumulate.
+  // is cleared/re-entered; cleanup destroys this run's card so none accumulate.
   useEffect(() => {
     if (!payments || !hasIdentity) return
     let cancelled = false
+    let localCard: any = null
 
     async function attachCard() {
       try {
         const card = await payments.card({ style: CARD_STYLE })
+        // Teardown already ran before the SDK resolved — destroy this orphan.
         if (cancelled) {
           await card.destroy()
           return
         }
         await card.attach('#card-container')
+        localCard = card
         cardRef.current = card
         setReady(true)
       } catch {
@@ -158,8 +161,8 @@ export function BookingForm({
     void attachCard()
     return () => {
       cancelled = true
-      void cardRef.current?.destroy()
-      cardRef.current = null
+      void localCard?.destroy()
+      if (cardRef.current === localCard) cardRef.current = null
       setReady(false)
     }
   }, [payments, hasIdentity])
@@ -183,6 +186,7 @@ export function BookingForm({
         <input
           required
           className="pp-input"
+          aria-label="Your name"
           placeholder="Your name"
           value={form.customerName}
           onChange={(e) => setForm({ ...form, customerName: e.target.value })}
@@ -191,6 +195,7 @@ export function BookingForm({
           required
           className="pp-input"
           type="email"
+          aria-label="Email"
           placeholder="Email"
           value={form.customerEmail}
           onChange={(e) => setForm({ ...form, customerEmail: e.target.value })}
@@ -221,6 +226,7 @@ export function BookingForm({
           <form onSubmit={submitCard} style={{ display: 'grid', gap: 10 }}>
             <input
               className="pp-input"
+              aria-label="Phone (optional)"
               placeholder="Phone (optional)"
               value={form.customerPhone}
               onChange={(e) => setForm({ ...form, customerPhone: e.target.value })}
