@@ -31,7 +31,20 @@ export const Classes: CollectionConfig = {
     { name: 'skillLevel', type: 'text' },
     { name: 'description', type: 'textarea' },
     { name: 'image', type: 'upload', relationTo: 'media' },
-    { name: 'priceCents', type: 'number', required: true, min: 0, admin: { description: 'Price in cents, e.g. 22000 = $220.00' } },
+    {
+      name: 'priceCents',
+      type: 'number',
+      required: true,
+      min: 0,
+      label: 'Price',
+      admin: {
+        description: 'Price in dollars, e.g. 220 for $220.00',
+        components: {
+          Field: '/admin/PriceField#PriceField',
+          Cell: '/admin/PriceCell#PriceCell',
+        },
+      },
+    },
     { name: 'capacity', type: 'number', required: true, min: 1 },
     { name: 'startDate', type: 'date' },
     { name: 'scheduleText', type: 'text', required: true, admin: { description: 'e.g. "Tuesdays 6–8pm for 6 weeks"' } },
