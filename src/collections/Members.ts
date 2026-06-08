@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 import { isAdmin } from '../access/isAdmin'
 import { isAdminOrEditor } from '../access/isAdminOrEditor'
 import { cancelSquareSubscription } from '../hooks/cancelSquareSubscription'
+import { cancelSquareSubscriptionOnDelete } from '../hooks/cancelSquareSubscriptionOnDelete'
 import { provisionSquareSubscription } from '../hooks/provisionSquareSubscription'
 
 export const Members: CollectionConfig = {
@@ -22,7 +23,10 @@ export const Members: CollectionConfig = {
     update: isAdminOrEditor,
     delete: isAdmin,
   },
-  hooks: { afterChange: [provisionSquareSubscription, cancelSquareSubscription] },
+  hooks: {
+    afterChange: [provisionSquareSubscription, cancelSquareSubscription],
+    beforeDelete: [cancelSquareSubscriptionOnDelete],
+  },
   fields: [
     { name: 'name', type: 'text', required: true },
     // email is provided by the auth config (local login disabled — see `auth` above)
