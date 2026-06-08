@@ -4,7 +4,7 @@ import { getSquareClient, SQUARE_LOCATION_ID } from './square'
 export interface MembershipGateway {
   createCustomer(input: { name: string; email: string; phone?: string }): Promise<{ customerId: string }>
   saveCard(input: { customerId: string; sourceId: string }): Promise<{ cardId: string }>
-  createSubscription(input: { customerId: string; cardId: string }): Promise<{ subscriptionId: string; status: string }>
+  createSubscription(input: { customerId: string; cardId?: string }): Promise<{ subscriptionId: string; status: string }>
 }
 
 // NOTE: the customer → card → subscription sequence has no rollback. A failure
@@ -44,7 +44,9 @@ export const squareMembershipGateway: MembershipGateway = {
       locationId: SQUARE_LOCATION_ID(),
       planVariationId: process.env.SQUARE_MEMBERSHIP_PLAN_VARIATION_ID!,
       customerId,
-      cardId,
+      // Cardless subscription → Square emails the member an invoice each billing
+      // period (with an auto-pay opt-in). Only attach a card when one is provided.
+      ...(cardId ? { cardId } : {}),
     })
     const sub = res.subscription
     if (!sub?.id) throw new Error('Square subscription was not created')

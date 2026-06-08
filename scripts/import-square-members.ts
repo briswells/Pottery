@@ -1,4 +1,3 @@
-import { randomBytes } from 'crypto'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { getSquareClient, SQUARE_LOCATION_ID } from '../src/lib/square'
@@ -60,7 +59,6 @@ async function run() {
         data: {
           name,
           email,
-          password: randomBytes(24).toString('hex'),
           phone: c?.phoneNumber,
           status: statusMap[sub.status ?? 'ACTIVE'] ?? 'active',
           joinedDate: sub.startDate,

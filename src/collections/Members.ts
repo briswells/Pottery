@@ -2,10 +2,15 @@ import type { CollectionConfig } from 'payload'
 import { isAdmin } from '../access/isAdmin'
 import { isAdminOrEditor } from '../access/isAdminOrEditor'
 import { cancelSquareSubscription } from '../hooks/cancelSquareSubscription'
+import { provisionSquareSubscription } from '../hooks/provisionSquareSubscription'
 
 export const Members: CollectionConfig = {
   slug: 'members',
-  auth: true, // foundation for the future member portal; staff-managed for now
+  // No member login yet: disable the local (email/password) strategy so no password
+  // is required and the login UI is hidden. enableFields keeps the email + auth
+  // columns so the DB/types don't change (no migration). optionalPassword makes
+  // password non-required. Re-enable a strategy later for a member portal.
+  auth: { disableLocalStrategy: { enableFields: true, optionalPassword: true } },
   admin: {
     group: 'People',
     useAsTitle: 'name',
@@ -17,10 +22,10 @@ export const Members: CollectionConfig = {
     update: isAdminOrEditor,
     delete: isAdmin,
   },
-  hooks: { afterChange: [cancelSquareSubscription] },
+  hooks: { afterChange: [provisionSquareSubscription, cancelSquareSubscription] },
   fields: [
     { name: 'name', type: 'text', required: true },
-    // email/password are provided by `auth: true`
+    // email is provided by the auth config (local login disabled — see `auth` above)
     { name: 'phone', type: 'text' },
     { name: 'status', type: 'select', required: true, defaultValue: 'active', options: [
       { label: 'Active', value: 'active' },
