@@ -1,4 +1,4 @@
-import { describe, it, expect, afterAll, beforeEach, vi } from 'vitest'
+import { describe, it, expect, afterAll, vi } from 'vitest'
 import { getTestPayload } from './helpers'
 
 describe('members no-login auth', () => {
@@ -21,7 +21,7 @@ afterAll(async () => {
   await payload.delete({ collection: 'members', where: { email: { contains: '@test.local' } }, overrideAccess: true })
 })
 
-import { provisionMemberSubscription } from '../../src/services/membership'
+import { reconcileMemberPlan } from '../../src/services/membership'
 import type { MembershipGateway } from '../../src/lib/membership-gateway'
 
 function fakeGateway(over: Partial<MembershipGateway> = {}): MembershipGateway {
@@ -35,88 +35,87 @@ function fakeGateway(over: Partial<MembershipGateway> = {}): MembershipGateway {
   }
 }
 
-describe('provisionMemberSubscription', () => {
-  const member = { id: 7, name: 'Mae', email: 'mae@test.local', phone: null }
+describe('reconcileMemberPlan', () => {
+  const FREE = { id: 'p_free', kind: 'free', squarePlanVariationId: null }
+  const SQ_A = { id: 'p_a', kind: 'square', squarePlanVariationId: 'PV_A' }
+  const SQ_B = { id: 'p_b', kind: 'square', squarePlanVariationId: 'PV_B' }
 
-  // The guard reads SQUARE_MEMBERSHIP_PLAN_VARIATION_ID; give the "configured"
-  // tests a real-looking value so they reach the gateway.
-  beforeEach(() => {
-    process.env.SQUARE_MEMBERSHIP_PLAN_VARIATION_ID = 'PLAN_OK'
-  })
-
-  it('creates a cardless subscription and writes Square ids back within the caller transaction', async () => {
-    const req = { transactionID: 'tx1' } as any
+  function setup(plansById: Record<string, any>) {
     const update = vi.fn(async (a: any) => ({ id: a.id, ...a.data }))
-    const payload = { update } as any
+    const findByID = vi.fn(async ({ id }: any) => plansById[id])
+    const payload = { update, findByID } as any
+    return { payload, update }
+  }
+  const req = { transactionID: 'tx' } as any
+
+  it('Free on create: no Square calls, status FREE', async () => {
+    const { payload, update } = setup({ p_free: FREE })
     const gateway = fakeGateway()
-
-    await provisionMemberSubscription({ payload, gateway, req }, member)
-
-    expect(gateway.createSubscription).toHaveBeenCalledWith({ customerId: 'cus_x' }) // no cardId
-    expect(gateway.saveCard).not.toHaveBeenCalled()
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        req,
-        collection: 'members',
-        id: 7,
-        data: expect.objectContaining({
-          squareCustomerId: 'cus_x',
-          squareSubscriptionId: 'sub_x',
-          subscriptionStatus: 'ACTIVE',
-        }),
-      }),
-    )
-  })
-
-  it('records SETUP_FAILED WITH the Square reason (no sub id) when Square throws', async () => {
-    const req = { transactionID: 'tx1' } as any
-    const update = vi.fn(async (a: any) => ({ id: a.id, ...a.data }))
-    const payload = { update } as any
-    const squareErr: any = new Error('Status code: 400')
-    squareErr.errors = [{ code: 'BAD_REQUEST', detail: 'plan ID does not match any plan' }]
-    const gateway = fakeGateway({ createSubscription: vi.fn(async () => { throw squareErr }) })
-
-    await provisionMemberSubscription({ payload, gateway, req }, member)
-
-    const lastData = update.mock.calls.at(-1)![0].data
-    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ req }))
-    expect(lastData.subscriptionStatus).toMatch(/^SETUP_FAILED/)
-    expect(lastData.subscriptionStatus).toContain('plan ID does not match')
-    expect(lastData.squareSubscriptionId ?? null).toBeNull()
-  })
-
-  it('skips Square entirely and records NOT_CONFIGURED when the plan id is the placeholder', async () => {
-    process.env.SQUARE_MEMBERSHIP_PLAN_VARIATION_ID = 'replace-with-plan-variation-id'
-    const req = { transactionID: 'tx1' } as any
-    const update = vi.fn(async (a: any) => ({ id: a.id, ...a.data }))
-    const payload = { update } as any
-    const gateway = fakeGateway()
-
-    await provisionMemberSubscription({ payload, gateway, req }, member)
-
-    expect(gateway.createCustomer).not.toHaveBeenCalled()
+    await reconcileMemberPlan({ payload, gateway, req }, {
+      member: { id: 1, name: 'A', email: 'a@test.local', phone: null, plan: 'p_free', squareCustomerId: null, squareSubscriptionId: null },
+      previousDoc: undefined,
+    })
     expect(gateway.createSubscription).not.toHaveBeenCalled()
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        req,
-        data: expect.objectContaining({ subscriptionStatus: 'NOT_CONFIGURED' }),
-      }),
-    )
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ req, data: expect.objectContaining({ subscriptionStatus: 'FREE', squareSubscriptionId: null }) }))
   })
 
-  it('skips Square entirely and records NOT_CONFIGURED when the plan id is unset', async () => {
-    delete process.env.SQUARE_MEMBERSHIP_PLAN_VARIATION_ID
-    const req = { transactionID: 'tx1' } as any
-    const update = vi.fn(async (a: any) => ({ id: a.id, ...a.data }))
-    const payload = { update } as any
+  it('Square on create: creates customer + subscription on the plan variation', async () => {
+    const { payload, update } = setup({ p_a: SQ_A })
     const gateway = fakeGateway()
+    await reconcileMemberPlan({ payload, gateway, req }, {
+      member: { id: 2, name: 'B', email: 'b@test.local', phone: null, plan: 'p_a', squareCustomerId: null, squareSubscriptionId: null },
+      previousDoc: undefined,
+    })
+    expect(gateway.createCustomer).toHaveBeenCalled()
+    expect(gateway.createSubscription).toHaveBeenCalledWith({ customerId: 'cus_x', planVariationId: 'PV_A' })
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ req, data: expect.objectContaining({ squareSubscriptionId: 'sub_x', subscriptionStatus: 'ACTIVE' }) }))
+  })
 
-    await provisionMemberSubscription({ payload, gateway, req }, member)
-
+  it('Square→Square swap: cancels old, reuses customer, creates new', async () => {
+    const { payload } = setup({ p_b: SQ_B })
+    const gateway = fakeGateway()
+    await reconcileMemberPlan({ payload, gateway, req }, {
+      member: { id: 3, name: 'C', email: 'c@test.local', phone: null, plan: 'p_b', squareCustomerId: 'cus_old', squareSubscriptionId: 'sub_old' },
+      previousDoc: { plan: 'p_a' },
+    })
+    expect(gateway.cancelSubscription).toHaveBeenCalledWith('sub_old')
     expect(gateway.createCustomer).not.toHaveBeenCalled()
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ subscriptionStatus: 'NOT_CONFIGURED' }) }),
-    )
+    expect(gateway.createSubscription).toHaveBeenCalledWith({ customerId: 'cus_old', planVariationId: 'PV_B' })
+  })
+
+  it('Square→Free: cancels subscription, status FREE', async () => {
+    const { payload, update } = setup({ p_free: FREE })
+    const gateway = fakeGateway()
+    await reconcileMemberPlan({ payload, gateway, req }, {
+      member: { id: 4, name: 'D', email: 'd@test.local', phone: null, plan: 'p_free', squareCustomerId: 'cus_1', squareSubscriptionId: 'sub_1' },
+      previousDoc: { plan: 'p_a' },
+    })
+    expect(gateway.cancelSubscription).toHaveBeenCalledWith('sub_1')
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ data: expect.objectContaining({ subscriptionStatus: 'FREE', squareSubscriptionId: null }) }))
+  })
+
+  it('unchanged Square plan: no Square calls', async () => {
+    const { payload } = setup({ p_a: SQ_A })
+    const gateway = fakeGateway()
+    await reconcileMemberPlan({ payload, gateway, req }, {
+      member: { id: 5, name: 'E', email: 'e@test.local', phone: null, plan: 'p_a', squareCustomerId: 'cus_1', squareSubscriptionId: 'sub_1' },
+      previousDoc: { plan: 'p_a' },
+    })
+    expect(gateway.createSubscription).not.toHaveBeenCalled()
+    expect(gateway.cancelSubscription).not.toHaveBeenCalled()
+  })
+
+  it('records SETUP_FAILED with the reason when Square throws', async () => {
+    const { payload, update } = setup({ p_a: SQ_A })
+    const err: any = new Error('Status code: 400'); err.errors = [{ detail: 'plan ID does not match' }]
+    const gateway = fakeGateway({ createSubscription: vi.fn(async () => { throw err }) })
+    await reconcileMemberPlan({ payload, gateway, req }, {
+      member: { id: 6, name: 'F', email: 'f@test.local', phone: null, plan: 'p_a', squareCustomerId: null, squareSubscriptionId: null },
+      previousDoc: undefined,
+    })
+    const last = update.mock.calls.at(-1)![0].data
+    expect(last.subscriptionStatus).toMatch(/^SETUP_FAILED/)
+    expect(last.subscriptionStatus).toContain('plan ID does not match')
   })
 })
 // NOTE: the gateway's cardless Square-call shape is tested in

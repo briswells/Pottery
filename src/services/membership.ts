@@ -56,25 +56,6 @@ export async function createMembership(deps: MembershipDeps, input: MembershipIn
   return member
 }
 
-export interface ProvisionDeps {
-  payload: Payload
-  gateway: MembershipGateway
-  // Thread the triggering hook's req so the write-back JOINS its transaction
-  // instead of deadlocking on the row lock the parent save holds.
-  req?: PayloadRequest
-}
-
-/**
- * Provision Square for a member that already exists in Payload (admin-created):
- * create a customer + cardless subscription (Square emails an invoice with an
- * auto-pay opt-in), then attach the Square ids to the member.
- */
-/** True only when a real Square plan variation id is configured (not unset/placeholder). */
-function membershipPlanConfigured(): boolean {
-  const v = process.env.SQUARE_MEMBERSHIP_PLAN_VARIATION_ID
-  return !!v && !v.startsWith('replace-with')
-}
-
 /** A short, human-readable reason from a Square SDK error, for the admin to see. */
 function squareErrorReason(e: unknown): string {
   const anyErr = e as { errors?: Array<{ detail?: string }>; message?: string }
@@ -82,55 +63,74 @@ function squareErrorReason(e: unknown): string {
   return detail.slice(0, 200)
 }
 
-export async function provisionMemberSubscription(
-  deps: ProvisionDeps,
-  member: { id: string | number; name: string; email: string; phone?: string | null },
+export interface ReconcileDeps {
+  payload: Payload
+  gateway: MembershipGateway
+  req?: PayloadRequest // thread the hook's req so write-backs join the save transaction
+}
+
+type MemberSnapshot = {
+  id: string | number
+  name: string
+  email: string
+  phone?: string | null
+  plan?: string | number | { id: string | number } | null
+  squareCustomerId?: string | null
+  squareSubscriptionId?: string | null
+}
+
+const planId = (p: MemberSnapshot['plan']): string | number | null =>
+  p == null ? null : typeof p === 'object' ? p.id : p
+
+/**
+ * Reconcile a member's Square subscription to match their assigned plan.
+ * Free → no subscription (cancel any existing). Square → ensure a cardless
+ * subscription on the plan's variation (swap if the plan changed). Reuses the
+ * member's existing Square customer. All write-backs thread `req`.
+ */
+export async function reconcileMemberPlan(
+  deps: ReconcileDeps,
+  args: { member: MemberSnapshot; previousDoc?: { plan?: MemberSnapshot['plan'] } | undefined },
 ): Promise<void> {
   const { payload, gateway, req } = deps
+  const { member, previousDoc } = args
 
-  const writeStatus = (subscriptionStatus: string) =>
-    payload.update({
-      collection: 'members',
-      id: member.id,
-      overrideAccess: true,
-      req,
-      context: { fromMemberHook: true },
-      data: { subscriptionStatus },
-    })
+  const write = (data: Record<string, unknown>) =>
+    payload.update({ collection: 'members', id: member.id, overrideAccess: true, req, context: { fromMemberHook: true }, data })
 
-  // No usable plan id → don't make a doomed Square call (and don't create an
-  // orphan customer). Record a clear status so staff know it's a config gap.
-  if (!membershipPlanConfigured()) {
-    console.error(
-      `Member ${member.id}: SQUARE_MEMBERSHIP_PLAN_VARIATION_ID is unset/placeholder — skipping Square provisioning.`,
-    )
-    await writeStatus('NOT_CONFIGURED')
-    return
-  }
+  const currentPlanId = planId(member.plan)
+  if (!currentPlanId) return
+
+  const plan: any = await payload.findByID({ collection: 'membership-plans', id: currentPlanId, req, overrideAccess: true })
+  if (!plan) return
 
   try {
-    const { customerId } = await gateway.createCustomer({
-      name: member.name,
-      email: member.email,
-      phone: member.phone ?? undefined,
-    })
-    // TODO: removed in reconcile task
-    const { subscriptionId, status } = await gateway.createSubscription({
-      customerId,
-      planVariationId: process.env.SQUARE_MEMBERSHIP_PLAN_VARIATION_ID ?? '',
-    })
-    await payload.update({
-      collection: 'members',
-      id: member.id,
-      overrideAccess: true,
-      req,
-      context: { fromMemberHook: true },
-      data: { squareCustomerId: customerId, squareSubscriptionId: subscriptionId, subscriptionStatus: status },
-    })
+    if (plan.kind === 'free') {
+      if (member.squareSubscriptionId) await gateway.cancelSubscription(member.squareSubscriptionId)
+      await write({ squareSubscriptionId: null, subscriptionStatus: 'FREE' })
+      return
+    }
+
+    const planVariationId: string | undefined = plan.squarePlanVariationId
+    if (!planVariationId) {
+      await write({ subscriptionStatus: 'NOT_CONFIGURED' })
+      return
+    }
+
+    const planChanged = planId(previousDoc?.plan) !== currentPlanId
+    if (member.squareSubscriptionId && !planChanged) return
+
+    if (member.squareSubscriptionId && planChanged) {
+      await gateway.cancelSubscription(member.squareSubscriptionId)
+    }
+
+    const customerId =
+      member.squareCustomerId ??
+      (await gateway.createCustomer({ name: member.name, email: member.email, phone: member.phone ?? undefined })).customerId
+    const { subscriptionId, status } = await gateway.createSubscription({ customerId, planVariationId })
+    await write({ squareCustomerId: customerId, squareSubscriptionId: subscriptionId, subscriptionStatus: status })
   } catch (e) {
-    console.error(`Member ${member.id} Square provisioning failed:`, e)
-    // Surface the real reason in the admin (e.g. "plan ID does not match…")
-    // instead of a bare SETUP_FAILED. Reuses the existing field — no migration.
-    await writeStatus(`SETUP_FAILED: ${squareErrorReason(e)}`.slice(0, 240))
+    console.error(`Member ${member.id} plan reconcile failed:`, e)
+    await write({ subscriptionStatus: `SETUP_FAILED: ${squareErrorReason(e)}`.slice(0, 240) })
   }
 }
