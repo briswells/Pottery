@@ -4,7 +4,15 @@ import { getSquareClient, SQUARE_LOCATION_ID } from './square'
 export interface MembershipGateway {
   createCustomer(input: { name: string; email: string; phone?: string }): Promise<{ customerId: string }>
   saveCard(input: { customerId: string; sourceId: string }): Promise<{ cardId: string }>
-  createSubscription(input: { customerId: string; cardId?: string }): Promise<{ subscriptionId: string; status: string }>
+  createSubscription(input: {
+    customerId: string
+    planVariationId: string
+    cardId?: string
+  }): Promise<{ subscriptionId: string; status: string }>
+  cancelSubscription(subscriptionId: string): Promise<void>
+  listPlanVariations(): Promise<
+    Array<{ variationId: string; planName: string; variationName?: string; priceCents?: number; cadence?: string }>
+  >
 }
 
 // NOTE: the customer → card → subscription sequence has no rollback. A failure
@@ -37,19 +45,53 @@ export const squareMembershipGateway: MembershipGateway = {
     return { cardId: id }
   },
 
-  async createSubscription({ customerId, cardId }) {
+  async createSubscription({ customerId, planVariationId, cardId }) {
     const client = getSquareClient()
     const res = await client.subscriptions.create({
       idempotencyKey: randomUUID(),
       locationId: SQUARE_LOCATION_ID(),
-      planVariationId: process.env.SQUARE_MEMBERSHIP_PLAN_VARIATION_ID!,
+      planVariationId,
       customerId,
-      // Cardless subscription → Square emails the member an invoice each billing
-      // period (with an auto-pay opt-in). Only attach a card when one is provided.
+      // Cardless → Square emails the member an invoice each period (auto-pay opt-in).
       ...(cardId ? { cardId } : {}),
     })
     const sub = res.subscription
     if (!sub?.id) throw new Error('Square subscription was not created')
     return { subscriptionId: sub.id, status: sub.status ?? 'ACTIVE' }
+  },
+
+  async cancelSubscription(subscriptionId) {
+    const client = getSquareClient()
+    await client.subscriptions.cancel({ subscriptionId })
+  },
+
+  async listPlanVariations() {
+    const client = getSquareClient()
+    const res: any = await client.catalog.list({ types: 'SUBSCRIPTION_PLAN,SUBSCRIPTION_PLAN_VARIATION' })
+    const objects: any[] = []
+    if (res && typeof res[Symbol.asyncIterator] === 'function') {
+      for await (const o of res) objects.push(o)
+    } else if (Array.isArray(res?.data)) objects.push(...res.data)
+    else if (Array.isArray(res?.objects)) objects.push(...res.objects)
+    else if (Array.isArray(res)) objects.push(...res)
+
+    const planName = new Map<string, string>()
+    for (const o of objects) {
+      if (o.type === 'SUBSCRIPTION_PLAN') planName.set(o.id, o.subscriptionPlanData?.name ?? '(unnamed plan)')
+    }
+    return objects
+      .filter((o) => o.type === 'SUBSCRIPTION_PLAN_VARIATION')
+      .map((o) => {
+        const d = o.subscriptionPlanVariationData
+        const phase = d?.phases?.[0]
+        const amount = phase?.pricing?.priceMoney?.amount
+        return {
+          variationId: o.id as string,
+          planName: planName.get(d?.subscriptionPlanId) ?? '(unknown plan)',
+          variationName: d?.name as string | undefined,
+          priceCents: amount != null ? Number(amount) : undefined,
+          cadence: phase?.cadence as string | undefined,
+        }
+      })
   },
 }

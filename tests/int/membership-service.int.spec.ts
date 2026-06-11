@@ -8,6 +8,8 @@ function fakeGateway(overrides: Partial<MembershipGateway> = {}) {
     createCustomer: vi.fn(async () => ({ customerId: 'cus_1' })),
     saveCard: vi.fn(async () => ({ cardId: 'card_1' })),
     createSubscription: vi.fn(async () => ({ subscriptionId: 'sub_1', status: 'ACTIVE' })),
+    cancelSubscription: vi.fn(async () => undefined),
+    listPlanVariations: vi.fn(async () => []),
     ...overrides,
   }
 }
@@ -18,7 +20,7 @@ describe('createMembership', () => {
     const gw = fakeGateway()
     const sendEmail = vi.fn(async () => {})
     const member = await createMembership({ payload, gateway: gw, sendEmail }, {
-      name: 'Pat', email: `pat-${Date.now()}@test.local`, phone: '555', sourceId: 'cnon:fake',
+      name: 'Pat', email: `pat-${Date.now()}@test.local`, phone: '555', sourceId: 'cnon:fake', planVariationId: 'PV_TEST',
     })
     expect(gw.createCustomer).toHaveBeenCalledOnce()
     expect(gw.saveCard).toHaveBeenCalledWith(expect.objectContaining({ customerId: 'cus_1', sourceId: 'cnon:fake' }))
@@ -34,7 +36,7 @@ describe('createMembership', () => {
     const email = `fail-${Date.now()}@test.local`
     const gw = fakeGateway({ createSubscription: vi.fn(async () => { throw new Error('subscription failed') }) })
     await expect(
-      createMembership({ payload, gateway: gw, sendEmail: vi.fn(async () => {}) }, { name: 'No', email, sourceId: 'cnon:x' }),
+      createMembership({ payload, gateway: gw, sendEmail: vi.fn(async () => {}) }, { name: 'No', email, sourceId: 'cnon:x', planVariationId: 'PV_TEST' }),
     ).rejects.toThrow(/subscription failed/i)
     const found = await payload.find({ collection: 'members', where: { email: { equals: email } } })
     expect(found.totalDocs).toBe(0)

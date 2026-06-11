@@ -13,6 +13,7 @@ export interface MembershipInput {
   email: string
   phone?: string
   sourceId: string
+  planVariationId: string
 }
 
 export async function createMembership(deps: MembershipDeps, input: MembershipInput) {
@@ -21,7 +22,7 @@ export async function createMembership(deps: MembershipDeps, input: MembershipIn
   // Square side first — if any step throws, no Member row is written.
   const { customerId } = await gateway.createCustomer({ name: input.name, email: input.email, phone: input.phone })
   const { cardId } = await gateway.saveCard({ customerId, sourceId: input.sourceId })
-  const { subscriptionId, status } = await gateway.createSubscription({ customerId, cardId })
+  const { subscriptionId, status } = await gateway.createSubscription({ customerId, cardId, planVariationId: input.planVariationId })
 
   const member = await payload.create({
     collection: 'members',
@@ -113,7 +114,11 @@ export async function provisionMemberSubscription(
       email: member.email,
       phone: member.phone ?? undefined,
     })
-    const { subscriptionId, status } = await gateway.createSubscription({ customerId })
+    // TODO: removed in reconcile task
+    const { subscriptionId, status } = await gateway.createSubscription({
+      customerId,
+      planVariationId: process.env.SQUARE_MEMBERSHIP_PLAN_VARIATION_ID ?? '',
+    })
     await payload.update({
       collection: 'members',
       id: member.id,
