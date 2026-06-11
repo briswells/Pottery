@@ -68,11 +68,45 @@ export interface ProvisionDeps {
  * create a customer + cardless subscription (Square emails an invoice with an
  * auto-pay opt-in), then attach the Square ids to the member.
  */
+/** True only when a real Square plan variation id is configured (not unset/placeholder). */
+function membershipPlanConfigured(): boolean {
+  const v = process.env.SQUARE_MEMBERSHIP_PLAN_VARIATION_ID
+  return !!v && !v.startsWith('replace-with')
+}
+
+/** A short, human-readable reason from a Square SDK error, for the admin to see. */
+function squareErrorReason(e: unknown): string {
+  const anyErr = e as { errors?: Array<{ detail?: string }>; message?: string }
+  const detail = anyErr?.errors?.[0]?.detail ?? anyErr?.message ?? String(e)
+  return detail.slice(0, 200)
+}
+
 export async function provisionMemberSubscription(
   deps: ProvisionDeps,
   member: { id: string | number; name: string; email: string; phone?: string | null },
 ): Promise<void> {
   const { payload, gateway, req } = deps
+
+  const writeStatus = (subscriptionStatus: string) =>
+    payload.update({
+      collection: 'members',
+      id: member.id,
+      overrideAccess: true,
+      req,
+      context: { fromMemberHook: true },
+      data: { subscriptionStatus },
+    })
+
+  // No usable plan id → don't make a doomed Square call (and don't create an
+  // orphan customer). Record a clear status so staff know it's a config gap.
+  if (!membershipPlanConfigured()) {
+    console.error(
+      `Member ${member.id}: SQUARE_MEMBERSHIP_PLAN_VARIATION_ID is unset/placeholder — skipping Square provisioning.`,
+    )
+    await writeStatus('NOT_CONFIGURED')
+    return
+  }
+
   try {
     const { customerId } = await gateway.createCustomer({
       name: member.name,
@@ -90,13 +124,8 @@ export async function provisionMemberSubscription(
     })
   } catch (e) {
     console.error(`Member ${member.id} Square provisioning failed:`, e)
-    await payload.update({
-      collection: 'members',
-      id: member.id,
-      overrideAccess: true,
-      req,
-      context: { fromMemberHook: true },
-      data: { subscriptionStatus: 'SETUP_FAILED' },
-    })
+    // Surface the real reason in the admin (e.g. "plan ID does not match…")
+    // instead of a bare SETUP_FAILED. Reuses the existing field — no migration.
+    await writeStatus(`SETUP_FAILED: ${squareErrorReason(e)}`.slice(0, 240))
   }
 }
