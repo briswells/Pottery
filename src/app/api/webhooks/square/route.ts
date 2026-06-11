@@ -2,6 +2,12 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { WebhooksHelper } from 'square'
 import { sendEmail } from '../../../../lib/email'
+import { syncSquarePlans } from '../../../../services/sync-square-plans'
+import { squareMembershipGateway } from '../../../../lib/membership-gateway'
+
+export async function handleCatalogVersionUpdated(payload: Awaited<ReturnType<typeof getPayload>>) {
+  await syncSquarePlans({ payload, gateway: squareMembershipGateway })
+}
 
 export async function POST(req: Request) {
   const requestBody = await req.text() // raw body required for signature verification
@@ -130,6 +136,8 @@ export async function POST(req: Request) {
         } })
       }
     }
+  } else if (event.type === 'catalog.version.updated') {
+    await handleCatalogVersionUpdated(payload)
   }
 
   return new Response('ok', { status: 200 })
