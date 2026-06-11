@@ -1,41 +1,35 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-// Replace the service so the hook never reaches Square. Must be a separate file
-// from the tests that exercise the REAL service (vi.mock is per-file).
-// vi.hoisted so the mock fn exists when the hoisted vi.mock factory runs.
-const provisionMock = vi.hoisted(() => vi.fn(async () => undefined))
-vi.mock('../../src/services/membership', () => ({ provisionMemberSubscription: provisionMock }))
+const reconcileMock = vi.hoisted(() => vi.fn(async () => undefined))
+vi.mock('../../src/services/membership', () => ({ reconcileMemberPlan: reconcileMock }))
 
-import { provisionSquareSubscription } from '../../src/hooks/provisionSquareSubscription'
+import { reconcileMemberSubscription } from '../../src/hooks/reconcileMemberSubscription'
 
 const baseReq: any = { payload: {}, context: {} }
-const baseDoc: any = { id: 1, name: 'A', email: 'a@test.local', phone: null, status: 'active', squareSubscriptionId: null }
+const baseDoc: any = { id: 1, name: 'A', email: 'a@test.local', phone: null, plan: 'p_a', squareSubscriptionId: null }
 
-async function didProvision(args: any) {
-  provisionMock.mockClear()
-  await provisionSquareSubscription({ operation: 'create', req: baseReq, doc: baseDoc, ...args } as any)
-  return provisionMock.mock.calls.length > 0
+async function ran(args: any) {
+  reconcileMock.mockClear()
+  await reconcileMemberSubscription({ operation: 'create', req: baseReq, doc: baseDoc, previousDoc: undefined, ...args } as any)
+  return reconcileMock.mock.calls.length > 0
 }
 
-describe('provisionSquareSubscription hook guards', () => {
-  beforeEach(() => provisionMock.mockClear())
+describe('reconcileMemberSubscription hook guards', () => {
+  beforeEach(() => reconcileMock.mockClear())
 
-  it('provisions on create of an active, unlinked member', async () => {
-    expect(await didProvision({})).toBe(true)
+  it('runs on create', async () => {
+    expect(await ran({})).toBe(true)
   })
-  it('skips on update', async () => {
-    expect(await didProvision({ operation: 'update' })).toBe(false)
+  it('runs on update when the plan changed', async () => {
+    expect(await ran({ operation: 'update', doc: { ...baseDoc, plan: 'p_b' }, previousDoc: { plan: 'p_a' } })).toBe(true)
   })
-  it('skips when not active', async () => {
-    expect(await didProvision({ doc: { ...baseDoc, status: 'paused' } })).toBe(false)
+  it('skips on update when the plan is unchanged', async () => {
+    expect(await ran({ operation: 'update', doc: { ...baseDoc, plan: 'p_a' }, previousDoc: { plan: 'p_a' } })).toBe(false)
   })
-  it('skips when already linked to Square', async () => {
-    expect(await didProvision({ doc: { ...baseDoc, squareSubscriptionId: 'sub_existing' } })).toBe(false)
+  it('skips our own write-back', async () => {
+    expect(await ran({ req: { ...baseReq, context: { fromMemberHook: true } } })).toBe(false)
   })
-  it('skips when triggered by our own hook write-back', async () => {
-    expect(await didProvision({ req: { ...baseReq, context: { fromMemberHook: true } } })).toBe(false)
-  })
-  it('skips when triggered by the Square webhook', async () => {
-    expect(await didProvision({ req: { ...baseReq, context: { fromSquareWebhook: true } } })).toBe(false)
+  it('skips the Square webhook', async () => {
+    expect(await ran({ req: { ...baseReq, context: { fromSquareWebhook: true } } })).toBe(false)
   })
 })

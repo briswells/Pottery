@@ -3,7 +3,7 @@ import { isAdmin } from '../access/isAdmin'
 import { isAdminOrEditor } from '../access/isAdminOrEditor'
 import { cancelSquareSubscription } from '../hooks/cancelSquareSubscription'
 import { cancelSquareSubscriptionOnDelete } from '../hooks/cancelSquareSubscriptionOnDelete'
-import { provisionSquareSubscription } from '../hooks/provisionSquareSubscription'
+import { reconcileMemberSubscription } from '../hooks/reconcileMemberSubscription'
 
 export const Members: CollectionConfig = {
   slug: 'members',
@@ -24,7 +24,7 @@ export const Members: CollectionConfig = {
     delete: isAdmin,
   },
   hooks: {
-    afterChange: [provisionSquareSubscription, cancelSquareSubscription],
+    afterChange: [reconcileMemberSubscription, cancelSquareSubscription],
     beforeDelete: [cancelSquareSubscriptionOnDelete],
   },
   fields: [
