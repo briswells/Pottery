@@ -8,6 +8,7 @@ import sharp from 'sharp'
 
 import { Users } from './collections/Users'
 import { Members } from './collections/Members'
+import { MembershipPlans } from './collections/MembershipPlans'
 import { Media } from './collections/Media'
 import { Classes } from './collections/Classes'
 import { Bookings } from './collections/Bookings'
@@ -28,7 +29,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Members, Media, Classes, Bookings, Payments, FiringRequests],
+  collections: [Users, Members, MembershipPlans, Media, Classes, Bookings, Payments, FiringRequests],
   globals: [SiteSettings, HomePage, MembershipPage, FiringsPage],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

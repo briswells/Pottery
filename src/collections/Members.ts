@@ -29,6 +29,19 @@ export const Members: CollectionConfig = {
   },
   fields: [
     { name: 'name', type: 'text', required: true },
+    {
+      name: 'plan',
+      type: 'relationship',
+      relationTo: 'membership-plans',
+      hasMany: false,
+      admin: { description: 'Membership plan. Use a Free plan for unbilled members.' },
+      // Required only when first creating a member; existing members (created
+      // before plans existed) can still be edited without being forced to set one.
+      validate: (value: unknown, { operation }: { operation?: string }) => {
+        if (operation === 'create' && !value) return 'Choose a plan (use the Free plan for unbilled members).'
+        return true
+      },
+    },
     // email is provided by the auth config (local login disabled — see `auth` above)
     { name: 'phone', type: 'text' },
     { name: 'status', type: 'select', required: true, defaultValue: 'active', options: [

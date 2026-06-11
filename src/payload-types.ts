@@ -70,6 +70,7 @@ export interface Config {
   collections: {
     users: User;
     members: Member;
+    'membership-plans': MembershipPlan;
     media: Media;
     classes: Class;
     bookings: Booking;
@@ -84,6 +85,7 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     members: MembersSelect<false> | MembersSelect<true>;
+    'membership-plans': MembershipPlansSelect<false> | MembershipPlansSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     classes: ClassesSelect<false> | ClassesSelect<true>;
     bookings: BookingsSelect<false> | BookingsSelect<true>;
@@ -241,6 +243,10 @@ export interface Media {
 export interface Member {
   id: number;
   name: string;
+  /**
+   * Membership plan. Use a Free plan for unbilled members.
+   */
+  plan?: (number | null) | MembershipPlan;
   phone?: string | null;
   status: 'active' | 'past_due' | 'paused' | 'cancelled';
   joinedDate?: string | null;
@@ -272,6 +278,33 @@ export interface Member {
     | null;
   password?: string | null;
   collection: 'members';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "membership-plans".
+ */
+export interface MembershipPlan {
+  id: number;
+  name: string;
+  kind: 'square' | 'free';
+  /**
+   * Synced from Square; empty for Free plans.
+   */
+  squarePlanVariationId?: string | null;
+  /**
+   * Synced from Square.
+   */
+  priceCents?: number | null;
+  /**
+   * e.g. MONTHLY (synced).
+   */
+  cadence?: string | null;
+  /**
+   * Square plans removed from Square are set inactive by sync.
+   */
+  active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -427,6 +460,10 @@ export interface PayloadLockedDocument {
         value: number | Member;
       } | null)
     | ({
+        relationTo: 'membership-plans';
+        value: number | MembershipPlan;
+      } | null)
+    | ({
         relationTo: 'media';
         value: number | Media;
       } | null)
@@ -533,6 +570,7 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface MembersSelect<T extends boolean = true> {
   name?: T;
+  plan?: T;
   phone?: T;
   status?: T;
   joinedDate?: T;
@@ -559,6 +597,20 @@ export interface MembersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "membership-plans_select".
+ */
+export interface MembershipPlansSelect<T extends boolean = true> {
+  name?: T;
+  kind?: T;
+  squarePlanVariationId?: T;
+  priceCents?: T;
+  cadence?: T;
+  active?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
