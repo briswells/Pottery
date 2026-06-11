@@ -75,23 +75,37 @@ export const squareMembershipGateway: MembershipGateway = {
     else if (Array.isArray(res?.objects)) objects.push(...res.objects)
     else if (Array.isArray(res)) objects.push(...res)
 
+    // Square returns plan variations NESTED inside each SUBSCRIPTION_PLAN's
+    // subscriptionPlanData.subscriptionPlanVariations. They may ALSO appear as
+    // top-level SUBSCRIPTION_PLAN_VARIATION objects. Collect from both, dedupe by
+    // id. (A top-level-only parser misses real plans entirely — they come nested.)
     const planName = new Map<string, string>()
+    const variations = new Map<string, any>()
     for (const o of objects) {
-      if (o.type === 'SUBSCRIPTION_PLAN') planName.set(o.id, o.subscriptionPlanData?.name ?? '(unnamed plan)')
-    }
-    return objects
-      .filter((o) => o.type === 'SUBSCRIPTION_PLAN_VARIATION')
-      .map((o) => {
-        const d = o.subscriptionPlanVariationData
-        const phase = d?.phases?.[0]
-        const amount = phase?.pricing?.priceMoney?.amount
-        return {
-          variationId: o.id as string,
-          planName: planName.get(d?.subscriptionPlanId) ?? '(unknown plan)',
-          variationName: d?.name as string | undefined,
-          priceCents: amount != null ? Number(amount) : undefined,
-          cadence: phase?.cadence as string | undefined,
+      if (o.type === 'SUBSCRIPTION_PLAN') {
+        planName.set(o.id, o.subscriptionPlanData?.name ?? '(unnamed plan)')
+        for (const v of o.subscriptionPlanData?.subscriptionPlanVariations ?? []) {
+          if (v?.id) variations.set(v.id, v)
         }
-      })
+      } else if (o.type === 'SUBSCRIPTION_PLAN_VARIATION') {
+        variations.set(o.id, o)
+      }
+    }
+
+    return [...variations.values()].map((v) => {
+      const d = v.subscriptionPlanVariationData
+      const phase = d?.phases?.[0]
+      // Price field name varies across API/SDK versions: pricing.price (current
+      // raw shape), pricing.priceMoney, or a legacy recurringPriceMoney.
+      const money = phase?.pricing?.price ?? phase?.pricing?.priceMoney ?? phase?.recurringPriceMoney
+      const amount = money?.amount
+      return {
+        variationId: v.id as string,
+        planName: planName.get(d?.subscriptionPlanId) ?? '(unknown plan)',
+        variationName: d?.name as string | undefined,
+        priceCents: amount != null ? Number(amount) : undefined,
+        cadence: phase?.cadence as string | undefined,
+      }
+    })
   },
 }
