@@ -22,15 +22,30 @@ describe('membership-plans collection + member.plan', () => {
     expect(member.plan).toBeTruthy()
   })
 
-  it('rejects creating a member with no plan', async () => {
+  it('requires a plan when an admin creates a member (no plan → rejected)', async () => {
     const payload = await getTestPayload()
+    const staff = await payload.create({
+      collection: 'users',
+      data: { name: 'Staff', email: `staff-${Date.now()}@test.local`, password: 'test12345' },
+    })
     await expect(
       payload.create({
         collection: 'members',
-        overrideAccess: true,
-        data: { name: 'NoPlan', email: `noplan-${Date.now()}@test.local`, status: 'active' },
+        overrideAccess: false,
+        user: staff,
+        data: { name: 'NoPlan', email: `noplan-${Date.now()}@test.local`, status: 'active', plan: undefined },
       }),
     ).rejects.toThrow()
+  })
+
+  it('allows programmatic creation without a plan (no logged-in user)', async () => {
+    const payload = await getTestPayload()
+    const m = await payload.create({
+      collection: 'members',
+      overrideAccess: true,
+      data: { name: 'Prog', email: `prog-${Date.now()}@test.local`, status: 'paused' },
+    })
+    expect(m.id).toBeTruthy()
   })
 })
 

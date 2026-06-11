@@ -37,8 +37,9 @@ export const Members: CollectionConfig = {
       admin: { description: 'Membership plan. Use a Free plan for unbilled members.' },
       // Required only when first creating a member; existing members (created
       // before plans existed) can still be edited without being forced to set one.
-      validate: (value: unknown, { operation }: { operation?: string }) => {
-        if (operation === 'create' && !value) return 'Choose a plan (use the Free plan for unbilled members).'
+      validate: (value: unknown, { operation, req }: { operation?: string; req?: { user?: unknown } }) => {
+        if (operation === 'create' && req?.user && !value)
+          return 'Choose a plan (use the Free plan for unbilled members).'
         return true
       },
     },
