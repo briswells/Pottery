@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { syncSquarePlans } from '../../src/services/sync-square-plans'
+import { syncSquarePlans, ensureFreePlan } from '../../src/services/sync-square-plans'
 
 function fakePayload(existing: any[] = []) {
   const calls: any[] = []
@@ -8,7 +8,8 @@ function fakePayload(existing: any[] = []) {
     find: vi.fn(async ({ where }: any) => {
       const eqId = where?.squarePlanVariationId?.equals
       if (eqId) return { docs: existing.filter((d) => d.squarePlanVariationId === eqId) }
-      if (where?.kind?.equals === 'square') return { docs: existing.filter((d) => d.kind === 'square') }
+      const eqKind = where?.kind?.equals
+      if (eqKind) return { docs: existing.filter((d) => d.kind === eqKind) }
       return { docs: [] }
     }),
     create: vi.fn(async ({ data }: any) => { calls.push(['create', data]); return { id: 'new', ...data } }),
@@ -52,5 +53,21 @@ describe('syncSquarePlans', () => {
       expect.objectContaining({ id: 1, data: expect.objectContaining({ active: false }) }),
     )
     expect(payload.update.mock.calls.find((c: any) => c[0].id === 2)).toBeUndefined()
+  })
+})
+
+describe('ensureFreePlan', () => {
+  it('creates a Free plan when none exists', async () => {
+    const payload = fakePayload([])
+    await ensureFreePlan(payload)
+    expect(payload.create).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'membership-plans', data: expect.objectContaining({ kind: 'free', name: 'Free', active: true }) }),
+    )
+  })
+
+  it('does nothing when a Free plan already exists', async () => {
+    const payload = fakePayload([{ id: 9, kind: 'free' }])
+    await ensureFreePlan(payload)
+    expect(payload.create).not.toHaveBeenCalled()
   })
 })

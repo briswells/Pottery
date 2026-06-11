@@ -50,3 +50,24 @@ export async function syncSquarePlans({ payload, gateway }: SyncPlansDeps): Prom
     }
   }
 }
+
+/**
+ * Ensure a platform "Free" plan exists so staff can assign unbilled members
+ * out of the box (no manual creation, no Square). Idempotent — creates one only
+ * if no `free` plan exists yet.
+ */
+export async function ensureFreePlan(payload: Payload): Promise<void> {
+  const { docs } = await payload.find({
+    collection: 'membership-plans',
+    where: { kind: { equals: 'free' } },
+    limit: 1,
+    overrideAccess: true,
+  })
+  if (docs.length > 0) return
+  await payload.create({
+    collection: 'membership-plans',
+    overrideAccess: true,
+    context: { fromPlanSync: true },
+    data: { name: 'Free', kind: 'free', active: true },
+  })
+}

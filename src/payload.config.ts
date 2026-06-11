@@ -18,7 +18,7 @@ import { SiteSettings } from './globals/SiteSettings'
 import { HomePage } from './globals/HomePage'
 import { MembershipPage } from './globals/MembershipPage'
 import { FiringsPage } from './globals/FiringsPage'
-import { syncSquarePlans } from './services/sync-square-plans'
+import { syncSquarePlans, ensureFreePlan } from './services/sync-square-plans'
 import { squareMembershipGateway } from './lib/membership-gateway'
 
 const filename = fileURLToPath(import.meta.url)
@@ -32,9 +32,16 @@ export default buildConfig({
     },
   },
   onInit: async (payload) => {
-    // Keep the Plans list seeded/fresh on boot. Skipped in tests (never hit Square
-    // in CI) and when Square isn't configured. Never blocks/breaks boot.
-    if (process.env.NODE_ENV === 'test' || !process.env.SQUARE_ACCESS_TOKEN) return
+    // Skipped in tests (they manage their own data and must never hit Square).
+    if (process.env.NODE_ENV === 'test') return
+    // Ensure the platform Free plan exists (no Square needed). Self-healing on boot.
+    try {
+      await ensureFreePlan(payload)
+    } catch (e) {
+      payload.logger.error(`Ensuring Free plan failed: ${e instanceof Error ? e.message : e}`)
+    }
+    // Keep the Square plans fresh on boot. Needs Square creds; never breaks boot.
+    if (!process.env.SQUARE_ACCESS_TOKEN) return
     try {
       await syncSquarePlans({ payload, gateway: squareMembershipGateway })
     } catch (e) {

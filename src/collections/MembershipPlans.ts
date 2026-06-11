@@ -1,11 +1,12 @@
 import type { CollectionConfig } from 'payload'
-import { isAdmin } from '../access/isAdmin'
 import { isAdminOrEditor } from '../access/isAdminOrEditor'
 
 /**
- * Membership plans. `square` plans mirror Square subscription plan variations
- * (kept in sync — their identifying fields are read-only here). `free` plans are
- * platform-only: assigning one creates a member with no Square subscription.
+ * Membership plans — VIEW ONLY in the admin. `square` plans are synced from
+ * Square (the catalog webhook + startup sync); the `free` platform plan is
+ * created automatically on startup (ensureFreePlan). Staff don't create or edit
+ * plans by hand, so create/update/delete are disabled — the sync/seed use
+ * `overrideAccess` to write. Assigning a plan to a member is what drives Square.
  */
 export const MembershipPlans: CollectionConfig = {
   slug: 'membership-plans',
@@ -16,9 +17,9 @@ export const MembershipPlans: CollectionConfig = {
   },
   access: {
     read: isAdminOrEditor,
-    create: isAdminOrEditor,
-    update: isAdminOrEditor,
-    delete: isAdmin,
+    create: () => false,
+    update: () => false,
+    delete: () => false,
   },
   fields: [
     { name: 'name', type: 'text', required: true },

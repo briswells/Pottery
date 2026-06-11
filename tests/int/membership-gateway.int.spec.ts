@@ -39,20 +39,50 @@ describe('squareMembershipGateway.cancelSubscription', () => {
 })
 
 describe('squareMembershipGateway.listPlanVariations', () => {
-  it('flattens catalog plans + variations into {variationId, planName, priceCents, cadence}', async () => {
+  // Real Square shape: variations are NESTED in the plan and price is under
+  // `pricing.price` (not a top-level SUBSCRIPTION_PLAN_VARIATION / `priceMoney`).
+  it('reads variations nested in the plan, with price under pricing.price', async () => {
     list.mockImplementation(async () => [
-      { id: 'PLAN_A', type: 'SUBSCRIPTION_PLAN', subscriptionPlanData: { name: 'Studio' } },
       {
-        id: 'PV_A', type: 'SUBSCRIPTION_PLAN_VARIATION',
-        subscriptionPlanVariationData: {
-          name: 'Monthly', subscriptionPlanId: 'PLAN_A',
-          phases: [{ cadence: 'MONTHLY', pricing: { priceMoney: { amount: 20000n, currency: 'USD' } } }],
+        id: 'PLAN_A',
+        type: 'SUBSCRIPTION_PLAN',
+        subscriptionPlanData: {
+          name: 'Studio',
+          subscriptionPlanVariations: [
+            {
+              id: 'PV_A',
+              type: 'SUBSCRIPTION_PLAN_VARIATION',
+              subscriptionPlanVariationData: {
+                name: 'Monthly',
+                subscriptionPlanId: 'PLAN_A',
+                phases: [{ cadence: 'MONTHLY', pricing: { type: 'STATIC', price: { amount: 20000n, currency: 'USD' } } }],
+              },
+            },
+          ],
         },
       },
     ])
     const out = await squareMembershipGateway.listPlanVariations()
     expect(out).toEqual([
       { variationId: 'PV_A', planName: 'Studio', variationName: 'Monthly', priceCents: 20000, cadence: 'MONTHLY' },
+    ])
+  })
+
+  it('also reads top-level variations with priceMoney (no duplicates)', async () => {
+    list.mockImplementation(async () => [
+      { id: 'PLAN_B', type: 'SUBSCRIPTION_PLAN', subscriptionPlanData: { name: 'Clay' } },
+      {
+        id: 'PV_B',
+        type: 'SUBSCRIPTION_PLAN_VARIATION',
+        subscriptionPlanVariationData: {
+          name: 'Yearly', subscriptionPlanId: 'PLAN_B',
+          phases: [{ cadence: 'ANNUAL', pricing: { priceMoney: { amount: 99900n, currency: 'USD' } } }],
+        },
+      },
+    ])
+    const out = await squareMembershipGateway.listPlanVariations()
+    expect(out).toEqual([
+      { variationId: 'PV_B', planName: 'Clay', variationName: 'Yearly', priceCents: 99900, cadence: 'ANNUAL' },
     ])
   })
 })
