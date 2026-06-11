@@ -260,6 +260,8 @@ export interface Member {
   subscriptionStatus?: string | null;
   lastPaymentDate?: string | null;
   lastPaymentStatus?: string | null;
+  cancelTokenHash?: string | null;
+  cancelTokenExpiresAt?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -581,6 +583,8 @@ export interface MembersSelect<T extends boolean = true> {
   subscriptionStatus?: T;
   lastPaymentDate?: T;
   lastPaymentStatus?: T;
+  cancelTokenHash?: T;
+  cancelTokenExpiresAt?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
