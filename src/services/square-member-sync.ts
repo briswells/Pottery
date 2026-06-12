@@ -23,6 +23,9 @@ export interface SquareSubscriptionInput {
 export interface EnsureMemberDeps {
   payload: Payload
   gateway: MembershipGateway
+  /** Re-sync the plan mirror once on a plan-variation miss. Default true (webhook).
+   *  Bulk callers (the import) sync upfront and pass false to avoid a per-row sync. */
+  syncPlansOnMiss?: boolean
 }
 
 async function findPlanByVariation(payload: Payload, variationId: string): Promise<number | null> {
@@ -43,7 +46,7 @@ async function findPlanByVariation(payload: Payload, variationId: string): Promi
  * Person, or null when skipped (missing ids, or a plan we don't track).
  */
 export async function ensureMemberFromSubscription(
-  { payload, gateway }: EnsureMemberDeps,
+  { payload, gateway, syncPlansOnMiss = true }: EnsureMemberDeps,
   sub: SquareSubscriptionInput,
 ): Promise<Person | null> {
   const existingBySub = await payload.find({
@@ -60,7 +63,7 @@ export async function ensureMemberFromSubscription(
   }
 
   let planId = await findPlanByVariation(payload, sub.planVariationId)
-  if (planId == null) {
+  if (planId == null && syncPlansOnMiss) {
     await syncSquarePlans({ payload, gateway })
     planId = await findPlanByVariation(payload, sub.planVariationId)
   }

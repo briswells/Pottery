@@ -3,6 +3,7 @@ import config from '@payload-config'
 import { getSquareClient, SQUARE_LOCATION_ID } from '../src/lib/square'
 import { squareMembershipGateway } from '../src/lib/membership-gateway'
 import { ensureMemberFromSubscription } from '../src/services/square-member-sync'
+import { syncSquarePlans } from '../src/services/sync-square-plans'
 
 async function run() {
   const payload = await getPayload({ config: await config })
@@ -14,7 +15,12 @@ async function run() {
     query: { filter: { locationIds: [SQUARE_LOCATION_ID()] } },
   })
   const subscriptions = search.subscriptions ?? []
-  let created = 0,
+
+  // Sync the plan mirror once up front; the per-subscription service then runs
+  // with syncPlansOnMiss:false so a bulk import never re-syncs per row.
+  await syncSquarePlans({ payload, gateway: squareMembershipGateway })
+
+  let processed = 0,
     skipped = 0,
     failed = 0
 
@@ -31,10 +37,10 @@ async function run() {
       // "already existed" from "newly created" by the return alone, so count
       // non-null as processed and null as skipped.
       const person = await ensureMemberFromSubscription(
-        { payload, gateway: squareMembershipGateway },
+        { payload, gateway: squareMembershipGateway, syncPlansOnMiss: false },
         { id: s.id, customerId: s.customerId, planVariationId: s.planVariationId, status: s.status, startDate: s.startDate },
       )
-      if (person) created++
+      if (person) processed++
       else skipped++
     } catch (e) {
       failed++
@@ -48,7 +54,7 @@ async function run() {
     console.warn('WARNING: more subscriptions exist beyond the first page — pagination is not implemented, so some members were NOT imported.')
   }
 
-  console.log(`Import complete. Processed ${created}, skipped ${skipped}, failed ${failed}.`)
+  console.log(`Import complete. Processed ${processed}, skipped ${skipped}, failed ${failed}.`)
   process.exit(failed > 0 ? 1 : 0)
 }
 

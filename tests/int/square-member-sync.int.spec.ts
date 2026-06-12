@@ -100,6 +100,17 @@ describe('ensureMemberFromSubscription', () => {
     expect(person).toBeNull()
   })
 
+  it('does not sync plans when syncPlansOnMiss is false (caller synced upfront)', async () => {
+    const payload = await getTestPayload()
+    const gateway = makeGateway({ listPlanVariations: vi.fn(async () => [{ variationId: 'PV_NOSYNC', planName: 'X', variationName: 'M', priceCents: 1, cadence: 'MONTHLY' }]) })
+    // Plan is NOT pre-created and we forbid sync-on-miss → must return null without calling listPlanVariations.
+    const person = await ensureMemberFromSubscription({ payload, gateway, syncPlansOnMiss: false }, {
+      id: 'sub_nosync', customerId: 'cus_nosync', planVariationId: 'PV_NOSYNC', status: 'ACTIVE',
+    })
+    expect(person).toBeNull()
+    expect(gateway.listPlanVariations).not.toHaveBeenCalled()
+  })
+
   it('returns null when customerId or planVariationId is missing', async () => {
     const payload = await getTestPayload()
     const gateway = makeGateway()
