@@ -12,6 +12,7 @@ export const Bookings: CollectionConfig = {
   },
   fields: [
     { name: 'class', type: 'relationship', relationTo: 'classes', required: true },
+    { name: 'person', type: 'relationship', relationTo: 'people', hasMany: false, admin: { description: 'The person who made this booking.' } },
     { name: 'customerName', type: 'text', required: true },
     { name: 'customerEmail', type: 'email', required: true },
     { name: 'customerPhone', type: 'text' },

@@ -3,6 +3,7 @@ import { seatsRemaining, occupiedSeats } from '../lib/occupancy'
 import type { ChargeInput, ChargeResult } from '../lib/payments'
 import type { EmailInput } from '../lib/email'
 import { usd } from '../lib/format'
+import { upsertPersonByEmail } from './people'
 
 export interface BookingDeps {
   payload: Payload
@@ -64,6 +65,18 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
     data: { type: 'booking', booking: pending.id, amountCents: cls.priceCents, squareId: charge.paymentId, status: charge.status, paidAt: new Date().toISOString() },
   })
 
+  // Link the booking to a Person (find-or-create by email). A failure here must
+  // not fail the already-paid booking — log and move on; the backfill can link later.
+  try {
+    const person = await upsertPersonByEmail(
+      { payload },
+      { name: input.customerName, email: input.customerEmail, phone: input.customerPhone },
+    )
+    await payload.update({ collection: 'bookings', id: booking.id, overrideAccess: true, data: { person: person.id } })
+  } catch (e) {
+    console.error(`Booking ${booking.id} person link failed:`, e)
+  }
+
   // The booking is already paid and recorded at this point. A failed
   // confirmation email must NOT fail the request (and re-charge anxiety),
   // so swallow+log email errors rather than letting them propagate.
@@ -77,5 +90,5 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
     console.error(`Booking ${pending.id} confirmation email failed:`, e)
   }
 
-  return booking
+  return await payload.findByID({ collection: 'bookings', id: booking.id, overrideAccess: true })
 }

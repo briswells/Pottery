@@ -26,6 +26,7 @@ describe('createPaidBooking', () => {
     await payload.delete({ collection: 'payments', where: {} })
     await payload.delete({ collection: 'bookings', where: {} })
     await payload.delete({ collection: 'classes', where: {} })
+    await payload.delete({ collection: 'people', where: { email: { like: '@test.local' } } })
   })
 
   it('charges the DB price (not the client) and records a paid booking + payment', async () => {
@@ -83,5 +84,23 @@ describe('createPaidBooking', () => {
     ] } })
     expect(paid.totalDocs).toBeLessThanOrEqual(1)
     expect(occupied.totalDocs).toBeLessThanOrEqual(1)
+  })
+
+  it('links the booking to a person, reusing the same person on a repeat email', async () => {
+    const payload = await getTestPayload()
+    const cls = await makeClass(payload, 5)
+    const d = deps()
+    const first = await createPaidBooking({ payload, ...d }, {
+      classId: cls.id, sourceId: 'cnon:fake', customerName: 'Repeat', customerEmail: 'repeat@test.local', customerPhone: '999',
+    })
+    const firstFull = await payload.findByID({ collection: 'bookings', id: first.id, depth: 0 })
+    expect(firstFull.person).toBeTruthy()
+
+    const cls2 = await makeClass(payload, 5)
+    const second = await createPaidBooking({ payload, ...d }, {
+      classId: cls2.id, sourceId: 'cnon:fake2', customerName: 'Repeat', customerEmail: 'REPEAT@test.local',
+    })
+    const secondFull = await payload.findByID({ collection: 'bookings', id: second.id, depth: 0 })
+    expect(secondFull.person).toBe(firstFull.person) // same person id
   })
 })
