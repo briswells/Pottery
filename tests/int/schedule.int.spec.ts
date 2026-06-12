@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseHHMM, dateParts, expandSessions, monthGrid, scheduleSummary } from '../../src/lib/schedule'
+import { parseHHMM, dateParts, formatTime, formatDate, expandSessions, monthGrid, scheduleSummary } from '../../src/lib/schedule'
 
 describe('parseHHMM', () => {
   it('parses 24-hour times', () => {
@@ -15,6 +15,20 @@ describe('parseHHMM', () => {
 describe('dateParts', () => {
   it('extracts y/m/d from a UTC-midnight date-only ISO', () => {
     expect(dateParts('2026-07-03T00:00:00.000Z')).toEqual([2026, 7, 3])
+  })
+})
+
+describe('formatTime', () => {
+  it('formats midnight, noon, and an afternoon time', () => {
+    expect(formatTime('00:00')).toBe('12:00 AM')
+    expect(formatTime('12:00')).toBe('12:00 PM')
+    expect(formatTime('18:30')).toBe('6:30 PM')
+  })
+})
+
+describe('formatDate', () => {
+  it('formats a UTC-midnight ISO date as a readable date', () => {
+    expect(formatDate('2026-07-04T00:00:00.000Z')).toBe('Jul 4, 2026')
   })
 })
 
@@ -70,6 +84,20 @@ describe('expandSessions', () => {
       e,
     )
     expect(out).toEqual(['2026-07-10']) // only the Fri inside 8th–12th
+  })
+
+  it('returns single session on startDate when daysOfWeek is empty and endDate is provided', () => {
+    const [s, e] = range('2026-07-01', '2026-07-31')
+    const out = expandSessions(
+      {
+        startDate: '2026-07-07T00:00:00.000Z',
+        endDate: '2026-07-31T00:00:00.000Z',
+        daysOfWeek: [],
+      },
+      s,
+      e,
+    )
+    expect(out).toEqual(['2026-07-07'])
   })
 })
 

@@ -94,7 +94,10 @@ export function monthGrid(year: number, month: number): string[][] {
   return weeks
 }
 
-/** Human-readable schedule, e.g. "Tue, Fri · 6:00 PM–8:00 PM · Jul 7, 2026 – Aug 11, 2026". */
+/**
+ * Human-readable schedule, e.g. "Tue, Fri · 6:00 PM–8:00 PM · Jul 7, 2026 – Aug 11, 2026".
+ * If only one of startTime/endTime is provided, the time segment is omitted entirely.
+ */
 export function scheduleSummary(input: {
   startDate: string
   endDate?: string | null
