@@ -27,7 +27,7 @@ export async function requestMembershipCancel(deps: CancelRequestDeps, email: st
   if (!email) return
   const { docs } = await payload.find({
     collection: 'people',
-    where: { email: { equals: email } },
+    where: { email: { equals: email.toLowerCase() } },
     limit: 1,
     overrideAccess: true,
   })

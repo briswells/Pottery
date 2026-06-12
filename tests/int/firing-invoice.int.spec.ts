@@ -62,9 +62,19 @@ describe('createAndSendFiringInvoice', () => {
     // which holds a row lock on the firing-request. If these writes run in a
     // SEPARATE transaction (no req), they block on that lock forever — the save
     // hangs and rolls back. Passing req makes them join the parent transaction.
+    //
+    // The service now also calls upsertPersonByEmail, which calls payload.find
+    // then conditionally payload.update/create. We stub find to return a fully-
+    // enriched existing person (phone + squareCustomerId already set) so the
+    // upsert takes the "found, nothing to enrich" early-return path and doesn't
+    // need a create stub. We then assert find itself also received req, proving
+    // the threading extends through the person-upsert path as well.
     const req = { transactionID: 'tx_test' } as any
     const update = vi.fn(async (args: any) => ({ id: args.id, ...args.data }))
-    const payload = { update } as any
+    const find = vi.fn(async () => ({
+      docs: [{ id: 999, phone: 'x', squareCustomerId: 'cus_existing' }],
+    }))
+    const payload = { update, find } as any
     const request = {
       id: 'r1',
       name: 'X',
@@ -76,6 +86,7 @@ describe('createAndSendFiringInvoice', () => {
 
     await createAndSendFiringInvoice({ payload, gateway: fakeGateway(), req }, request)
 
+    expect(find).toHaveBeenCalledWith(expect.objectContaining({ req }))
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ req }))
   })
 
