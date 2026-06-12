@@ -41,15 +41,18 @@ export const resendEmailAdapter =
       const from = formatAddress(message.from) ?? `${opts.defaultFromName} <${opts.defaultFromAddress}>`
       const html = message.html != null ? String(message.html) : undefined
       const text = message.text != null ? String(message.text) : undefined
+      const cc = formatList(message.cc)
+      const bcc = formatList(message.bcc)
+      const replyTo = formatList(message.replyTo)
       const payload = {
         from,
         to: formatList(message.to) ?? [],
         subject: message.subject ?? '',
         ...(html ? { html } : {}),
         ...(text ? { text } : {}),
-        ...(formatList(message.cc) ? { cc: formatList(message.cc) } : {}),
-        ...(formatList(message.bcc) ? { bcc: formatList(message.bcc) } : {}),
-        ...(formatList(message.replyTo) ? { replyTo: formatList(message.replyTo) } : {}),
+        ...(cc ? { cc } : {}),
+        ...(bcc ? { bcc } : {}),
+        ...(replyTo ? { replyTo } : {}),
       } as CreateEmailOptions
       // Resend resolves with { data, error } instead of throwing on API errors.
       const { data, error } = await getResend().emails.send(payload)
