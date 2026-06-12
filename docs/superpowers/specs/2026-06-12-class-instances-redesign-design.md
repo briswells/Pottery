@@ -43,7 +43,7 @@ Collections can be restructured cleanly.
 | `category` | select | wheel-series / day-camp / raku / daytime-multiweek (unchanged) |
 | `skillLevel` | text | |
 | `description` | textarea | |
-| `image` | upload → media | |
+| `image` | upload → media | title image; default for all instances |
 | `defaultPriceCents` | number, required, min 0 | renamed from `priceCents`; uses existing dollar PriceField/PriceCell |
 | `defaultCapacity` | number, required, min 1 | renamed from `capacity` |
 | `status` | select | active / archived (default active) |
@@ -64,6 +64,7 @@ Removed from `classes`: `startDate`, `scheduleText`, `instructor` (they describe
 | `skipDates` | array of date | holidays/exclusions → ICS `EXDATE` |
 | `capacity` | number, min 1 | defaults from `class.defaultCapacity`, overridable |
 | `priceCents` | number, min 0 | defaults from `class.defaultPriceCents`, overridable; dollar input |
+| `image` | upload → media | optional title image; blank ⇒ use the class image |
 | `location` | text | optional; falls back to a studio address constant |
 | `status` | select | draft / published / cancelled / completed (default draft); only **published** is public |
 | `roster` | join → bookings | reverse relationship surfacing this instance's bookings in admin |
@@ -131,7 +132,8 @@ parent class happens via a `class-instances` field hook/admin default (admin can
   instance date and links to the class detail page.
 - **`/classes/[slug]`**: class description/image + a list of its upcoming **published**
   instances (dates, time, instructor, seats left), each with a **Sign up** button leading to
-  that instance's booking form (the existing Square form, keyed to the instance).
+  that instance's booking form (the existing Square form, keyed to the instance). Images shown
+  use the instance's `image` when set, otherwise the class `image`.
 - **`/schedule`**: a **month calendar**. Each published instance's recurrence is expanded into
   individual session occurrences within the visible month, rendered as a chip in the day cell
   (class title + time). Clicking a chip goes to that instance's signup. Prev/next month
