@@ -31,6 +31,8 @@ function fakeGateway(over: Partial<MembershipGateway> = {}): MembershipGateway {
     createSubscription: vi.fn(async () => ({ subscriptionId: 'sub_x', status: 'ACTIVE' })),
     cancelSubscription: vi.fn(async () => undefined),
     listPlanVariations: vi.fn(async () => []),
+    getSubscription: vi.fn(async () => null),
+    getCustomer: vi.fn(async () => null),
     ...over,
   }
 }

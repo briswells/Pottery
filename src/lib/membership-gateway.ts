@@ -13,6 +13,12 @@ export interface MembershipGateway {
   listPlanVariations(): Promise<
     Array<{ variationId: string; planName: string; variationName?: string; priceCents?: number; cadence?: string }>
   >
+  getSubscription(subscriptionId: string): Promise<{
+    id: string; customerId?: string; planVariationId?: string; status?: string; startDate?: string
+  } | null>
+  getCustomer(customerId: string): Promise<{
+    id: string; email?: string; givenName?: string; familyName?: string; phone?: string
+  } | null>
 }
 
 // NOTE: the customer → card → subscription sequence has no rollback. A failure
@@ -63,6 +69,22 @@ export const squareMembershipGateway: MembershipGateway = {
   async cancelSubscription(subscriptionId) {
     const client = getSquareClient()
     await client.subscriptions.cancel({ subscriptionId })
+  },
+
+  async getSubscription(subscriptionId) {
+    const client = getSquareClient()
+    const res = await client.subscriptions.get({ subscriptionId })
+    const s = res.subscription
+    if (!s?.id) return null
+    return { id: s.id, customerId: s.customerId, planVariationId: s.planVariationId, status: s.status, startDate: s.startDate }
+  },
+
+  async getCustomer(customerId) {
+    const client = getSquareClient()
+    const res = await client.customers.get({ customerId })
+    const c = res.customer
+    if (!c?.id) return null
+    return { id: c.id, email: c.emailAddress ?? undefined, givenName: c.givenName ?? undefined, familyName: c.familyName ?? undefined, phone: c.phoneNumber ?? undefined }
   },
 
   async listPlanVariations() {

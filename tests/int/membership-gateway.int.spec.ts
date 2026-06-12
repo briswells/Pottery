@@ -5,13 +5,15 @@ import { describe, it, expect, vi, beforeAll } from 'vitest'
 // file deliberately never boots Payload — booting it would cache the REAL
 // ./square (via the Members provisioning hook) and a late mock would no-op,
 // letting the gateway hit the live Square API.
-const { create, cancel, list } = vi.hoisted(() => ({
+const { create, cancel, list, getSub, getCust } = vi.hoisted(() => ({
   create: vi.fn(async () => ({ subscription: { id: 'sub_1', status: 'ACTIVE' } })),
   cancel: vi.fn(async () => ({})),
   list: vi.fn(async () => [] as any[]),
+  getSub: vi.fn(async () => ({ subscription: { id: 'sub_9', customerId: 'cus_9', planVariationId: 'PV_9', status: 'ACTIVE', startDate: '2026-01-01' } })),
+  getCust: vi.fn(async () => ({ customer: { id: 'cus_9', emailAddress: 'c@x.com', givenName: 'Cee', familyName: 'Ess', phoneNumber: '555' } })),
 }))
 vi.mock('../../src/lib/square', () => ({
-  getSquareClient: () => ({ subscriptions: { create, cancel }, catalog: { list } }),
+  getSquareClient: () => ({ subscriptions: { create, cancel, get: getSub }, customers: { get: getCust }, catalog: { list } }),
   SQUARE_LOCATION_ID: () => 'LOC1',
 }))
 
@@ -84,5 +86,27 @@ describe('squareMembershipGateway.listPlanVariations', () => {
     expect(out).toEqual([
       { variationId: 'PV_B', planName: 'Clay', variationName: 'Yearly', priceCents: 99900, cadence: 'ANNUAL' },
     ])
+  })
+})
+
+describe('squareMembershipGateway.getSubscription', () => {
+  it('returns a normalized subscription', async () => {
+    const out = await squareMembershipGateway.getSubscription('sub_9')
+    expect(out).toEqual({ id: 'sub_9', customerId: 'cus_9', planVariationId: 'PV_9', status: 'ACTIVE', startDate: '2026-01-01' })
+  })
+  it('returns null when Square has no such subscription', async () => {
+    getSub.mockResolvedValueOnce({ subscription: undefined } as any)
+    expect(await squareMembershipGateway.getSubscription('missing')).toBeNull()
+  })
+})
+
+describe('squareMembershipGateway.getCustomer', () => {
+  it('returns a normalized customer (emailAddress→email, phoneNumber→phone)', async () => {
+    const out = await squareMembershipGateway.getCustomer('cus_9')
+    expect(out).toEqual({ id: 'cus_9', email: 'c@x.com', givenName: 'Cee', familyName: 'Ess', phone: '555' })
+  })
+  it('returns null when Square has no such customer', async () => {
+    getCust.mockResolvedValueOnce({ customer: undefined } as any)
+    expect(await squareMembershipGateway.getCustomer('missing')).toBeNull()
   })
 })
