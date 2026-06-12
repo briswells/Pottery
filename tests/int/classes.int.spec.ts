@@ -15,9 +15,8 @@ describe('Classes', () => {
       data: {
         title: '6wk Wheel Throwing (Tuesdays)',
         category: 'wheel-series',
-        priceCents: 22000,
-        capacity: 8,
-        scheduleText: 'Tuesdays 6–8pm, starts soon',
+        defaultPriceCents: 22000,
+        defaultCapacity: 8,
       },
     })
     expect(cls.slug).toBe('6wk-wheel-throwing-tuesdays')
@@ -27,7 +26,7 @@ describe('Classes', () => {
     const payload = await getTestPayload()
     const cls = await payload.create({
       collection: 'classes',
-      data: { title: 'Raku Day', category: 'raku', priceCents: 9000, capacity: 10, scheduleText: 'Sat' },
+      data: { title: 'Raku Day', category: 'raku', defaultPriceCents: 9000, defaultCapacity: 10 },
     })
     expect(cls.status).toBe('active')
   })
@@ -36,7 +35,7 @@ describe('Classes', () => {
     const payload = await getTestPayload()
     const cls = await payload.create({
       collection: 'classes',
-      data: { title: '陶芸', category: 'raku', priceCents: 5000, capacity: 6, scheduleText: 'x' },
+      data: { title: '陶芸', category: 'raku', defaultPriceCents: 5000, defaultCapacity: 6 },
     })
     expect(cls.slug).toBeTruthy()
     expect(String(cls.slug).length).toBeGreaterThan(0)
@@ -46,7 +45,7 @@ describe('Classes', () => {
     const payload = await getTestPayload()
     const cls = await payload.create({
       collection: 'classes',
-      data: { title: 'Anything', slug: 'Custom Slug!', category: 'raku', priceCents: 5000, capacity: 6, scheduleText: 'x' },
+      data: { title: 'Anything', slug: 'Custom Slug!', category: 'raku', defaultPriceCents: 5000, defaultCapacity: 6 },
     })
     expect(cls.slug).toBe('custom-slug')
   })

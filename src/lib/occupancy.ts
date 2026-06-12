@@ -1,16 +1,16 @@
 import type { Payload } from 'payload'
 
-/** Raw number of seats held by active (paid or pending) bookings. */
-export async function occupiedSeats(payload: Payload, classId: number | string): Promise<number> {
+/** Raw number of seats held by active (paid or pending) bookings on an instance. */
+export async function occupiedSeats(payload: Payload, classInstanceId: number | string): Promise<number> {
   const { totalDocs } = await payload.count({
     collection: 'bookings',
-    where: { and: [{ class: { equals: classId } }, { status: { in: ['paid', 'pending'] } }] },
+    where: { and: [{ classInstance: { equals: classInstanceId } }, { status: { in: ['paid', 'pending'] } }] },
   })
   return totalDocs
 }
 
-export async function seatsRemaining(payload: Payload, classId: number | string): Promise<number> {
-  const cls = await payload.findByID({ collection: 'classes', id: classId })
-  const occupied = await occupiedSeats(payload, classId)
-  return Math.max(0, (cls.capacity ?? 0) - occupied)
+export async function seatsRemaining(payload: Payload, classInstanceId: number | string): Promise<number> {
+  const inst = await payload.findByID({ collection: 'class-instances', id: classInstanceId })
+  const occupied = await occupiedSeats(payload, classInstanceId)
+  return Math.max(0, (inst.capacity ?? 0) - occupied)
 }

@@ -5,7 +5,7 @@ import { slugifyFromTitle } from '../hooks/slugify'
 
 export const Classes: CollectionConfig = {
   slug: 'classes',
-  admin: { useAsTitle: 'title', group: 'Studio', defaultColumns: ['title', 'category', 'startDate', 'status'] },
+  admin: { useAsTitle: 'title', group: 'Studio', defaultColumns: ['title', 'category', 'status'] },
   access: {
     read: anyone,
     create: isAdminOrEditor,
@@ -30,25 +30,22 @@ export const Classes: CollectionConfig = {
     },
     { name: 'skillLevel', type: 'text' },
     { name: 'description', type: 'textarea' },
-    { name: 'image', type: 'upload', relationTo: 'media' },
+    { name: 'image', type: 'upload', relationTo: 'media', admin: { description: 'Title image; default for all instances' } },
     {
-      name: 'priceCents',
+      name: 'defaultPriceCents',
       type: 'number',
       required: true,
       min: 0,
-      label: 'Price',
+      label: 'Default price',
       admin: {
-        description: 'Price in dollars, e.g. 220 for $220.00',
+        description: 'Price in dollars, e.g. 220 for $220.00. Instances inherit this unless overridden.',
         components: {
           Field: '/admin/PriceField#PriceField',
           Cell: '/admin/PriceCell#PriceCell',
         },
       },
     },
-    { name: 'capacity', type: 'number', required: true, min: 1 },
-    { name: 'startDate', type: 'date' },
-    { name: 'scheduleText', type: 'text', required: true, admin: { description: 'e.g. "Tuesdays 6–8pm for 6 weeks"' } },
-    { name: 'instructor', type: 'relationship', relationTo: 'users' },
+    { name: 'defaultCapacity', type: 'number', required: true, min: 1, admin: { description: 'Instances inherit this unless overridden.' } },
     {
       name: 'status', type: 'select', defaultValue: 'active',
       options: [{ label: 'Active', value: 'active' }, { label: 'Archived', value: 'archived' }],

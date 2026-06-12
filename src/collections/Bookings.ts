@@ -3,7 +3,7 @@ import { isAdmin } from '../access/isAdmin'
 
 export const Bookings: CollectionConfig = {
   slug: 'bookings',
-  admin: { group: 'Commerce', useAsTitle: 'customerEmail', defaultColumns: ['customerName', 'class', 'status', 'amountCents'] },
+  admin: { group: 'Commerce', useAsTitle: 'customerEmail', defaultColumns: ['customerName', 'classInstance', 'status', 'amountCents'] },
   access: {
     read: isAdmin,
     create: () => false,   // created server-side only
@@ -11,7 +11,7 @@ export const Bookings: CollectionConfig = {
     delete: isAdmin,
   },
   fields: [
-    { name: 'class', type: 'relationship', relationTo: 'classes', required: true },
+    { name: 'classInstance', type: 'relationship', relationTo: 'class-instances', required: true },
     { name: 'person', type: 'relationship', relationTo: 'people', hasMany: false, admin: { description: 'The person who made this booking.' } },
     { name: 'customerName', type: 'text', required: true },
     { name: 'customerEmail', type: 'email', required: true },
