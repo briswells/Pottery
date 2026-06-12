@@ -3,7 +3,9 @@ import { Resend } from 'resend'
 export interface EmailInput { to: string; subject: string; html: string }
 
 let resend: Resend | null = null
-function getResend(): Resend {
+/** Lazily-created shared Resend client (one API-key read). Reused by the Payload
+ *  email adapter so all outbound mail goes through a single integration. */
+export function getResend(): Resend {
   if (!resend) resend = new Resend(process.env.RESEND_API_KEY)
   return resend
 }

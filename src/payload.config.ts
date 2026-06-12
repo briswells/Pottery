@@ -20,11 +20,18 @@ import { MembershipPage } from './globals/MembershipPage'
 import { FiringsPage } from './globals/FiringsPage'
 import { syncSquarePlans, ensureFreePlan } from './services/sync-square-plans'
 import { squareMembershipGateway } from './lib/membership-gateway'
+import { resendEmailAdapter, parseFromAddress } from './lib/payload-email-adapter'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 export default buildConfig({
+  // Public origin used to build links in transactional emails (e.g. the admin
+  // forgot-password reset URL) and elsewhere.
+  serverURL: process.env.PUBLIC_BASE_URL,
+  // Route Payload's built-in transactional emails (admin forgot-password, etc.)
+  // through the app's shared Resend integration. `from` defaults from EMAIL_FROM.
+  email: resendEmailAdapter(parseFromAddress(process.env.EMAIL_FROM)),
   admin: {
     user: Users.slug,
     importMap: {
