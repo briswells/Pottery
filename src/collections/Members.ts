@@ -60,5 +60,8 @@ export const Members: CollectionConfig = {
     { name: 'subscriptionStatus', type: 'text', admin: { readOnly: true } },
     { name: 'lastPaymentDate', type: 'date', admin: { readOnly: true } },
     { name: 'lastPaymentStatus', type: 'text', admin: { readOnly: true } },
+    // Internal: single-use, expiring token for passwordless self-serve cancellation.
+    { name: 'cancelTokenHash', type: 'text', admin: { hidden: true } },
+    { name: 'cancelTokenExpiresAt', type: 'date', admin: { hidden: true } },
   ],
 }
