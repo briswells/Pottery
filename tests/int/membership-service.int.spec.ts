@@ -38,15 +38,15 @@ describe('createMembership', () => {
     await expect(
       createMembership({ payload, gateway: gw, sendEmail: vi.fn(async () => {}) }, { name: 'No', email, sourceId: 'cnon:x', planVariationId: 'PV_TEST' }),
     ).rejects.toThrow(/subscription failed/i)
-    const found = await payload.find({ collection: 'members', where: { email: { equals: email } } })
+    const found = await payload.find({ collection: 'people', where: { email: { equals: email } } })
     expect(found.totalDocs).toBe(0)
   })
 })
 
-// Keep the shared test DB clean for sibling suites (members is an auth collection;
+// Keep the shared test DB clean for sibling suites (people is an auth collection;
 // payments may reference members). Delete in FK-safe order.
 afterAll(async () => {
   const payload = await getTestPayload()
   await payload.delete({ collection: 'payments', where: { type: { equals: 'membership' } }, overrideAccess: true })
-  await payload.delete({ collection: 'members', where: { email: { contains: '@test.local' } }, overrideAccess: true })
+  await payload.delete({ collection: 'people', where: { email: { contains: '@test.local' } }, overrideAccess: true })
 })

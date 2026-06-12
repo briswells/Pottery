@@ -26,6 +26,7 @@ describe('createPaidBooking', () => {
     await payload.delete({ collection: 'payments', where: {} })
     await payload.delete({ collection: 'bookings', where: {} })
     await payload.delete({ collection: 'classes', where: {} })
+    await payload.delete({ collection: 'people', where: { email: { like: '@test.local' } } })
   })
 
   it('charges the DB price (not the client) and records a paid booking + payment', async () => {
@@ -83,5 +84,57 @@ describe('createPaidBooking', () => {
     ] } })
     expect(paid.totalDocs).toBeLessThanOrEqual(1)
     expect(occupied.totalDocs).toBeLessThanOrEqual(1)
+  })
+
+  it('links the booking to a person, reusing the same person on a repeat email', async () => {
+    const payload = await getTestPayload()
+    const cls = await makeClass(payload, 5)
+    const d = deps()
+    const first = await createPaidBooking({ payload, ...d }, {
+      classId: cls.id, sourceId: 'cnon:fake', customerName: 'Repeat', customerEmail: 'repeat@test.local', customerPhone: '999',
+    })
+    const firstFull = await payload.findByID({ collection: 'bookings', id: first.id, depth: 0 })
+    expect(firstFull.person).toBeTruthy()
+
+    const cls2 = await makeClass(payload, 5)
+    const second = await createPaidBooking({ payload, ...d }, {
+      classId: cls2.id, sourceId: 'cnon:fake2', customerName: 'Repeat', customerEmail: 'REPEAT@test.local',
+    })
+    const secondFull = await payload.findByID({ collection: 'bookings', id: second.id, depth: 0 })
+    expect(secondFull.person).toBe(firstFull.person) // same person id
+  })
+
+  it('booking by an existing member email links to that member without clobbering their plan/status', async () => {
+    const payload = await getTestPayload()
+    // Create a free membership plan for this test
+    const plan = await payload.create({
+      collection: 'membership-plans',
+      overrideAccess: true,
+      data: { name: `Free ${Date.now()}`, kind: 'free' },
+    })
+    // Create a person who is already an active member
+    const member = await payload.create({
+      collection: 'people',
+      overrideAccess: true,
+      data: { name: 'Existing Member', email: 'member@test.local', plan: plan.id, status: 'active' },
+    })
+    // Book a class using the member's email
+    const cls = await makeClass(payload, 5)
+    const d = deps()
+    const booking = await createPaidBooking({ payload, ...d }, {
+      classId: cls.id, sourceId: 'cnon:member', customerName: 'Existing Member', customerEmail: 'member@test.local',
+    })
+    // Booking must link to the existing member, not a new duplicate
+    const bookingFull = await payload.findByID({ collection: 'bookings', id: booking.id, depth: 0 })
+    expect(bookingFull.person).toBe(member.id)
+    // Re-fetch the person and confirm plan/status were NOT clobbered
+    const personAfter = await payload.findByID({ collection: 'people', id: member.id, depth: 0 })
+    expect(personAfter.plan).toBe(plan.id)
+    expect(personAfter.status).toBe('active')
+    // Confirm no duplicate person was created
+    const count = await payload.count({ collection: 'people', where: { email: { equals: 'member@test.local' } } })
+    expect(count.totalDocs).toBe(1)
+    // Clean up membership-plan created in this test
+    await payload.delete({ collection: 'membership-plans', id: plan.id, overrideAccess: true })
   })
 })

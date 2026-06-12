@@ -4,7 +4,7 @@ import { getSquareClient, SQUARE_LOCATION_ID } from '../src/lib/square'
 import { squareMembershipGateway } from '../src/lib/membership-gateway'
 import { syncSquarePlans } from '../src/services/sync-square-plans'
 
-type MemberStatus = 'active' | 'past_due' | 'paused' | 'cancelled'
+type MemberStatus = 'none' | 'active' | 'past_due' | 'paused' | 'cancelled'
 
 async function run() {
   const payload = await getPayload({ config: await config })
@@ -53,7 +53,7 @@ async function run() {
     }
 
     const existing = await payload.find({
-      collection: 'members',
+      collection: 'people',
       where: { squareSubscriptionId: { equals: sub.id } },
       limit: 1,
       overrideAccess: true,
@@ -70,7 +70,7 @@ async function run() {
 
     try {
       await payload.create({
-        collection: 'members',
+        collection: 'people',
         overrideAccess: true,
         // These members are ALREADY provisioned in Square — we're syncing FROM
         // Square. Mark the write as webhook-sourced so the reconcile hook skips:

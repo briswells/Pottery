@@ -64,12 +64,12 @@ export type SupportedTimezones =
 export interface Config {
   auth: {
     users: UserAuthOperations;
-    members: MemberAuthOperations;
+    people: PersonAuthOperations;
   };
   blocks: {};
   collections: {
     users: User;
-    members: Member;
+    people: Person;
     'membership-plans': MembershipPlan;
     media: Media;
     classes: Class;
@@ -84,7 +84,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
-    members: MembersSelect<false> | MembersSelect<true>;
+    people: PeopleSelect<false> | PeopleSelect<true>;
     'membership-plans': MembershipPlansSelect<false> | MembershipPlansSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     classes: ClassesSelect<false> | ClassesSelect<true>;
@@ -116,7 +116,7 @@ export interface Config {
   widgets: {
     collections: CollectionsWidget;
   };
-  user: User | Member;
+  user: User | Person;
   jobs: {
     tasks: unknown;
     workflows: unknown;
@@ -140,7 +140,7 @@ export interface UserAuthOperations {
     password: string;
   };
 }
-export interface MemberAuthOperations {
+export interface PersonAuthOperations {
   forgotPassword: {
     email: string;
     password: string;
@@ -238,17 +238,17 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "members".
+ * via the `definition` "people".
  */
-export interface Member {
+export interface Person {
   id: number;
   name: string;
   /**
-   * Membership plan. Use a Free plan for unbilled members.
+   * Assign a plan to make this person a member; leave empty for a non-member contact.
    */
   plan?: (number | null) | MembershipPlan;
   phone?: string | null;
-  status: 'active' | 'past_due' | 'paused' | 'cancelled';
+  status?: ('none' | 'active' | 'past_due' | 'paused' | 'cancelled') | null;
   joinedDate?: string | null;
   /**
    * e.g. "Shelf B-12"
@@ -279,7 +279,7 @@ export interface Member {
       }[]
     | null;
   password?: string | null;
-  collection: 'members';
+  collection: 'people';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -345,6 +345,10 @@ export interface Class {
 export interface Booking {
   id: number;
   class: number | Class;
+  /**
+   * The person who made this booking.
+   */
+  person?: (number | null) | Person;
   customerName: string;
   customerEmail: string;
   customerPhone?: string | null;
@@ -364,7 +368,7 @@ export interface Payment {
   /**
    * Set for membership payments
    */
-  member?: (number | null) | Member;
+  member?: (number | null) | Person;
   /**
    * Set for class booking payments
    */
@@ -393,6 +397,10 @@ export interface Payment {
 export interface FiringRequest {
   id: number;
   name: string;
+  /**
+   * The person who requested this firing.
+   */
+  person?: (number | null) | Person;
   email: string;
   phone?: string | null;
   description: string;
@@ -458,8 +466,8 @@ export interface PayloadLockedDocument {
         value: number | User;
       } | null)
     | ({
-        relationTo: 'members';
-        value: number | Member;
+        relationTo: 'people';
+        value: number | Person;
       } | null)
     | ({
         relationTo: 'membership-plans';
@@ -492,8 +500,8 @@ export interface PayloadLockedDocument {
         value: number | User;
       }
     | {
-        relationTo: 'members';
-        value: number | Member;
+        relationTo: 'people';
+        value: number | Person;
       };
   updatedAt: string;
   createdAt: string;
@@ -510,8 +518,8 @@ export interface PayloadPreference {
         value: number | User;
       }
     | {
-        relationTo: 'members';
-        value: number | Member;
+        relationTo: 'people';
+        value: number | Person;
       };
   key?: string | null;
   value?:
@@ -568,9 +576,9 @@ export interface UsersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "members_select".
+ * via the `definition` "people_select".
  */
-export interface MembersSelect<T extends boolean = true> {
+export interface PeopleSelect<T extends boolean = true> {
   name?: T;
   plan?: T;
   phone?: T;
@@ -684,6 +692,7 @@ export interface ClassesSelect<T extends boolean = true> {
  */
 export interface BookingsSelect<T extends boolean = true> {
   class?: T;
+  person?: T;
   customerName?: T;
   customerEmail?: T;
   customerPhone?: T;
@@ -715,6 +724,7 @@ export interface PaymentsSelect<T extends boolean = true> {
  */
 export interface FiringRequestsSelect<T extends boolean = true> {
   name?: T;
+  person?: T;
   email?: T;
   phone?: T;
   description?: T;

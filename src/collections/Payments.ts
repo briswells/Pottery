@@ -16,7 +16,7 @@ export const Payments: CollectionConfig = {
       { label: 'Membership', value: 'membership' },
       { label: 'Firing', value: 'firing' },
     ] },
-    { name: 'member', type: 'relationship', relationTo: 'members', admin: { description: 'Set for membership payments' } },
+    { name: 'member', type: 'relationship', relationTo: 'people', admin: { description: 'Set for membership payments' } },
     { name: 'booking', type: 'relationship', relationTo: 'bookings', admin: { description: 'Set for class booking payments' } },
     { name: 'firingRequest', type: 'relationship', relationTo: 'firing-requests', admin: { description: 'Set for firing payments' } },
     {

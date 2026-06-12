@@ -26,8 +26,8 @@ export async function requestMembershipCancel(deps: CancelRequestDeps, email: st
   const { payload, sendEmail, baseUrl } = deps
   if (!email) return
   const { docs } = await payload.find({
-    collection: 'members',
-    where: { email: { equals: email } },
+    collection: 'people',
+    where: { email: { equals: email.toLowerCase() } },
     limit: 1,
     overrideAccess: true,
   })
@@ -36,7 +36,7 @@ export async function requestMembershipCancel(deps: CancelRequestDeps, email: st
 
   const raw = randomBytes(32).toString('base64url')
   await payload.update({
-    collection: 'members',
+    collection: 'people',
     id: member.id,
     overrideAccess: true,
     data: { cancelTokenHash: hashToken(raw), cancelTokenExpiresAt: new Date(Date.now() + TOKEN_TTL_MS).toISOString() },
@@ -59,7 +59,7 @@ export async function requestMembershipCancel(deps: CancelRequestDeps, email: st
 async function findByToken(payload: Payload, token: string): Promise<any | null> {
   if (!token) return null
   const { docs } = await payload.find({
-    collection: 'members',
+    collection: 'people',
     where: { cancelTokenHash: { equals: hashToken(token) } },
     limit: 1,
     overrideAccess: true,
@@ -91,7 +91,7 @@ export async function confirmMembershipCancel(deps: CancelConfirmDeps, token: st
   const state = tokenState(member)
   if (!state.ok) return state
   await deps.payload.update({
-    collection: 'members',
+    collection: 'people',
     id: member.id,
     overrideAccess: true,
     data: { status: 'cancelled', cancelTokenHash: null, cancelTokenExpiresAt: null },

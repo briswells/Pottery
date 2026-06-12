@@ -72,7 +72,7 @@ upsertPersonByEmail(
 
 Behavior:
 - Normalize email to lowercase (Payload auth already lowercases stored emails; we match on the normalized value).
-- Find an existing person by email. If found, **enrich without clobbering**: fill `phone`/`squareCustomerId`/`name` only where the existing value is empty. Return it.
+- Find an existing person by email. If found, **enrich without clobbering**: fill `phone`/`squareCustomerId` only where the existing value is empty. Return it.
 - If not found, **create** with `plan: undefined`, `status: 'none'`, the provided fields, and `joinedDate` unset. No special context flag is needed to keep this inert: `reconcileMemberSubscription` calls `reconcileMemberPlan`, which returns early when there's no plan — so a person created without a plan never triggers a Square subscription. A test asserts zero gateway calls to lock this guarantee in.
 - Returns the Person doc. Dependency-injected `payload`/`req` so it threads the caller's transaction (per the hook-transaction footgun) and is unit-testable.
 
