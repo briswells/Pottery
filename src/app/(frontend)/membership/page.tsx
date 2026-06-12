@@ -1,5 +1,6 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,6 +33,11 @@ export default async function MembershipPage() {
       <a className="pp-btn" href="mailto:getcreative@portsidepottery.com?subject=Membership">
         Ask about membership
       </a>
+      <p style={{ marginTop: 16 }}>
+        <Link href="/membership/cancel" style={{ color: 'var(--pp-muted)', fontSize: 14 }}>
+          Cancel my membership
+        </Link>
+      </p>
     </div>
   )
 }
