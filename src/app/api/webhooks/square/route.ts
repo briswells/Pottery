@@ -4,7 +4,7 @@ import { WebhooksHelper } from 'square'
 import { sendEmail } from '../../../../lib/email'
 import { syncSquarePlans } from '../../../../services/sync-square-plans'
 import { squareMembershipGateway, type MembershipGateway } from '../../../../lib/membership-gateway'
-import { ensureMemberFromSubscription, type SquareSubscriptionInput } from '../../../../services/square-member-sync'
+import { ensureMemberFromSubscription, SQUARE_SUBSCRIPTION_STATUS_MAP, type SquareSubscriptionInput } from '../../../../services/square-member-sync'
 
 export async function handleCatalogVersionUpdated(payload: Awaited<ReturnType<typeof getPayload>>) {
   await syncSquarePlans({ payload, gateway: squareMembershipGateway })
@@ -179,14 +179,13 @@ export async function POST(req: Request) {
     let member = await findMemberBySubscription(sub?.id)
     if (!member && sub?.id) {
       try {
-        member = await ensureMemberForSubscriptionId(deps, sub.id)
+        member = await handleSubscriptionCreated(deps, sub)
       } catch (e) {
         console.error('subscription.updated auto-create failed:', e)
       }
     }
     if (member && sub?.status) {
-      const map: Record<string, string> = { ACTIVE: 'active', PAUSED: 'paused', CANCELED: 'cancelled', DEACTIVATED: 'cancelled' }
-      const nextStatus = map[sub.status] ?? member.status
+      const nextStatus = SQUARE_SUBSCRIPTION_STATUS_MAP[sub.status] ?? member.status
       // Idempotent: only write when something actually changes (also avoids
       // needless churn through the People afterChange → Square hook).
       if (member.subscriptionStatus !== sub.status || member.status !== nextStatus) {

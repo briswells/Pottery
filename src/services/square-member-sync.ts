@@ -4,7 +4,7 @@ import { syncSquarePlans } from './sync-square-plans'
 import { upsertPersonByEmail } from './people'
 import type { Person } from '../payload-types'
 
-/** Square subscription status → our membership status. Shared by the webhook + import. */
+/** Square subscription status → our membership status. Used by the service and the subscription.updated webhook branch. */
 export const SQUARE_SUBSCRIPTION_STATUS_MAP: Record<string, Person['status']> = {
   ACTIVE: 'active',
   PAUSED: 'paused',
