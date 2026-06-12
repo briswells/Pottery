@@ -1,11 +1,12 @@
 import { describe, it, expect, afterAll } from 'vitest'
 import { getTestPayload } from './helpers'
 import { createAndSendFiringInvoice } from '../../src/services/firing-invoice'
+import type { FiringInvoiceGateway } from '../../src/lib/firing-invoice-gateway'
 
 // A fake gateway so the test never calls Square; it returns a customer id we then
 // assert lands on the linked Person.
-const fakeGateway = {
-  createAndSendInvoice: async () => ({ customerId: 'cus_firing_1', invoiceId: 'inv_1', invoiceUrl: 'https://x/inv_1' }),
+const fakeGateway: FiringInvoiceGateway = {
+  createAndSendInvoice: async () => ({ customerId: 'cus_firing_1', invoiceId: 'inv_1', invoiceUrl: 'https://x/inv_1', status: 'UNPAID' }),
 }
 
 describe('createAndSendFiringInvoice person link', () => {
@@ -21,9 +22,10 @@ describe('createAndSendFiringInvoice person link', () => {
       collection: 'firing-requests', overrideAccess: true,
       data: { name: 'Fire Person', email: 'fp@firing.local', description: 'a pot', quotedPriceCents: 4500, status: 'submitted' },
     })
-    await createAndSendFiringInvoice({ payload, gateway: fakeGateway as any }, req as any)
+    await createAndSendFiringInvoice({ payload, gateway: fakeGateway }, req as any)
 
     const updated = await payload.findByID({ collection: 'firing-requests', id: req.id, depth: 0 })
+    expect(updated.status).toBe('invoiced')
     expect(updated.person).toBeTruthy()
     const person = await payload.findByID({ collection: 'people', id: updated.person as number })
     expect(person.squareCustomerId).toBe('cus_firing_1')

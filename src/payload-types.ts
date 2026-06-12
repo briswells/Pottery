@@ -345,6 +345,10 @@ export interface Class {
 export interface Booking {
   id: number;
   class: number | Class;
+  /**
+   * The person who made this booking.
+   */
+  person?: (number | null) | Person;
   customerName: string;
   customerEmail: string;
   customerPhone?: string | null;
@@ -393,6 +397,10 @@ export interface Payment {
 export interface FiringRequest {
   id: number;
   name: string;
+  /**
+   * The person who requested this firing.
+   */
+  person?: (number | null) | Person;
   email: string;
   phone?: string | null;
   description: string;
@@ -684,6 +692,7 @@ export interface ClassesSelect<T extends boolean = true> {
  */
 export interface BookingsSelect<T extends boolean = true> {
   class?: T;
+  person?: T;
   customerName?: T;
   customerEmail?: T;
   customerPhone?: T;
@@ -715,6 +724,7 @@ export interface PaymentsSelect<T extends boolean = true> {
  */
 export interface FiringRequestsSelect<T extends boolean = true> {
   name?: T;
+  person?: T;
   email?: T;
   phone?: T;
   description?: T;
