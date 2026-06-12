@@ -36,12 +36,12 @@ const CARD_STYLE = {
 const LOAD_ERROR = 'The payment form could not be loaded. Please refresh and try again.'
 
 export function BookingForm({
-  classId,
+  classInstanceId,
   slug,
   priceCents,
   priceLabel,
 }: {
-  classId: string | number
+  classInstanceId: string | number
   slug: string
   priceCents: number
   priceLabel: string
@@ -80,7 +80,7 @@ export function BookingForm({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            classId,
+            classInstanceId,
             sourceId,
             customerName: f.customerName,
             customerEmail: f.customerEmail,
@@ -98,7 +98,7 @@ export function BookingForm({
         busyRef.current = false
       }
     },
-    [classId, slug, router],
+    [classInstanceId, slug, router],
   )
 
   // Effect A: load the SDK and create the payments instance (no card yet).
@@ -237,7 +237,7 @@ export function BookingForm({
               <WalletButtons
                 payments={payments}
                 priceCents={priceCents}
-                referenceId={`booking-${classId}`}
+                referenceId={`booking-instance-${classInstanceId}`}
                 disabled={busy}
                 onToken={completeBooking}
                 onError={setMsg}
