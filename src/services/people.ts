@@ -24,6 +24,7 @@ export async function upsertPersonByEmail(
   input: UpsertPersonInput,
 ): Promise<Person> {
   const email = input.email.trim().toLowerCase()
+  if (!email) throw new Error('upsertPersonByEmail requires a non-empty email')
 
   const { docs } = await payload.find({
     collection: 'people',
@@ -33,22 +34,22 @@ export async function upsertPersonByEmail(
     req,
   })
 
-  const existing = docs[0] as Person | undefined
+  const existing = docs[0]
   if (existing) {
     const patch: Record<string, unknown> = {}
     if (!existing.phone && input.phone) patch.phone = input.phone
     if (!existing.squareCustomerId && input.squareCustomerId) patch.squareCustomerId = input.squareCustomerId
     if (Object.keys(patch).length === 0) return existing
-    return (await payload.update({
+    return await payload.update({
       collection: 'people',
       id: existing.id,
       overrideAccess: true,
       req,
       data: patch,
-    })) as Person
+    })
   }
 
-  return (await payload.create({
+  return await payload.create({
     collection: 'people',
     overrideAccess: true,
     req,
@@ -59,5 +60,5 @@ export async function upsertPersonByEmail(
       status: 'none',
       squareCustomerId: input.squareCustomerId ?? undefined,
     },
-  })) as Person
+  })
 }
