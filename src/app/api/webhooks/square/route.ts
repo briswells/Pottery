@@ -3,10 +3,41 @@ import config from '@payload-config'
 import { WebhooksHelper } from 'square'
 import { sendEmail } from '../../../../lib/email'
 import { syncSquarePlans } from '../../../../services/sync-square-plans'
-import { squareMembershipGateway } from '../../../../lib/membership-gateway'
+import { squareMembershipGateway, type MembershipGateway } from '../../../../lib/membership-gateway'
+import { ensureMemberFromSubscription, type SquareSubscriptionInput } from '../../../../services/square-member-sync'
 
 export async function handleCatalogVersionUpdated(payload: Awaited<ReturnType<typeof getPayload>>) {
   await syncSquarePlans({ payload, gateway: squareMembershipGateway })
+}
+
+type AutoCreateDeps = { payload: Awaited<ReturnType<typeof getPayload>>; gateway: MembershipGateway }
+
+/** Normalize a Square webhook subscription object (snake_case) to the service shape. */
+function normalizeSubscription(raw: any): SquareSubscriptionInput | null {
+  const id = raw?.id
+  if (!id) return null
+  return {
+    id,
+    customerId: raw.customer_id ?? raw.customerId,
+    planVariationId: raw.plan_variation_id ?? raw.planVariationId,
+    status: raw.status,
+    startDate: raw.start_date ?? raw.startDate,
+  }
+}
+
+/** subscription.created: build a member from the event's subscription object. */
+export async function handleSubscriptionCreated(deps: AutoCreateDeps, rawSubscription: any) {
+  const sub = normalizeSubscription(rawSubscription)
+  if (!sub) return null
+  return ensureMemberFromSubscription(deps, sub)
+}
+
+/** Safety net: resolve a subscription id via the gateway, then ensure the member. */
+export async function ensureMemberForSubscriptionId(deps: AutoCreateDeps, subscriptionId: string | undefined) {
+  if (!subscriptionId) return null
+  const sub = await deps.gateway.getSubscription(subscriptionId)
+  if (!sub) return null
+  return ensureMemberFromSubscription(deps, sub)
 }
 
 export async function POST(req: Request) {
@@ -24,6 +55,7 @@ export async function POST(req: Request) {
 
   const event = JSON.parse(requestBody)
   const payload = await getPayload({ config: await config })
+  const deps = { payload, gateway: squareMembershipGateway }
 
   // Reconcile a booking's status from a Square event, keyed on the Square
   // payment id we stored at booking time. Idempotent: only writes on change.
@@ -73,7 +105,10 @@ export async function POST(req: Request) {
     // Square delivers webhook JSON in snake_case (we parse the raw body, not via
     // the SDK), so read subscription_id; fall back to camelCase just in case.
     const subscriptionId = invoice?.subscription_id ?? invoice?.subscriptionId
-    const member = await findMemberBySubscription(subscriptionId)
+    let member = await findMemberBySubscription(subscriptionId)
+    if (!member && subscriptionId) {
+      try { member = await ensureMemberForSubscriptionId(deps, subscriptionId) } catch (e) { console.error('invoice.payment_made auto-create failed:', e) }
+    }
     if (member) {
       await payload.update({ collection: 'people', id: member.id, overrideAccess: true, context: { fromSquareWebhook: true }, data: {
         status: 'active', subscriptionStatus: 'ACTIVE',
@@ -110,7 +145,10 @@ export async function POST(req: Request) {
     const status: string | undefined = invoice?.status // UNPAID | PAYMENT_PENDING | CANCELED | ...
     if (status === 'UNPAID' || status === 'PAYMENT_PENDING') {
       const subscriptionId = invoice?.subscription_id ?? invoice?.subscriptionId
-      const member = await findMemberBySubscription(subscriptionId)
+      let member = await findMemberBySubscription(subscriptionId)
+      if (!member && subscriptionId) {
+        try { member = await ensureMemberForSubscriptionId(deps, subscriptionId) } catch (e) { console.error('invoice.updated auto-create failed:', e) }
+      }
       if (member && member.status !== 'past_due') {
         await payload.update({ collection: 'people', id: member.id, overrideAccess: true, context: { fromSquareWebhook: true }, data: {
           status: 'past_due', lastPaymentStatus: 'FAILED',
@@ -122,9 +160,18 @@ export async function POST(req: Request) {
           html: `<p>Hi ${member.name}, we couldn't process your latest membership payment. Please update your card or contact the studio. Your access is unchanged for now.</p>` })
       }
     }
+  } else if (event.type === 'subscription.created') {
+    try {
+      await handleSubscriptionCreated(deps, event.data?.object?.subscription)
+    } catch (e) {
+      console.error('subscription.created auto-create failed:', e)
+    }
   } else if (event.type === 'subscription.updated') {
     const sub = event.data?.object?.subscription
-    const member = await findMemberBySubscription(sub?.id)
+    let member = await findMemberBySubscription(sub?.id)
+    if (!member && sub?.id) {
+      try { member = await ensureMemberForSubscriptionId(deps, sub.id) } catch (e) { console.error('subscription.updated auto-create failed:', e) }
+    }
     if (member && sub?.status) {
       const map: Record<string, string> = { ACTIVE: 'active', PAUSED: 'paused', CANCELED: 'cancelled', DEACTIVATED: 'cancelled' }
       const nextStatus = map[sub.status] ?? member.status
