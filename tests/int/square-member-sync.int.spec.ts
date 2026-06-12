@@ -106,4 +106,21 @@ describe('ensureMemberFromSubscription', () => {
     expect(await ensureMemberFromSubscription({ payload, gateway }, { id: 'x', planVariationId: 'PV', status: 'ACTIVE' })).toBeNull()
     expect(await ensureMemberFromSubscription({ payload, gateway }, { id: 'y', customerId: 'cus', status: 'ACTIVE' })).toBeNull()
   })
+
+  it('does not overwrite a different existing subscription on an email match', async () => {
+    const payload = await getTestPayload()
+    await makeSquarePlan(payload, 'PV_CONFLICT')
+    const gateway = makeGateway()
+    // A member who already has a DIFFERENT live subscription, same email as the incoming sub's customer.
+    const existing = await payload.create({
+      collection: 'people', overrideAccess: true, context: { fromSquareWebhook: true },
+      data: { name: 'Resub', email: 'cus_conflict@sq.local', status: 'active', squareSubscriptionId: 'sub_OLD' },
+    })
+    const result = await ensureMemberFromSubscription({ payload, gateway }, {
+      id: 'sub_NEW', customerId: 'cus_conflict', planVariationId: 'PV_CONFLICT', status: 'ACTIVE',
+    })
+    expect(result).toBeNull()
+    const reloaded = await payload.findByID({ collection: 'people', id: existing.id, depth: 0 })
+    expect(reloaded.squareSubscriptionId).toBe('sub_OLD') // unchanged, not overwritten
+  })
 })
