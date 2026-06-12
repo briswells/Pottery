@@ -14,7 +14,7 @@ describe('membership-plans collection + member.plan', () => {
     const payload = await getTestPayload()
     const plan = await makeFreePlan(payload)
     const member = await payload.create({
-      collection: 'members',
+      collection: 'people',
       overrideAccess: true,
       data: { name: 'Planned', email: `planned-${Date.now()}@test.local`, status: 'active', plan: plan.id },
     })
@@ -22,26 +22,27 @@ describe('membership-plans collection + member.plan', () => {
     expect(member.plan).toBeTruthy()
   })
 
-  it('requires a plan when an admin creates a member (no plan → rejected)', async () => {
+  it('lets an admin create a non-member person with no plan (status none)', async () => {
     const payload = await getTestPayload()
     const staff = await payload.create({
       collection: 'users',
       data: { name: 'Staff', email: `staff-${Date.now()}@test.local`, password: 'test12345' },
     })
-    await expect(
-      payload.create({
-        collection: 'members',
-        overrideAccess: false,
-        user: staff,
-        data: { name: 'NoPlan', email: `noplan-${Date.now()}@test.local`, status: 'active', plan: undefined },
-      }),
-    ).rejects.toThrow()
+    const person = await payload.create({
+      collection: 'people',
+      overrideAccess: false,
+      user: staff,
+      data: { name: 'NoPlan', email: `noplan-${Date.now()}@test.local` },
+    })
+    expect(person.id).toBeTruthy()
+    expect(person.plan).toBeFalsy()
+    expect(person.status).toBe('none')
   })
 
   it('allows programmatic creation without a plan (no logged-in user)', async () => {
     const payload = await getTestPayload()
     const m = await payload.create({
-      collection: 'members',
+      collection: 'people',
       overrideAccess: true,
       data: { name: 'Prog', email: `prog-${Date.now()}@test.local`, status: 'paused' },
     })
@@ -51,6 +52,6 @@ describe('membership-plans collection + member.plan', () => {
 
 afterAll(async () => {
   const payload = await getTestPayload()
-  await payload.delete({ collection: 'members', where: { email: { contains: '@test.local' } }, overrideAccess: true })
+  await payload.delete({ collection: 'people', where: { email: { contains: '@test.local' } }, overrideAccess: true })
   await payload.delete({ collection: 'membership-plans', where: { name: { contains: 'Free ' } }, overrideAccess: true })
 })

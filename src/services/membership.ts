@@ -25,7 +25,7 @@ export async function createMembership(deps: MembershipDeps, input: MembershipIn
   const { subscriptionId, status } = await gateway.createSubscription({ customerId, cardId, planVariationId: input.planVariationId })
 
   const member = await payload.create({
-    collection: 'members',
+    collection: 'people',
     overrideAccess: true,
     data: {
       name: input.name,
@@ -96,7 +96,7 @@ export async function reconcileMemberPlan(
   const { member, previousDoc } = args
 
   const write = (data: Record<string, unknown>) =>
-    payload.update({ collection: 'members', id: member.id, overrideAccess: true, req, context: { fromMemberHook: true }, data })
+    payload.update({ collection: 'people', id: member.id, overrideAccess: true, req, context: { fromMemberHook: true }, data })
 
   const currentPlanId = planId(member.plan)
   if (!currentPlanId) return

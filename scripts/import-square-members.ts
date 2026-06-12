@@ -53,7 +53,7 @@ async function run() {
     }
 
     const existing = await payload.find({
-      collection: 'members',
+      collection: 'people',
       where: { squareSubscriptionId: { equals: sub.id } },
       limit: 1,
       overrideAccess: true,
@@ -70,7 +70,7 @@ async function run() {
 
     try {
       await payload.create({
-        collection: 'members',
+        collection: 'people',
         overrideAccess: true,
         // These members are ALREADY provisioned in Square — we're syncing FROM
         // Square. Mark the write as webhook-sourced so the reconcile hook skips:

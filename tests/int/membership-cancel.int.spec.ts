@@ -83,7 +83,7 @@ describe('confirmMembershipCancel (mutating)', () => {
     const res = await confirmMembershipCancel({ payload }, 'raw')
     expect(res).toEqual({ ok: true })
     expect(payload.update).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'members', id: 1, data: expect.objectContaining({ status: 'cancelled', cancelTokenHash: null, cancelTokenExpiresAt: null }) }),
+      expect.objectContaining({ collection: 'people', id: 1, data: expect.objectContaining({ status: 'cancelled', cancelTokenHash: null, cancelTokenExpiresAt: null }) }),
     )
   })
 

@@ -12,7 +12,7 @@ import { getSquareClient } from '../lib/square'
  */
 export const cancelSquareSubscriptionOnDelete: CollectionBeforeDeleteHook = async ({ id, req }) => {
   const member = (await req.payload.findByID({
-    collection: 'members',
+    collection: 'people',
     id,
     req,
     overrideAccess: true,

@@ -38,7 +38,7 @@ describe('createMembership', () => {
     await expect(
       createMembership({ payload, gateway: gw, sendEmail: vi.fn(async () => {}) }, { name: 'No', email, sourceId: 'cnon:x', planVariationId: 'PV_TEST' }),
     ).rejects.toThrow(/subscription failed/i)
-    const found = await payload.find({ collection: 'members', where: { email: { equals: email } } })
+    const found = await payload.find({ collection: 'people', where: { email: { equals: email } } })
     expect(found.totalDocs).toBe(0)
   })
 })
@@ -48,5 +48,5 @@ describe('createMembership', () => {
 afterAll(async () => {
   const payload = await getTestPayload()
   await payload.delete({ collection: 'payments', where: { type: { equals: 'membership' } }, overrideAccess: true })
-  await payload.delete({ collection: 'members', where: { email: { contains: '@test.local' } }, overrideAccess: true })
+  await payload.delete({ collection: 'people', where: { email: { contains: '@test.local' } }, overrideAccess: true })
 })

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
 import { Users } from './collections/Users'
-import { Members } from './collections/Members'
+import { People } from './collections/People'
 import { MembershipPlans } from './collections/MembershipPlans'
 import { Media } from './collections/Media'
 import { Classes } from './collections/Classes'
@@ -48,7 +48,7 @@ export default buildConfig({
       payload.logger.error(`Startup plan sync failed: ${e instanceof Error ? e.message : e}`)
     }
   },
-  collections: [Users, Members, MembershipPlans, Media, Classes, Bookings, Payments, FiringRequests],
+  collections: [Users, People, MembershipPlans, Media, Classes, Bookings, Payments, FiringRequests],
   globals: [SiteSettings, HomePage, MembershipPage, FiringsPage],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

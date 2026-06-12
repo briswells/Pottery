@@ -7,7 +7,7 @@ describe('members no-login auth', () => {
     // status 'paused' so the (later) provisioning hook skips it — isolates the
     // auth change from any Square calls.
     const member = await payload.create({
-      collection: 'members',
+      collection: 'people',
       overrideAccess: true,
       data: { name: 'No Password', email: `nopw-${Date.now()}@test.local`, status: 'paused' },
     })
@@ -18,7 +18,7 @@ describe('members no-login auth', () => {
 afterAll(async () => {
   const { getTestPayload } = await import('./helpers')
   const payload = await getTestPayload()
-  await payload.delete({ collection: 'members', where: { email: { contains: '@test.local' } }, overrideAccess: true })
+  await payload.delete({ collection: 'people', where: { email: { contains: '@test.local' } }, overrideAccess: true })
 })
 
 import { reconcileMemberPlan } from '../../src/services/membership'

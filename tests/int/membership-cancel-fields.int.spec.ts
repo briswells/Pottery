@@ -5,13 +5,13 @@ describe('member cancel-token fields', () => {
   it('stores and reads cancelTokenHash + cancelTokenExpiresAt', async () => {
     const payload = await getTestPayload()
     const m = await payload.create({
-      collection: 'members',
+      collection: 'people',
       overrideAccess: true,
       data: { name: 'TokenFields', email: `tok-${Date.now()}@test.local`, status: 'paused' },
     })
     const exp = new Date(Date.now() + 60_000).toISOString()
     const updated = await payload.update({
-      collection: 'members', id: m.id, overrideAccess: true,
+      collection: 'people', id: m.id, overrideAccess: true,
       data: { cancelTokenHash: 'abc123', cancelTokenExpiresAt: exp },
     })
     expect(updated.cancelTokenHash).toBe('abc123')
@@ -21,5 +21,5 @@ describe('member cancel-token fields', () => {
 
 afterAll(async () => {
   const payload = await getTestPayload()
-  await payload.delete({ collection: 'members', where: { email: { contains: '@test.local' } }, overrideAccess: true })
+  await payload.delete({ collection: 'people', where: { email: { contains: '@test.local' } }, overrideAccess: true })
 })
