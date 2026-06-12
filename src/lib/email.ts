@@ -1,6 +1,16 @@
 import { Resend } from 'resend'
 
-export interface EmailInput { to: string; subject: string; html: string }
+export interface EmailAttachment {
+  filename: string
+  content: string | Buffer
+}
+
+export interface EmailInput {
+  to: string
+  subject: string
+  html: string
+  attachments?: EmailAttachment[]
+}
 
 let resend: Resend | null = null
 /** Lazily-created shared Resend client (one API-key read). Reused by the Payload
@@ -10,9 +20,15 @@ export function getResend(): Resend {
   return resend
 }
 
-export async function sendEmail({ to, subject, html }: EmailInput): Promise<void> {
+export async function sendEmail({ to, subject, html, attachments }: EmailInput): Promise<void> {
   // Resend resolves with { data, error } instead of throwing on API errors,
   // so surface a failure explicitly rather than reporting a false success.
-  const { error } = await getResend().emails.send({ from: process.env.EMAIL_FROM!, to, subject, html })
+  const { error } = await getResend().emails.send({
+    from: process.env.EMAIL_FROM!,
+    to,
+    subject,
+    html,
+    ...(attachments ? { attachments } : {}),
+  })
   if (error) throw new Error(`Email send failed: ${error.message}`)
 }

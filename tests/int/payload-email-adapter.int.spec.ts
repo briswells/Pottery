@@ -41,6 +41,20 @@ describe('resendEmailAdapter.sendEmail', () => {
     send.mockResolvedValueOnce({ data: null, error: { message: 'boom' } } as any)
     await expect(adapter().sendEmail({ to: 'a@x.com', subject: 's', html: 'h' } as any)).rejects.toThrow(/boom/)
   })
+
+  it('passes attachments through to Resend', async () => {
+    await adapter().sendEmail({
+      to: 'a@x.com',
+      subject: 's',
+      html: 'h',
+      attachments: [{ filename: 'class.ics', content: 'BEGIN:VCALENDAR' }],
+    } as any)
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attachments: [{ filename: 'class.ics', content: 'BEGIN:VCALENDAR' }],
+      }),
+    )
+  })
 })
 
 describe('parseFromAddress', () => {
