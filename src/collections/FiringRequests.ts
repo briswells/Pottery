@@ -21,6 +21,7 @@ export const FiringRequests: CollectionConfig = {
   },
   fields: [
     { name: 'name', type: 'text', required: true },
+    { name: 'person', type: 'relationship', relationTo: 'people', hasMany: false, admin: { description: 'The person who requested this firing.' } },
     { name: 'email', type: 'email', required: true },
     { name: 'phone', type: 'text' },
     { name: 'description', type: 'textarea', required: true },

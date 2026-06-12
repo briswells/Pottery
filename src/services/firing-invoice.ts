@@ -1,6 +1,7 @@
 import type { Payload, PayloadRequest } from 'payload'
 import type { FiringInvoiceGateway } from '../lib/firing-invoice-gateway'
 import type { FiringRequest } from '../payload-types'
+import { upsertPersonByEmail } from './people'
 
 export interface FiringInvoiceDeps {
   payload: Payload
@@ -39,6 +40,10 @@ export async function createAndSendFiringInvoice(
       amountCents,
       referenceId: `firing-${request.id}`,
     })
+    const person = await upsertPersonByEmail(
+      { payload, req },
+      { name: request.name, email: request.email, phone: request.phone, squareCustomerId: result.customerId },
+    )
     return await payload.update({
       collection: 'firing-requests',
       id: request.id,
@@ -47,6 +52,7 @@ export async function createAndSendFiringInvoice(
       context: { fromFiringHook: true },
       data: {
         status: 'invoiced',
+        person: person.id,
         squareCustomerId: result.customerId,
         squareInvoiceId: result.invoiceId,
         squareInvoiceUrl: result.invoiceUrl,
