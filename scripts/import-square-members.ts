@@ -4,7 +4,7 @@ import { getSquareClient, SQUARE_LOCATION_ID } from '../src/lib/square'
 import { squareMembershipGateway } from '../src/lib/membership-gateway'
 import { syncSquarePlans } from '../src/services/sync-square-plans'
 
-type MemberStatus = 'active' | 'past_due' | 'paused' | 'cancelled'
+type MemberStatus = 'none' | 'active' | 'past_due' | 'paused' | 'cancelled'
 
 async function run() {
   const payload = await getPayload({ config: await config })

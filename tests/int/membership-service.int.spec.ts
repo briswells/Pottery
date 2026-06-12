@@ -43,7 +43,7 @@ describe('createMembership', () => {
   })
 })
 
-// Keep the shared test DB clean for sibling suites (members is an auth collection;
+// Keep the shared test DB clean for sibling suites (people is an auth collection;
 // payments may reference members). Delete in FK-safe order.
 afterAll(async () => {
   const payload = await getTestPayload()

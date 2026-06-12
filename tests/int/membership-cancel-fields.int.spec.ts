@@ -7,7 +7,7 @@ describe('member cancel-token fields', () => {
     const m = await payload.create({
       collection: 'people',
       overrideAccess: true,
-      data: { name: 'TokenFields', email: `tok-${Date.now()}@test.local`, status: 'paused' },
+      data: { name: 'TokenFields', email: `tok-${Date.now()}@test.local`, status: 'none' },
     })
     const exp = new Date(Date.now() + 60_000).toISOString()
     const updated = await payload.update({

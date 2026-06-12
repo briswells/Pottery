@@ -9,7 +9,7 @@ describe('members no-login auth', () => {
     const member = await payload.create({
       collection: 'people',
       overrideAccess: true,
-      data: { name: 'No Password', email: `nopw-${Date.now()}@test.local`, status: 'paused' },
+      data: { name: 'No Password', email: `nopw-${Date.now()}@test.local`, status: 'none' },
     })
     expect(member.id).toBeTruthy()
   })

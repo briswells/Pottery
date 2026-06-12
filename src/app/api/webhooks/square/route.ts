@@ -129,7 +129,7 @@ export async function POST(req: Request) {
       const map: Record<string, string> = { ACTIVE: 'active', PAUSED: 'paused', CANCELED: 'cancelled', DEACTIVATED: 'cancelled' }
       const nextStatus = map[sub.status] ?? member.status
       // Idempotent: only write when something actually changes (also avoids
-      // needless churn through the Members afterChange → Square hook).
+      // needless churn through the People afterChange → Square hook).
       if (member.subscriptionStatus !== sub.status || member.status !== nextStatus) {
         await payload.update({ collection: 'people', id: member.id, overrideAccess: true, context: { fromSquareWebhook: true }, data: {
           subscriptionStatus: sub.status, status: nextStatus as typeof member.status,

@@ -22,7 +22,7 @@ export const reconcileMemberSubscription: CollectionAfterChangeHook<Person> = as
       { member: doc as any, previousDoc: previousDoc as any },
     )
   } catch (e) {
-    console.error(`Member ${doc.id} reconcile hook error:`, e)
+    console.error(`Person ${doc.id} reconcile hook error:`, e)
   }
   return doc
 }
