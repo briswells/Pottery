@@ -1,8 +1,8 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { getSquareClient, SQUARE_LOCATION_ID } from '../src/lib/square'
-
-const PLAN_VARIATION_ID = process.env.SQUARE_MEMBERSHIP_PLAN_VARIATION_ID
+import { squareMembershipGateway } from '../src/lib/membership-gateway'
+import { syncSquarePlans } from '../src/services/sync-square-plans'
 
 type MemberStatus = 'active' | 'past_due' | 'paused' | 'cancelled'
 
@@ -10,7 +10,19 @@ async function run() {
   const payload = await getPayload({ config: await config })
   const client = getSquareClient()
 
-  // Find subscriptions at our location (optionally filtered to our plan).
+  // Make sure the Plans mirror is current, then map each Square plan variation id
+  // to our membership-plans record so imported members are linked to their plan.
+  await syncSquarePlans({ payload, gateway: squareMembershipGateway })
+  const { docs: plans } = await payload.find({
+    collection: 'membership-plans',
+    where: { kind: { equals: 'square' } },
+    limit: 1000,
+    overrideAccess: true,
+  })
+  const planByVariation = new Map<string, number>()
+  for (const p of plans) if (p.squarePlanVariationId) planByVariation.set(p.squarePlanVariationId, p.id)
+
+  // Find subscriptions at our location.
   // TODO: paginate via search cursor if subscriptions exceed one page
   const search = await client.subscriptions.search({
     query: { filter: { locationIds: [SQUARE_LOCATION_ID()] } },
@@ -28,11 +40,14 @@ async function run() {
   }
 
   for (const sub of subscriptions) {
-    if (PLAN_VARIATION_ID && sub.planVariationId !== PLAN_VARIATION_ID) {
+    if (!sub.customerId || !sub.id || !sub.planVariationId) {
       skipped++
       continue
     }
-    if (!sub.customerId || !sub.id) {
+    // Only import subscriptions on one of our known membership plans, and capture
+    // which plan to link the member to.
+    const planId = planByVariation.get(sub.planVariationId)
+    if (!planId) {
       skipped++
       continue
     }
@@ -41,6 +56,7 @@ async function run() {
       collection: 'members',
       where: { squareSubscriptionId: { equals: sub.id } },
       limit: 1,
+      overrideAccess: true,
     })
     if (existing.totalDocs > 0) {
       skipped++
@@ -56,10 +72,16 @@ async function run() {
       await payload.create({
         collection: 'members',
         overrideAccess: true,
+        // These members are ALREADY provisioned in Square — we're syncing FROM
+        // Square. Mark the write as webhook-sourced so the reconcile hook skips:
+        // otherwise it would treat the (plan + existing subscription) as a plan
+        // change and cancel + recreate the live subscription.
+        context: { fromSquareWebhook: true },
         data: {
           name,
           email,
           phone: c?.phoneNumber,
+          plan: planId,
           status: statusMap[sub.status ?? 'ACTIVE'] ?? 'active',
           joinedDate: sub.startDate,
           squareCustomerId: sub.customerId,
