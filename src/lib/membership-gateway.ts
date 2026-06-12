@@ -76,7 +76,13 @@ export const squareMembershipGateway: MembershipGateway = {
     const res = await client.subscriptions.get({ subscriptionId })
     const s = res.subscription
     if (!s?.id) return null
-    return { id: s.id, customerId: s.customerId, planVariationId: s.planVariationId, status: s.status, startDate: s.startDate }
+    return {
+      id: s.id,
+      customerId: s.customerId ?? undefined,
+      planVariationId: s.planVariationId ?? undefined,
+      status: s.status ?? undefined,
+      startDate: s.startDate ?? undefined,
+    }
   },
 
   async getCustomer(customerId) {
