@@ -30,6 +30,9 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    components: {
+      beforeNavLinks: ['/admin/MembersNavLink#default'],
+    },
   },
   onInit: async (payload) => {
     // Skipped in tests (they manage their own data and must never hit Square).
