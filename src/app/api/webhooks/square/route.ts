@@ -107,7 +107,11 @@ export async function POST(req: Request) {
     const subscriptionId = invoice?.subscription_id ?? invoice?.subscriptionId
     let member = await findMemberBySubscription(subscriptionId)
     if (!member && subscriptionId) {
-      try { member = await ensureMemberForSubscriptionId(deps, subscriptionId) } catch (e) { console.error('invoice.payment_made auto-create failed:', e) }
+      try {
+        member = await ensureMemberForSubscriptionId(deps, subscriptionId)
+      } catch (e) {
+        console.error('invoice.payment_made auto-create failed:', e)
+      }
     }
     if (member) {
       await payload.update({ collection: 'people', id: member.id, overrideAccess: true, context: { fromSquareWebhook: true }, data: {
@@ -147,7 +151,11 @@ export async function POST(req: Request) {
       const subscriptionId = invoice?.subscription_id ?? invoice?.subscriptionId
       let member = await findMemberBySubscription(subscriptionId)
       if (!member && subscriptionId) {
-        try { member = await ensureMemberForSubscriptionId(deps, subscriptionId) } catch (e) { console.error('invoice.updated auto-create failed:', e) }
+        try {
+          member = await ensureMemberForSubscriptionId(deps, subscriptionId)
+        } catch (e) {
+          console.error('invoice.updated auto-create failed:', e)
+        }
       }
       if (member && member.status !== 'past_due') {
         await payload.update({ collection: 'people', id: member.id, overrideAccess: true, context: { fromSquareWebhook: true }, data: {
@@ -170,7 +178,11 @@ export async function POST(req: Request) {
     const sub = event.data?.object?.subscription
     let member = await findMemberBySubscription(sub?.id)
     if (!member && sub?.id) {
-      try { member = await ensureMemberForSubscriptionId(deps, sub.id) } catch (e) { console.error('subscription.updated auto-create failed:', e) }
+      try {
+        member = await ensureMemberForSubscriptionId(deps, sub.id)
+      } catch (e) {
+        console.error('subscription.updated auto-create failed:', e)
+      }
     }
     if (member && sub?.status) {
       const map: Record<string, string> = { ACTIVE: 'active', PAUSED: 'paused', CANCELED: 'cancelled', DEACTIVATED: 'cancelled' }
