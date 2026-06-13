@@ -44,6 +44,12 @@ export const resendEmailAdapter =
       const cc = formatList(message.cc)
       const bcc = formatList(message.bcc)
       const replyTo = formatList(message.replyTo)
+      const attachments = Array.isArray(message.attachments)
+        ? message.attachments.map((a) => ({
+            filename: String((a as { filename?: string }).filename ?? 'attachment'),
+            content: (a as { content?: string | Buffer }).content as string | Buffer,
+          }))
+        : undefined
       const payload = {
         from,
         to: formatList(message.to) ?? [],
@@ -53,6 +59,7 @@ export const resendEmailAdapter =
         ...(cc ? { cc } : {}),
         ...(bcc ? { bcc } : {}),
         ...(replyTo ? { replyTo } : {}),
+        ...(attachments ? { attachments } : {}),
       } as CreateEmailOptions
       // Resend resolves with { data, error } instead of throwing on API errors.
       const { data, error } = await getResend().emails.send(payload)

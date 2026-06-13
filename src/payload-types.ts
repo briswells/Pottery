@@ -73,6 +73,7 @@ export interface Config {
     'membership-plans': MembershipPlan;
     media: Media;
     classes: Class;
+    'class-instances': ClassInstance;
     bookings: Booking;
     payments: Payment;
     'firing-requests': FiringRequest;
@@ -81,13 +82,18 @@ export interface Config {
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    'class-instances': {
+      roster: 'bookings';
+    };
+  };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     people: PeopleSelect<false> | PeopleSelect<true>;
     'membership-plans': MembershipPlansSelect<false> | MembershipPlansSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     classes: ClassesSelect<false> | ClassesSelect<true>;
+    'class-instances': ClassInstancesSelect<false> | ClassInstancesSelect<true>;
     bookings: BookingsSelect<false> | BookingsSelect<true>;
     payments: PaymentsSelect<false> | PaymentsSelect<true>;
     'firing-requests': FiringRequestsSelect<false> | FiringRequestsSelect<true>;
@@ -165,7 +171,7 @@ export interface PersonAuthOperations {
 export interface User {
   id: number;
   name: string;
-  roles?: ('admin' | 'editor')[] | null;
+  roles?: ('admin' | 'editor' | 'instructor')[] | null;
   /**
    * Shown on the Meet the Staff page
    */
@@ -322,19 +328,91 @@ export interface Class {
   category: 'wheel-series' | 'day-camp' | 'raku' | 'daytime-multiweek';
   skillLevel?: string | null;
   description?: string | null;
+  /**
+   * Title image; default for all instances
+   */
   image?: (number | null) | Media;
   /**
-   * Price in dollars, e.g. 220 for $220.00
+   * Price in dollars, e.g. 220 for $220.00. Instances inherit this unless overridden.
    */
-  priceCents: number;
-  capacity: number;
-  startDate?: string | null;
+  defaultPriceCents: number;
   /**
-   * e.g. "Tuesdays 6–8pm for 6 weeks"
+   * Instances inherit this unless overridden.
    */
-  scheduleText: string;
-  instructor?: (number | null) | User;
+  defaultCapacity: number;
   status?: ('active' | 'archived') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "class-instances".
+ */
+export interface ClassInstance {
+  id: number;
+  class: number | Class;
+  /**
+   * Auto-filled from class + start date
+   */
+  label?: string | null;
+  instructor: number | User;
+  /**
+   * First (or only) meeting date
+   */
+  startDate: string;
+  /**
+   * Last meeting date. Leave blank for a single-day class.
+   */
+  endDate?: string | null;
+  /**
+   * Which days the class meets (multi-week courses).
+   */
+  daysOfWeek?: ('SU' | 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA')[] | null;
+  /**
+   * 24-hour HH:MM, e.g. 18:00
+   */
+  startTime: string;
+  /**
+   * 24-hour HH:MM, e.g. 20:00
+   */
+  endTime: string;
+  /**
+   * Dates to exclude (e.g. holidays).
+   */
+  skipDates?:
+    | {
+        date: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Defaults from the class if left blank.
+   */
+  capacity?: number | null;
+  /**
+   * Defaults from the class if left blank. Price in dollars.
+   */
+  priceCents?: number | null;
+  /**
+   * Optional; falls back to the class image.
+   */
+  image?: (number | null) | Media;
+  /**
+   * Optional; falls back to the studio address.
+   */
+  location?: string | null;
+  /**
+   * Only Published instances appear on the website.
+   */
+  status?: ('draft' | 'published' | 'cancelled' | 'completed') | null;
+  /**
+   * Everyone enrolled in this instance.
+   */
+  roster?: {
+    docs?: (number | Booking)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -344,7 +422,7 @@ export interface Class {
  */
 export interface Booking {
   id: number;
-  class: number | Class;
+  classInstance: number | ClassInstance;
   /**
    * The person who made this booking.
    */
@@ -480,6 +558,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'classes';
         value: number | Class;
+      } | null)
+    | ({
+        relationTo: 'class-instances';
+        value: number | ClassInstance;
       } | null)
     | ({
         relationTo: 'bookings';
@@ -677,12 +759,37 @@ export interface ClassesSelect<T extends boolean = true> {
   skillLevel?: T;
   description?: T;
   image?: T;
-  priceCents?: T;
-  capacity?: T;
-  startDate?: T;
-  scheduleText?: T;
-  instructor?: T;
+  defaultPriceCents?: T;
+  defaultCapacity?: T;
   status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "class-instances_select".
+ */
+export interface ClassInstancesSelect<T extends boolean = true> {
+  class?: T;
+  label?: T;
+  instructor?: T;
+  startDate?: T;
+  endDate?: T;
+  daysOfWeek?: T;
+  startTime?: T;
+  endTime?: T;
+  skipDates?:
+    | T
+    | {
+        date?: T;
+        id?: T;
+      };
+  capacity?: T;
+  priceCents?: T;
+  image?: T;
+  location?: T;
+  status?: T;
+  roster?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -691,7 +798,7 @@ export interface ClassesSelect<T extends boolean = true> {
  * via the `definition` "bookings_select".
  */
 export interface BookingsSelect<T extends boolean = true> {
-  class?: T;
+  classInstance?: T;
   person?: T;
   customerName?: T;
   customerEmail?: T;

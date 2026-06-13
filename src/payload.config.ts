@@ -11,6 +11,7 @@ import { People } from './collections/People'
 import { MembershipPlans } from './collections/MembershipPlans'
 import { Media } from './collections/Media'
 import { Classes } from './collections/Classes'
+import { ClassInstances } from './collections/ClassInstances'
 import { Bookings } from './collections/Bookings'
 import { Payments } from './collections/Payments'
 import { FiringRequests } from './collections/FiringRequests'
@@ -58,7 +59,7 @@ export default buildConfig({
       payload.logger.error(`Startup plan sync failed: ${e instanceof Error ? e.message : e}`)
     }
   },
-  collections: [Users, People, MembershipPlans, Media, Classes, Bookings, Payments, FiringRequests],
+  collections: [Users, People, MembershipPlans, Media, Classes, ClassInstances, Bookings, Payments, FiringRequests],
   globals: [SiteSettings, HomePage, MembershipPage, FiringsPage],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

@@ -8,15 +8,18 @@ describe('backfillPeople', () => {
     await payload.delete({ collection: 'payments', where: {} })
     await payload.delete({ collection: 'bookings', where: { customerEmail: { like: '@bf.local' } } })
     await payload.delete({ collection: 'firing-requests', where: { email: { like: '@bf.local' } } })
+    await payload.delete({ collection: 'class-instances', where: {} })
     await payload.delete({ collection: 'classes', where: {} })
     await payload.delete({ collection: 'people', where: { email: { like: '@bf.local' } } })
   })
 
   it('collapses a shared email across a booking + firing into one person and is idempotent', async () => {
     const payload = await getTestPayload()
-    const cls = await payload.create({ collection: 'classes', data: { title: `BF ${Date.now()}`, category: 'wheel-series', priceCents: 100, capacity: 5, scheduleText: 'x' } })
+    const cls = await payload.create({ collection: 'classes', data: { title: `BF ${Date.now()}`, category: 'wheel-series', defaultPriceCents: 100, defaultCapacity: 5 } })
+    const user = await payload.create({ collection: 'users', data: { name: 'BF Inst', email: `bf-inst-${Date.now()}@test.local`, password: 'test12345', roles: ['instructor'] } })
+    const inst = await payload.create({ collection: 'class-instances', data: { class: cls.id, instructor: user.id, startDate: '2026-07-07', startTime: '18:00', endTime: '20:00', status: 'published' } })
     // Booking and firing with no person link, same email, different case.
-    await payload.create({ collection: 'bookings', overrideAccess: true, data: { class: cls.id, customerName: 'Shared', customerEmail: 'shared@bf.local', amountCents: 100, status: 'paid' } })
+    await payload.create({ collection: 'bookings', overrideAccess: true, data: { classInstance: inst.id, customerName: 'Shared', customerEmail: 'shared@bf.local', amountCents: 100, status: 'paid' } })
     await payload.create({ collection: 'firing-requests', overrideAccess: true, data: { name: 'Shared', email: 'SHARED@bf.local', description: 'pot', status: 'submitted' } })
 
     await backfillPeople(payload)

@@ -19,6 +19,19 @@ async function ensureClass(payload: Payload, slug: string, data: Record<string, 
   return payload.create({ collection: 'classes', data } as Parameters<Payload['create']>[0])
 }
 
+async function ensureInstance(payload: Payload, classSlug: string, data: Record<string, unknown>) {
+  const cls = await payload.find({ collection: 'classes', where: { slug: { equals: classSlug } }, limit: 1 })
+  if (cls.totalDocs === 0) return
+  const classId = cls.docs[0].id
+  const existing = await payload.find({
+    collection: 'class-instances',
+    where: { and: [{ class: { equals: classId } }, { startDate: { equals: data.startDate as string } }] },
+    limit: 1,
+  })
+  if (existing.totalDocs > 0) return existing.docs[0]
+  return payload.create({ collection: 'class-instances', data: { class: classId, ...data } } as Parameters<Payload['create']>[0])
+}
+
 async function ensureMedia(payload: Payload, filename: string, alt: string) {
   const found = await payload.find({ collection: 'media', where: { filename: { equals: filename } }, limit: 1 })
   if (found.totalDocs > 0) return found.docs[0]
@@ -48,13 +61,13 @@ async function run() {
   const naiomiPhoto = await ensureMedia(payload, 'naiomi.jpg', 'Naiomi, Studio Technician & Instructor')
 
   // Users
-  await ensureUser(payload, 'eric@portsidepottery.com', {
+  const ericUser = await ensureUser(payload, 'eric@portsidepottery.com', {
     name: 'Eric', password: 'changeme-eric', roles: ['admin'],
     title: 'Studio Manager & Instructor',
     bio: 'Discovered pottery in high school 30+ years ago; inspired by Warren MacKenzie, Guy Wolff, and Phil Rogers.',
     showOnStaffPage: true, order: 1,
   })
-  await ensureUser(payload, 'naiomi@portsidepottery.com', {
+  const naiomiUser = await ensureUser(payload, 'naiomi@portsidepottery.com', {
     name: 'Naiomi', password: 'changeme-naiomi', roles: ['editor'],
     title: 'Studio Technician & Instructor',
     bio: 'Learned pottery in high school; loves how clay brings people of every age and level together.',
@@ -112,16 +125,16 @@ async function run() {
     ],
   })
 
-  // Classes
+  // Classes (templates)
   await ensureClass(payload, '6wk-wheel-throwing-tuesdays', {
-    title: '6wk Wheel Throwing (Tuesdays)', slug: '6wk-wheel-throwing-tuesdays', category: 'wheel-series', skillLevel: 'All levels',
-    description: 'Six weeks of wheel-throwing fundamentals.', priceCents: 22000, capacity: 8,
-    scheduleText: 'Tuesdays 6–8pm for 6 weeks', status: 'active',
+    title: '6-Week Wheel Throwing', slug: '6wk-wheel-throwing-tuesdays', category: 'wheel-series', skillLevel: 'Beginner',
+    description: 'Six weeks of wheel-throwing fundamentals.', defaultPriceCents: 22000, defaultCapacity: 8,
+    status: 'active',
   })
   await ensureClass(payload, 'kids-day-camp-pottery-pizza', {
-    title: 'Kids Day Camp: Pottery & Pizza', slug: 'kids-day-camp-pottery-pizza', category: 'day-camp', skillLevel: 'Ages 8+',
-    description: 'A fun day of clay and pizza for kids.', priceCents: 6500, capacity: 12,
-    scheduleText: 'Single day, 10am–2pm', status: 'active',
+    title: 'Kids Day Camp: Pottery & Pizza', slug: 'kids-day-camp-pottery-pizza', category: 'day-camp', skillLevel: 'All ages',
+    description: 'A fun day of clay and pizza for kids.', defaultPriceCents: 6500, defaultCapacity: 12,
+    status: 'active',
   })
 
   // Update class images (landscape photos fit 4:3 card slots; idempotent)
@@ -133,6 +146,15 @@ async function run() {
   if (kidsClass.totalDocs > 0) {
     await payload.update({ collection: 'classes', id: kidsClass.docs[0].id, data: { image: counter.id } } as Parameters<Payload['update']>[0])
   }
+
+  // Class instances (scheduled runs)
+  await ensureInstance(payload, '6wk-wheel-throwing-tuesdays', {
+    instructor: ericUser.id, startDate: '2026-09-01', endDate: '2026-10-06',
+    daysOfWeek: ['TU'], startTime: '18:00', endTime: '20:00', status: 'published',
+  })
+  await ensureInstance(payload, 'kids-day-camp-pottery-pizza', {
+    instructor: naiomiUser.id, startDate: '2026-08-15', startTime: '10:00', endTime: '14:00', status: 'published',
+  })
 
   console.log('Seed complete.')
   process.exit(0)
