@@ -3,7 +3,7 @@ import config from '@payload-config'
 import { mediaUrl, mediaAlt } from '../../../lib/media'
 
 export const metadata = {
-  title: 'Gallery — Portside Pottery',
+  title: 'Gallery',
   description: 'A visual look at life in the Portside Pottery studio — the work, the people, the process.',
 }
 

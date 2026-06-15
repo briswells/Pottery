@@ -5,6 +5,8 @@ import { usd } from '../../../lib/format'
 import { mediaUrl, mediaAlt } from '../../../lib/media'
 import { formatDate } from '../../../lib/schedule'
 
+export const metadata = { title: 'Classes' }
+
 export const dynamic = 'force-dynamic'
 
 export default async function ClassesPage() {

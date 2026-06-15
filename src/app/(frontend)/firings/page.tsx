@@ -3,7 +3,7 @@ import config from '@payload-config'
 import { FiringRequestForm } from './FiringRequestForm'
 
 export const metadata = {
-  title: 'Custom Cone 10 Firings — Portside Pottery',
+  title: 'Firings',
   description: 'Request a custom Cone 10 firing. We quote a price by size — no upfront charge.',
 }
 

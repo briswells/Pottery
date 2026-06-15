@@ -5,8 +5,21 @@ import { usd } from '../../../../../../lib/format'
 import { seatsRemaining } from '../../../../../../lib/occupancy'
 import { scheduleSummary } from '../../../../../../lib/schedule'
 import { BookingForm } from '../../BookingForm'
+import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
+
+export async function generateMetadata({ params }: { params: Promise<{ instanceId: string }> }): Promise<Metadata> {
+  const { instanceId } = await params
+  const payload = await getPayload({ config: await config })
+  try {
+    const inst = await payload.findByID({ collection: 'class-instances', id: instanceId, depth: 1 })
+    const name = inst?.label || (typeof inst?.class === 'object' ? inst.class?.title : null)
+    return { title: name ? `Sign up · ${name}` : 'Sign up' }
+  } catch {
+    return { title: 'Sign up' }
+  }
+}
 
 export default async function SignupPage({ params }: { params: Promise<{ slug: string; instanceId: string }> }) {
   const { slug, instanceId } = await params

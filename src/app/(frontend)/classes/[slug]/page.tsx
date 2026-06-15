@@ -6,8 +6,16 @@ import { usd } from '../../../../lib/format'
 import { mediaUrl, mediaAlt } from '../../../../lib/media'
 import { seatsRemaining } from '../../../../lib/occupancy'
 import { scheduleSummary } from '../../../../lib/schedule'
+import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const payload = await getPayload({ config: await config })
+  const { docs } = await payload.find({ collection: 'classes', where: { slug: { equals: slug } }, limit: 1 })
+  return { title: docs[0]?.title ?? 'Class' }
+}
 
 export default async function ClassDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params

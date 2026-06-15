@@ -14,17 +14,28 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 // never needs a database connection and staff edits show without a rebuild.
 export const dynamic = 'force-dynamic'
 
-// Favicon comes from CMS site-settings so staff can change it without a rebuild.
+// Title and favicon come from CMS site-settings so staff can change them without a
+// rebuild. The title template wraps each page's own title, e.g. "Classes — Portside
+// Pottery"; pages with no title fall back to the studio name alone.
 export async function generateMetadata(): Promise<Metadata> {
   const payload = await getPayload({ config: await config })
   const settings = await payload.findGlobal({ slug: 'site-settings', depth: 2 })
+  const studioName = settings.studioName ?? 'Portside Pottery'
+
+  const metadata: Metadata = {
+    title: { default: studioName, template: `%s — ${studioName}` },
+  }
+
   const faviconUrl = mediaUrl(settings.favicon)
-  if (!faviconUrl) return {}
-  const type =
-    settings.favicon && typeof settings.favicon === 'object'
-      ? settings.favicon.mimeType ?? undefined
-      : undefined
-  return { icons: { icon: [{ url: faviconUrl, type }] } }
+  if (faviconUrl) {
+    const type =
+      settings.favicon && typeof settings.favicon === 'object'
+        ? settings.favicon.mimeType ?? undefined
+        : undefined
+    metadata.icons = { icon: [{ url: faviconUrl, type }] }
+  }
+
+  return metadata
 }
 
 export default async function FrontendLayout({ children }: { children: React.ReactNode }) {

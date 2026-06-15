@@ -3,7 +3,7 @@ import config from '@payload-config'
 import { mediaUrl, mediaAlt } from '../../../lib/media'
 
 export const metadata = {
-  title: 'Visit Us — Portside Pottery',
+  title: 'Visit Us',
   description: 'Find Portside Pottery in Vancouver, WA. Get directions, hours, and contact info.',
 }
 

@@ -3,6 +3,8 @@ import config from '@payload-config'
 import Link from 'next/link'
 import { expandSessions, monthGrid, formatTime } from '../../../lib/schedule'
 
+export const metadata = { title: 'Class Calendar' }
+
 export const dynamic = 'force-dynamic'
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
