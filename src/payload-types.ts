@@ -339,6 +339,10 @@ export interface Class {
    * Instances inherit this unless overridden.
    */
   defaultCapacity: number;
+  /**
+   * How many sessions a run of this class includes. Instances inherit this (and fill in their end date from it) unless overridden.
+   */
+  defaultNumberOfClasses?: number | null;
   status?: ('active' | 'archived') | null;
   updatedAt: string;
   createdAt: string;
@@ -351,7 +355,7 @@ export interface ClassInstance {
   id: number;
   class: number | Class;
   /**
-   * Auto-filled from class + start date
+   * This run’s name. Leave blank to auto-fill from the class + start date; set it to tell concurrent runs apart, e.g. “… — Tuesday Nights” vs “… — Wednesday Nights”.
    */
   label?: string | null;
   instructor: number | User;
@@ -763,6 +767,7 @@ export interface ClassesSelect<T extends boolean = true> {
   image?: T;
   defaultPriceCents?: T;
   defaultCapacity?: T;
+  defaultNumberOfClasses?: T;
   status?: T;
   updatedAt?: T;
   createdAt?: T;

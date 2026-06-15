@@ -129,7 +129,7 @@ async function run() {
   await ensureClass(payload, '6wk-wheel-throwing-tuesdays', {
     title: '6-Week Wheel Throwing', slug: '6wk-wheel-throwing-tuesdays', skillLevel: 'Beginner',
     description: 'Six weeks of wheel-throwing fundamentals.', defaultPriceCents: 22000, defaultCapacity: 8,
-    status: 'active',
+    defaultNumberOfClasses: 6, status: 'active',
   })
   await ensureClass(payload, 'kids-day-camp-pottery-pizza', {
     title: 'Kids Day Camp: Pottery & Pizza', slug: 'kids-day-camp-pottery-pizza', skillLevel: 'All ages',
@@ -147,10 +147,17 @@ async function run() {
     await payload.update({ collection: 'classes', id: kidsClass.docs[0].id, data: { image: counter.id } } as Parameters<Payload['update']>[0])
   }
 
-  // Class instances (scheduled runs)
+  // Class instances (scheduled runs). Two concurrent runs of the same class with
+  // distinct titles; both inherit numberOfClasses (6) from the class default.
   await ensureInstance(payload, '6wk-wheel-throwing-tuesdays', {
-    instructor: ericUser.id, startDate: '2026-09-01', numberOfClasses: 6,
+    label: '6-Week Wheel Throwing — Tuesday Nights',
+    instructor: ericUser.id, startDate: '2026-09-01',
     daysOfWeek: ['TU'], startTime: '18:00', endTime: '20:00', status: 'published',
+  })
+  await ensureInstance(payload, '6wk-wheel-throwing-tuesdays', {
+    label: '6-Week Wheel Throwing — Wednesday Nights',
+    instructor: naiomiUser.id, startDate: '2026-09-02',
+    daysOfWeek: ['WE'], startTime: '18:00', endTime: '20:00', status: 'published',
   })
   await ensureInstance(payload, 'kids-day-camp-pottery-pizza', {
     instructor: naiomiUser.id, startDate: '2026-08-15', startTime: '10:00', endTime: '14:00', status: 'published',

@@ -57,6 +57,37 @@ describe('ClassInstances', () => {
     expect(inst.capacity).toBe(3)
   })
 
+  it('inherits numberOfClasses from the class default and fills in the end date', async () => {
+    const payload = await getTestPayload()
+    const cls = await payload.create({ collection: 'classes', data: {
+      title: `Default Count ${Date.now()}-${Math.random()}`,
+      defaultPriceCents: 22000, defaultCapacity: 8, defaultNumberOfClasses: 6,
+    } })
+    const user = await payload.create({ collection: 'users', data: {
+      name: 'CountTeacher', email: `ct-${Date.now()}@test.local`, password: 'test12345', roles: ['instructor'],
+    } })
+    // Sep 1 2026 is a Tuesday; six weekly Tuesdays end Oct 6.
+    const inst = await payload.create({ collection: 'class-instances', data: {
+      class: cls.id, instructor: user.id, startDate: '2026-09-01', daysOfWeek: ['TU'],
+      startTime: '18:00', endTime: '20:00',
+    } })
+    expect(inst.numberOfClasses).toBe(6)
+    expect(String(inst.endDate).slice(0, 10)).toBe('2026-10-06')
+  })
+
+  it('keeps an admin-provided title instead of auto-filling it', async () => {
+    const payload = await getTestPayload()
+    const cls = await makeClass(payload)
+    const user = await payload.create({ collection: 'users', data: {
+      name: 'TitleTeacher', email: `tt-${Date.now()}@test.local`, password: 'test12345', roles: ['instructor'],
+    } })
+    const inst = await payload.create({ collection: 'class-instances', data: {
+      class: cls.id, instructor: user.id, startDate: '2026-07-07', startTime: '18:00', endTime: '20:00',
+      label: 'Wheel — Wednesday Nights',
+    } })
+    expect(inst.label).toBe('Wheel — Wednesday Nights')
+  })
+
   it('rejects a malformed start time', async () => {
     const payload = await getTestPayload()
     const cls = await makeClass(payload)

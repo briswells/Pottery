@@ -38,6 +38,10 @@ export const Classes: CollectionConfig = {
     },
     { name: 'defaultCapacity', type: 'number', required: true, min: 1, admin: { description: 'Instances inherit this unless overridden.' } },
     {
+      name: 'defaultNumberOfClasses', type: 'number', min: 1, label: 'Default number of classes',
+      admin: { description: 'How many sessions a run of this class includes. Instances inherit this (and fill in their end date from it) unless overridden.' },
+    },
+    {
       name: 'status', type: 'select', defaultValue: 'active',
       options: [{ label: 'Active', value: 'active' }, { label: 'Archived', value: 'archived' }],
       admin: { position: 'sidebar' },

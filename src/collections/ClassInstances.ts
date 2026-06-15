@@ -36,8 +36,8 @@ export const ClassInstances: CollectionConfig = {
   fields: [
     { name: 'class', type: 'relationship', relationTo: 'classes', required: true },
     {
-      name: 'label', type: 'text',
-      admin: { readOnly: true, position: 'sidebar', description: 'Auto-filled from class + start date' },
+      name: 'label', type: 'text', label: 'Title',
+      admin: { description: 'This run’s name. Leave blank to auto-fill from the class + start date; set it to tell concurrent runs apart, e.g. “… — Tuesday Nights” vs “… — Wednesday Nights”.' },
     },
     { name: 'instructor', type: 'relationship', relationTo: 'users', required: true },
     { name: 'startDate', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly' }, description: 'First (or only) meeting date' } },
