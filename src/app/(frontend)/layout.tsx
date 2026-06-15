@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { Fraunces, Inter } from 'next/font/google'
 import { getPayload } from 'payload'
 import config from '@payload-config'
@@ -12,6 +13,19 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 // Header/footer come from CMS site-settings; render per-request so the build
 // never needs a database connection and staff edits show without a rebuild.
 export const dynamic = 'force-dynamic'
+
+// Favicon comes from CMS site-settings so staff can change it without a rebuild.
+export async function generateMetadata(): Promise<Metadata> {
+  const payload = await getPayload({ config: await config })
+  const settings = await payload.findGlobal({ slug: 'site-settings', depth: 2 })
+  const faviconUrl = mediaUrl(settings.favicon)
+  if (!faviconUrl) return {}
+  const type =
+    settings.favicon && typeof settings.favicon === 'object'
+      ? settings.favicon.mimeType ?? undefined
+      : undefined
+  return { icons: { icon: [{ url: faviconUrl, type }] } }
+}
 
 export default async function FrontendLayout({ children }: { children: React.ReactNode }) {
   const payload = await getPayload({ config: await config })

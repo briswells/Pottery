@@ -20,5 +20,9 @@ export const SiteSettings: GlobalConfig = {
       { name: 'url', type: 'text' },
     ] },
     { name: 'logo', type: 'upload', relationTo: 'media' },
+    {
+      name: 'favicon', type: 'upload', relationTo: 'media',
+      admin: { description: 'Browser tab icon for the public site. Use a square image — a .png, .svg, or .ico works best.' },
+    },
   ],
 }

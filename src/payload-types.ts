@@ -926,6 +926,10 @@ export interface SiteSetting {
       }[]
     | null;
   logo?: (number | null) | Media;
+  /**
+   * Browser tab icon for the public site. Use a square image — a .png, .svg, or .ico works best.
+   */
+  favicon?: (number | null) | Media;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1011,6 +1015,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         id?: T;
       };
   logo?: T;
+  favicon?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
