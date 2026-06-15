@@ -16,10 +16,11 @@ and sees just the people enrolled — no payment IDs or other metadata.
 
 ## Audience & scope
 
-- **For instructors viewing their own classes only.** Queries are always scoped
-  to `instructor = currentUser.id`. An admin who is also assigned as an
-  instructor sees their own assigned runs here; admins otherwise keep the full
-  collection views.
+- **For any admin user viewing the classes they teach.** Queries are always scoped
+  to `instructor = currentUser.id`, so each person sees only their own runs. The
+  link and view are available to everyone in the admin (an admin or editor may
+  also teach); a user with no assigned classes simply sees an empty list. Admins
+  otherwise keep the full collection views.
 - **One row per course run** (one `class-instances` document), not per session.
   Bookings attach to the instance, so the roster is per run.
 - **Out of scope:** per-session expansion, "email all students", printable
@@ -38,7 +39,7 @@ header):
 
 A **"My Classes" sidebar link** — new `src/admin/MyClassesNavLink.tsx`, injected
 via `admin.components.beforeNavLinks` alongside the existing `MembersNavLink`.
-Shown only to users whose `roles` include `instructor`.
+Shown to every signed-in admin user.
 
 Both views are **server components**. They read the logged-in user from the view
 props (`initPageResult.req.user`) and query through the Payload local API
