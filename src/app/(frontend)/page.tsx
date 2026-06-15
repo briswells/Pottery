@@ -2,7 +2,6 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import Link from 'next/link'
 import { mediaUrl, mediaAlt } from '../../lib/media'
-import { NewsletterBand } from './components/NewsletterBand'
 
 // Content is CMS-managed; render per-request so admin edits appear immediately
 // (and so `next build` doesn't try to prerender these DB-backed pages).
@@ -158,9 +157,6 @@ export default async function HomePage() {
         <p>Join Portside Pottery and get 24/7 studio access, professional wheels, and a community of makers.</p>
         <Link href="/membership" className="pp-btn">Become a member</Link>
       </section>
-
-      {/* ── NEWSLETTER BAND ── */}
-      <NewsletterBand />
     </div>
   )
 }
