@@ -39,6 +39,10 @@ describe('splitByTiming', () => {
     expect(upcoming).toEqual([b, a])
     expect(past).toEqual([c, d])
   })
+
+  it('returns empty buckets for no instances', () => {
+    expect(splitByTiming([], today)).toEqual({ upcoming: [], past: [] })
+  })
 })
 
 describe('todayKey', () => {
