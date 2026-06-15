@@ -2,12 +2,16 @@ import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
-   CREATE TYPE "public"."enum_users_roles" AS ENUM('admin', 'editor');
-  CREATE TYPE "public"."enum_members_status" AS ENUM('active', 'past_due', 'paused', 'cancelled');
+   CREATE TYPE "public"."enum_users_roles" AS ENUM('admin', 'editor', 'instructor');
+  CREATE TYPE "public"."enum_people_status" AS ENUM('none', 'active', 'past_due', 'paused', 'cancelled');
+  CREATE TYPE "public"."enum_membership_plans_kind" AS ENUM('square', 'free');
   CREATE TYPE "public"."enum_classes_category" AS ENUM('wheel-series', 'day-camp', 'raku', 'daytime-multiweek');
   CREATE TYPE "public"."enum_classes_status" AS ENUM('active', 'archived');
+  CREATE TYPE "public"."enum_class_instances_days_of_week" AS ENUM('SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA');
+  CREATE TYPE "public"."enum_class_instances_status" AS ENUM('draft', 'published', 'cancelled', 'completed');
   CREATE TYPE "public"."enum_bookings_status" AS ENUM('pending', 'paid', 'cancelled', 'refunded');
-  CREATE TYPE "public"."enum_payments_type" AS ENUM('booking', 'membership');
+  CREATE TYPE "public"."enum_payments_type" AS ENUM('booking', 'membership', 'firing');
+  CREATE TYPE "public"."enum_firing_requests_status" AS ENUM('submitted', 'approved', 'invoiced', 'invoice_failed', 'paid', 'completed', 'cancelled');
   CREATE TABLE "users_roles" (
   	"order" integer NOT NULL,
   	"parent_id" integer NOT NULL,
@@ -42,7 +46,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"lock_until" timestamp(3) with time zone
   );
   
-  CREATE TABLE "members_sessions" (
+  CREATE TABLE "people_sessions" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
   	"id" varchar PRIMARY KEY NOT NULL,
@@ -50,11 +54,12 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"expires_at" timestamp(3) with time zone NOT NULL
   );
   
-  CREATE TABLE "members" (
+  CREATE TABLE "people" (
   	"id" serial PRIMARY KEY NOT NULL,
   	"name" varchar NOT NULL,
+  	"plan_id" integer,
   	"phone" varchar,
-  	"status" "enum_members_status" DEFAULT 'active' NOT NULL,
+  	"status" "enum_people_status" DEFAULT 'none',
   	"joined_date" timestamp(3) with time zone,
   	"shelf_label" varchar,
   	"notes" varchar,
@@ -63,6 +68,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"subscription_status" varchar,
   	"last_payment_date" timestamp(3) with time zone,
   	"last_payment_status" varchar,
+  	"cancel_token_hash" varchar,
+  	"cancel_token_expires_at" timestamp(3) with time zone,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"email" varchar NOT NULL,
@@ -72,6 +79,18 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"hash" varchar,
   	"login_attempts" numeric DEFAULT 0,
   	"lock_until" timestamp(3) with time zone
+  );
+  
+  CREATE TABLE "membership_plans" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"name" varchar NOT NULL,
+  	"kind" "enum_membership_plans_kind" DEFAULT 'square' NOT NULL,
+  	"square_plan_variation_id" varchar,
+  	"price_cents" numeric,
+  	"cadence" varchar,
+  	"active" boolean DEFAULT true,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
   );
   
   CREATE TABLE "media" (
@@ -110,19 +129,49 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"skill_level" varchar,
   	"description" varchar,
   	"image_id" integer,
-  	"price_cents" numeric NOT NULL,
-  	"capacity" numeric NOT NULL,
-  	"start_date" timestamp(3) with time zone,
-  	"schedule_text" varchar NOT NULL,
-  	"instructor_id" integer,
+  	"default_price_cents" numeric NOT NULL,
+  	"default_capacity" numeric NOT NULL,
   	"status" "enum_classes_status" DEFAULT 'active',
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+  );
+  
+  CREATE TABLE "class_instances_days_of_week" (
+  	"order" integer NOT NULL,
+  	"parent_id" integer NOT NULL,
+  	"value" "enum_class_instances_days_of_week",
+  	"id" serial PRIMARY KEY NOT NULL
+  );
+  
+  CREATE TABLE "class_instances_skip_dates" (
+  	"_order" integer NOT NULL,
+  	"_parent_id" integer NOT NULL,
+  	"id" varchar PRIMARY KEY NOT NULL,
+  	"date" timestamp(3) with time zone NOT NULL
+  );
+  
+  CREATE TABLE "class_instances" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"class_id" integer NOT NULL,
+  	"label" varchar,
+  	"instructor_id" integer NOT NULL,
+  	"start_date" timestamp(3) with time zone NOT NULL,
+  	"end_date" timestamp(3) with time zone,
+  	"start_time" varchar NOT NULL,
+  	"end_time" varchar NOT NULL,
+  	"capacity" numeric,
+  	"price_cents" numeric,
+  	"image_id" integer,
+  	"location" varchar,
+  	"status" "enum_class_instances_status" DEFAULT 'draft',
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
   );
   
   CREATE TABLE "bookings" (
   	"id" serial PRIMARY KEY NOT NULL,
-  	"class_id" integer NOT NULL,
+  	"class_instance_id" integer NOT NULL,
+  	"person_id" integer,
   	"customer_name" varchar NOT NULL,
   	"customer_email" varchar NOT NULL,
   	"customer_phone" varchar,
@@ -138,10 +187,37 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"type" "enum_payments_type" NOT NULL,
   	"member_id" integer,
   	"booking_id" integer,
+  	"firing_request_id" integer,
   	"amount_cents" numeric NOT NULL,
   	"square_id" varchar NOT NULL,
   	"status" varchar NOT NULL,
   	"paid_at" timestamp(3) with time zone,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+  );
+  
+  CREATE TABLE "firing_requests" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"name" varchar NOT NULL,
+  	"person_id" integer,
+  	"email" varchar NOT NULL,
+  	"phone" varchar,
+  	"description" varchar NOT NULL,
+  	"height_in" numeric,
+  	"width_in" numeric,
+  	"depth_in" numeric,
+  	"quantity" numeric DEFAULT 1,
+  	"photo_id" integer,
+  	"notes" varchar,
+  	"status" "enum_firing_requests_status" DEFAULT 'submitted' NOT NULL,
+  	"quoted_price_cents" numeric,
+  	"admin_notes" varchar,
+  	"square_customer_id" varchar,
+  	"square_invoice_id" varchar,
+  	"square_invoice_url" varchar,
+  	"invoiced_at" timestamp(3) with time zone,
+  	"paid_at" timestamp(3) with time zone,
+  	"last_invoice_error" varchar,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
   );
@@ -165,11 +241,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"parent_id" integer NOT NULL,
   	"path" varchar NOT NULL,
   	"users_id" integer,
-  	"members_id" integer,
+  	"people_id" integer,
+  	"membership_plans_id" integer,
   	"media_id" integer,
   	"classes_id" integer,
+  	"class_instances_id" integer,
   	"bookings_id" integer,
-  	"payments_id" integer
+  	"payments_id" integer,
+  	"firing_requests_id" integer
   );
   
   CREATE TABLE "payload_preferences" (
@@ -186,7 +265,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"parent_id" integer NOT NULL,
   	"path" varchar NOT NULL,
   	"users_id" integer,
-  	"members_id" integer
+  	"people_id" integer
   );
   
   CREATE TABLE "payload_migrations" (
@@ -267,25 +346,53 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"created_at" timestamp(3) with time zone
   );
   
+  CREATE TABLE "firings_page_steps" (
+  	"_order" integer NOT NULL,
+  	"_parent_id" integer NOT NULL,
+  	"id" varchar PRIMARY KEY NOT NULL,
+  	"step" varchar NOT NULL
+  );
+  
+  CREATE TABLE "firings_page" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"headline" varchar DEFAULT 'Custom Cone 10 Firings' NOT NULL,
+  	"intro" varchar DEFAULT 'Bring us your work and we’ll fire it to Cone 10. Tell us about your piece below and we’ll quote a price based on its size.',
+  	"pricing_note" varchar DEFAULT 'Price is quoted by size after we see your piece — you’re never charged up front.',
+  	"updated_at" timestamp(3) with time zone,
+  	"created_at" timestamp(3) with time zone
+  );
+  
   ALTER TABLE "users_roles" ADD CONSTRAINT "users_roles_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "users_sessions" ADD CONSTRAINT "users_sessions_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "users" ADD CONSTRAINT "users_photo_id_media_id_fk" FOREIGN KEY ("photo_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "members_sessions" ADD CONSTRAINT "members_sessions_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."members"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "people_sessions" ADD CONSTRAINT "people_sessions_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."people"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "people" ADD CONSTRAINT "people_plan_id_membership_plans_id_fk" FOREIGN KEY ("plan_id") REFERENCES "public"."membership_plans"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "classes" ADD CONSTRAINT "classes_image_id_media_id_fk" FOREIGN KEY ("image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "classes" ADD CONSTRAINT "classes_instructor_id_users_id_fk" FOREIGN KEY ("instructor_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "bookings" ADD CONSTRAINT "bookings_class_id_classes_id_fk" FOREIGN KEY ("class_id") REFERENCES "public"."classes"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "payments" ADD CONSTRAINT "payments_member_id_members_id_fk" FOREIGN KEY ("member_id") REFERENCES "public"."members"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "class_instances_days_of_week" ADD CONSTRAINT "class_instances_days_of_week_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."class_instances"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "class_instances_skip_dates" ADD CONSTRAINT "class_instances_skip_dates_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."class_instances"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "class_instances" ADD CONSTRAINT "class_instances_class_id_classes_id_fk" FOREIGN KEY ("class_id") REFERENCES "public"."classes"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "class_instances" ADD CONSTRAINT "class_instances_instructor_id_users_id_fk" FOREIGN KEY ("instructor_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "class_instances" ADD CONSTRAINT "class_instances_image_id_media_id_fk" FOREIGN KEY ("image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "bookings" ADD CONSTRAINT "bookings_class_instance_id_class_instances_id_fk" FOREIGN KEY ("class_instance_id") REFERENCES "public"."class_instances"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "bookings" ADD CONSTRAINT "bookings_person_id_people_id_fk" FOREIGN KEY ("person_id") REFERENCES "public"."people"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "payments" ADD CONSTRAINT "payments_member_id_people_id_fk" FOREIGN KEY ("member_id") REFERENCES "public"."people"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "payments" ADD CONSTRAINT "payments_booking_id_bookings_id_fk" FOREIGN KEY ("booking_id") REFERENCES "public"."bookings"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "payments" ADD CONSTRAINT "payments_firing_request_id_firing_requests_id_fk" FOREIGN KEY ("firing_request_id") REFERENCES "public"."firing_requests"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "firing_requests" ADD CONSTRAINT "firing_requests_person_id_people_id_fk" FOREIGN KEY ("person_id") REFERENCES "public"."people"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "firing_requests" ADD CONSTRAINT "firing_requests_photo_id_media_id_fk" FOREIGN KEY ("photo_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."payload_locked_documents"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_users_fk" FOREIGN KEY ("users_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_members_fk" FOREIGN KEY ("members_id") REFERENCES "public"."members"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_people_fk" FOREIGN KEY ("people_id") REFERENCES "public"."people"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_membership_plans_fk" FOREIGN KEY ("membership_plans_id") REFERENCES "public"."membership_plans"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_media_fk" FOREIGN KEY ("media_id") REFERENCES "public"."media"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_classes_fk" FOREIGN KEY ("classes_id") REFERENCES "public"."classes"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_class_instances_fk" FOREIGN KEY ("class_instances_id") REFERENCES "public"."class_instances"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_bookings_fk" FOREIGN KEY ("bookings_id") REFERENCES "public"."bookings"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_payments_fk" FOREIGN KEY ("payments_id") REFERENCES "public"."payments"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_firing_requests_fk" FOREIGN KEY ("firing_requests_id") REFERENCES "public"."firing_requests"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_preferences_rels" ADD CONSTRAINT "payload_preferences_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."payload_preferences"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_preferences_rels" ADD CONSTRAINT "payload_preferences_rels_users_fk" FOREIGN KEY ("users_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "payload_preferences_rels" ADD CONSTRAINT "payload_preferences_rels_members_fk" FOREIGN KEY ("members_id") REFERENCES "public"."members"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "payload_preferences_rels" ADD CONSTRAINT "payload_preferences_rels_people_fk" FOREIGN KEY ("people_id") REFERENCES "public"."people"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "site_settings_hours" ADD CONSTRAINT "site_settings_hours_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."site_settings"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "site_settings_socials" ADD CONSTRAINT "site_settings_socials_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."site_settings"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "site_settings" ADD CONSTRAINT "site_settings_logo_id_media_id_fk" FOREIGN KEY ("logo_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
@@ -295,6 +402,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "home_page_rels" ADD CONSTRAINT "home_page_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."home_page"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "home_page_rels" ADD CONSTRAINT "home_page_rels_media_fk" FOREIGN KEY ("media_id") REFERENCES "public"."media"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "membership_page_benefits" ADD CONSTRAINT "membership_page_benefits_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."membership_page"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "firings_page_steps" ADD CONSTRAINT "firings_page_steps_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."firings_page"("id") ON DELETE cascade ON UPDATE no action;
   CREATE INDEX "users_roles_order_idx" ON "users_roles" USING btree ("order");
   CREATE INDEX "users_roles_parent_idx" ON "users_roles" USING btree ("parent_id");
   CREATE INDEX "users_sessions_order_idx" ON "users_sessions" USING btree ("_order");
@@ -303,13 +411,17 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "users_updated_at_idx" ON "users" USING btree ("updated_at");
   CREATE INDEX "users_created_at_idx" ON "users" USING btree ("created_at");
   CREATE UNIQUE INDEX "users_email_idx" ON "users" USING btree ("email");
-  CREATE INDEX "members_sessions_order_idx" ON "members_sessions" USING btree ("_order");
-  CREATE INDEX "members_sessions_parent_id_idx" ON "members_sessions" USING btree ("_parent_id");
-  CREATE INDEX "members_square_customer_id_idx" ON "members" USING btree ("square_customer_id");
-  CREATE INDEX "members_square_subscription_id_idx" ON "members" USING btree ("square_subscription_id");
-  CREATE INDEX "members_updated_at_idx" ON "members" USING btree ("updated_at");
-  CREATE INDEX "members_created_at_idx" ON "members" USING btree ("created_at");
-  CREATE UNIQUE INDEX "members_email_idx" ON "members" USING btree ("email");
+  CREATE INDEX "people_sessions_order_idx" ON "people_sessions" USING btree ("_order");
+  CREATE INDEX "people_sessions_parent_id_idx" ON "people_sessions" USING btree ("_parent_id");
+  CREATE INDEX "people_plan_idx" ON "people" USING btree ("plan_id");
+  CREATE INDEX "people_square_customer_id_idx" ON "people" USING btree ("square_customer_id");
+  CREATE INDEX "people_square_subscription_id_idx" ON "people" USING btree ("square_subscription_id");
+  CREATE INDEX "people_updated_at_idx" ON "people" USING btree ("updated_at");
+  CREATE INDEX "people_created_at_idx" ON "people" USING btree ("created_at");
+  CREATE UNIQUE INDEX "people_email_idx" ON "people" USING btree ("email");
+  CREATE INDEX "membership_plans_square_plan_variation_id_idx" ON "membership_plans" USING btree ("square_plan_variation_id");
+  CREATE INDEX "membership_plans_updated_at_idx" ON "membership_plans" USING btree ("updated_at");
+  CREATE INDEX "membership_plans_created_at_idx" ON "membership_plans" USING btree ("created_at");
   CREATE INDEX "media_updated_at_idx" ON "media" USING btree ("updated_at");
   CREATE INDEX "media_created_at_idx" ON "media" USING btree ("created_at");
   CREATE UNIQUE INDEX "media_filename_idx" ON "media" USING btree ("filename");
@@ -317,18 +429,33 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "media_sizes_hero_sizes_hero_filename_idx" ON "media" USING btree ("sizes_hero_filename");
   CREATE UNIQUE INDEX "classes_slug_idx" ON "classes" USING btree ("slug");
   CREATE INDEX "classes_image_idx" ON "classes" USING btree ("image_id");
-  CREATE INDEX "classes_instructor_idx" ON "classes" USING btree ("instructor_id");
   CREATE INDEX "classes_updated_at_idx" ON "classes" USING btree ("updated_at");
   CREATE INDEX "classes_created_at_idx" ON "classes" USING btree ("created_at");
-  CREATE INDEX "bookings_class_idx" ON "bookings" USING btree ("class_id");
+  CREATE INDEX "class_instances_days_of_week_order_idx" ON "class_instances_days_of_week" USING btree ("order");
+  CREATE INDEX "class_instances_days_of_week_parent_idx" ON "class_instances_days_of_week" USING btree ("parent_id");
+  CREATE INDEX "class_instances_skip_dates_order_idx" ON "class_instances_skip_dates" USING btree ("_order");
+  CREATE INDEX "class_instances_skip_dates_parent_id_idx" ON "class_instances_skip_dates" USING btree ("_parent_id");
+  CREATE INDEX "class_instances_class_idx" ON "class_instances" USING btree ("class_id");
+  CREATE INDEX "class_instances_instructor_idx" ON "class_instances" USING btree ("instructor_id");
+  CREATE INDEX "class_instances_image_idx" ON "class_instances" USING btree ("image_id");
+  CREATE INDEX "class_instances_updated_at_idx" ON "class_instances" USING btree ("updated_at");
+  CREATE INDEX "class_instances_created_at_idx" ON "class_instances" USING btree ("created_at");
+  CREATE INDEX "bookings_class_instance_idx" ON "bookings" USING btree ("class_instance_id");
+  CREATE INDEX "bookings_person_idx" ON "bookings" USING btree ("person_id");
   CREATE INDEX "bookings_square_payment_id_idx" ON "bookings" USING btree ("square_payment_id");
   CREATE INDEX "bookings_updated_at_idx" ON "bookings" USING btree ("updated_at");
   CREATE INDEX "bookings_created_at_idx" ON "bookings" USING btree ("created_at");
   CREATE INDEX "payments_member_idx" ON "payments" USING btree ("member_id");
   CREATE INDEX "payments_booking_idx" ON "payments" USING btree ("booking_id");
+  CREATE INDEX "payments_firing_request_idx" ON "payments" USING btree ("firing_request_id");
   CREATE INDEX "payments_square_id_idx" ON "payments" USING btree ("square_id");
   CREATE INDEX "payments_updated_at_idx" ON "payments" USING btree ("updated_at");
   CREATE INDEX "payments_created_at_idx" ON "payments" USING btree ("created_at");
+  CREATE INDEX "firing_requests_person_idx" ON "firing_requests" USING btree ("person_id");
+  CREATE INDEX "firing_requests_photo_idx" ON "firing_requests" USING btree ("photo_id");
+  CREATE INDEX "firing_requests_square_invoice_id_idx" ON "firing_requests" USING btree ("square_invoice_id");
+  CREATE INDEX "firing_requests_updated_at_idx" ON "firing_requests" USING btree ("updated_at");
+  CREATE INDEX "firing_requests_created_at_idx" ON "firing_requests" USING btree ("created_at");
   CREATE UNIQUE INDEX "payload_kv_key_idx" ON "payload_kv" USING btree ("key");
   CREATE INDEX "payload_locked_documents_global_slug_idx" ON "payload_locked_documents" USING btree ("global_slug");
   CREATE INDEX "payload_locked_documents_updated_at_idx" ON "payload_locked_documents" USING btree ("updated_at");
@@ -337,11 +464,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "payload_locked_documents_rels_parent_idx" ON "payload_locked_documents_rels" USING btree ("parent_id");
   CREATE INDEX "payload_locked_documents_rels_path_idx" ON "payload_locked_documents_rels" USING btree ("path");
   CREATE INDEX "payload_locked_documents_rels_users_id_idx" ON "payload_locked_documents_rels" USING btree ("users_id");
-  CREATE INDEX "payload_locked_documents_rels_members_id_idx" ON "payload_locked_documents_rels" USING btree ("members_id");
+  CREATE INDEX "payload_locked_documents_rels_people_id_idx" ON "payload_locked_documents_rels" USING btree ("people_id");
+  CREATE INDEX "payload_locked_documents_rels_membership_plans_id_idx" ON "payload_locked_documents_rels" USING btree ("membership_plans_id");
   CREATE INDEX "payload_locked_documents_rels_media_id_idx" ON "payload_locked_documents_rels" USING btree ("media_id");
   CREATE INDEX "payload_locked_documents_rels_classes_id_idx" ON "payload_locked_documents_rels" USING btree ("classes_id");
+  CREATE INDEX "payload_locked_documents_rels_class_instances_id_idx" ON "payload_locked_documents_rels" USING btree ("class_instances_id");
   CREATE INDEX "payload_locked_documents_rels_bookings_id_idx" ON "payload_locked_documents_rels" USING btree ("bookings_id");
   CREATE INDEX "payload_locked_documents_rels_payments_id_idx" ON "payload_locked_documents_rels" USING btree ("payments_id");
+  CREATE INDEX "payload_locked_documents_rels_firing_requests_id_idx" ON "payload_locked_documents_rels" USING btree ("firing_requests_id");
   CREATE INDEX "payload_preferences_key_idx" ON "payload_preferences" USING btree ("key");
   CREATE INDEX "payload_preferences_updated_at_idx" ON "payload_preferences" USING btree ("updated_at");
   CREATE INDEX "payload_preferences_created_at_idx" ON "payload_preferences" USING btree ("created_at");
@@ -349,7 +479,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "payload_preferences_rels_parent_idx" ON "payload_preferences_rels" USING btree ("parent_id");
   CREATE INDEX "payload_preferences_rels_path_idx" ON "payload_preferences_rels" USING btree ("path");
   CREATE INDEX "payload_preferences_rels_users_id_idx" ON "payload_preferences_rels" USING btree ("users_id");
-  CREATE INDEX "payload_preferences_rels_members_id_idx" ON "payload_preferences_rels" USING btree ("members_id");
+  CREATE INDEX "payload_preferences_rels_people_id_idx" ON "payload_preferences_rels" USING btree ("people_id");
   CREATE INDEX "payload_migrations_updated_at_idx" ON "payload_migrations" USING btree ("updated_at");
   CREATE INDEX "payload_migrations_created_at_idx" ON "payload_migrations" USING btree ("created_at");
   CREATE INDEX "site_settings_hours_order_idx" ON "site_settings_hours" USING btree ("_order");
@@ -366,7 +496,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "home_page_rels_path_idx" ON "home_page_rels" USING btree ("path");
   CREATE INDEX "home_page_rels_media_id_idx" ON "home_page_rels" USING btree ("media_id");
   CREATE INDEX "membership_page_benefits_order_idx" ON "membership_page_benefits" USING btree ("_order");
-  CREATE INDEX "membership_page_benefits_parent_id_idx" ON "membership_page_benefits" USING btree ("_parent_id");`)
+  CREATE INDEX "membership_page_benefits_parent_id_idx" ON "membership_page_benefits" USING btree ("_parent_id");
+  CREATE INDEX "firings_page_steps_order_idx" ON "firings_page_steps" USING btree ("_order");
+  CREATE INDEX "firings_page_steps_parent_id_idx" ON "firings_page_steps" USING btree ("_parent_id");`)
 }
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
@@ -374,12 +506,17 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
    DROP TABLE "users_roles" CASCADE;
   DROP TABLE "users_sessions" CASCADE;
   DROP TABLE "users" CASCADE;
-  DROP TABLE "members_sessions" CASCADE;
-  DROP TABLE "members" CASCADE;
+  DROP TABLE "people_sessions" CASCADE;
+  DROP TABLE "people" CASCADE;
+  DROP TABLE "membership_plans" CASCADE;
   DROP TABLE "media" CASCADE;
   DROP TABLE "classes" CASCADE;
+  DROP TABLE "class_instances_days_of_week" CASCADE;
+  DROP TABLE "class_instances_skip_dates" CASCADE;
+  DROP TABLE "class_instances" CASCADE;
   DROP TABLE "bookings" CASCADE;
   DROP TABLE "payments" CASCADE;
+  DROP TABLE "firing_requests" CASCADE;
   DROP TABLE "payload_kv" CASCADE;
   DROP TABLE "payload_locked_documents" CASCADE;
   DROP TABLE "payload_locked_documents_rels" CASCADE;
@@ -394,10 +531,16 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "home_page_rels" CASCADE;
   DROP TABLE "membership_page_benefits" CASCADE;
   DROP TABLE "membership_page" CASCADE;
+  DROP TABLE "firings_page_steps" CASCADE;
+  DROP TABLE "firings_page" CASCADE;
   DROP TYPE "public"."enum_users_roles";
-  DROP TYPE "public"."enum_members_status";
+  DROP TYPE "public"."enum_people_status";
+  DROP TYPE "public"."enum_membership_plans_kind";
   DROP TYPE "public"."enum_classes_category";
   DROP TYPE "public"."enum_classes_status";
+  DROP TYPE "public"."enum_class_instances_days_of_week";
+  DROP TYPE "public"."enum_class_instances_status";
   DROP TYPE "public"."enum_bookings_status";
-  DROP TYPE "public"."enum_payments_type";`)
+  DROP TYPE "public"."enum_payments_type";
+  DROP TYPE "public"."enum_firing_requests_status";`)
 }

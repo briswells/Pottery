@@ -362,8 +362,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.members_sessions": {
-      "name": "members_sessions",
+    "public.people_sessions": {
+      "name": "people_sessions",
       "schema": "",
       "columns": {
         "_order": {
@@ -398,8 +398,8 @@
         }
       },
       "indexes": {
-        "members_sessions_order_idx": {
-          "name": "members_sessions_order_idx",
+        "people_sessions_order_idx": {
+          "name": "people_sessions_order_idx",
           "columns": [
             {
               "expression": "_order",
@@ -413,8 +413,8 @@
           "method": "btree",
           "with": {}
         },
-        "members_sessions_parent_id_idx": {
-          "name": "members_sessions_parent_id_idx",
+        "people_sessions_parent_id_idx": {
+          "name": "people_sessions_parent_id_idx",
           "columns": [
             {
               "expression": "_parent_id",
@@ -430,10 +430,10 @@
         }
       },
       "foreignKeys": {
-        "members_sessions_parent_id_fk": {
-          "name": "members_sessions_parent_id_fk",
-          "tableFrom": "members_sessions",
-          "tableTo": "members",
+        "people_sessions_parent_id_fk": {
+          "name": "people_sessions_parent_id_fk",
+          "tableFrom": "people_sessions",
+          "tableTo": "people",
           "columnsFrom": [
             "_parent_id"
           ],
@@ -450,8 +450,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.members": {
-      "name": "members",
+    "public.people": {
+      "name": "people",
       "schema": "",
       "columns": {
         "id": {
@@ -466,6 +466,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "plan_id": {
+          "name": "plan_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "phone": {
           "name": "phone",
           "type": "varchar",
@@ -474,11 +480,11 @@
         },
         "status": {
           "name": "status",
-          "type": "enum_members_status",
+          "type": "enum_people_status",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'active'"
+          "notNull": false,
+          "default": "'none'"
         },
         "joined_date": {
           "name": "joined_date",
@@ -525,6 +531,18 @@
         "last_payment_status": {
           "name": "last_payment_status",
           "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancel_token_hash": {
+          "name": "cancel_token_hash",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancel_token_expires_at": {
+          "name": "cancel_token_expires_at",
+          "type": "timestamp(3) with time zone",
           "primaryKey": false,
           "notNull": false
         },
@@ -587,8 +605,23 @@
         }
       },
       "indexes": {
-        "members_square_customer_id_idx": {
-          "name": "members_square_customer_id_idx",
+        "people_plan_idx": {
+          "name": "people_plan_idx",
+          "columns": [
+            {
+              "expression": "plan_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "people_square_customer_id_idx": {
+          "name": "people_square_customer_id_idx",
           "columns": [
             {
               "expression": "square_customer_id",
@@ -602,8 +635,8 @@
           "method": "btree",
           "with": {}
         },
-        "members_square_subscription_id_idx": {
-          "name": "members_square_subscription_id_idx",
+        "people_square_subscription_id_idx": {
+          "name": "people_square_subscription_id_idx",
           "columns": [
             {
               "expression": "square_subscription_id",
@@ -617,8 +650,8 @@
           "method": "btree",
           "with": {}
         },
-        "members_updated_at_idx": {
-          "name": "members_updated_at_idx",
+        "people_updated_at_idx": {
+          "name": "people_updated_at_idx",
           "columns": [
             {
               "expression": "updated_at",
@@ -632,8 +665,8 @@
           "method": "btree",
           "with": {}
         },
-        "members_created_at_idx": {
-          "name": "members_created_at_idx",
+        "people_created_at_idx": {
+          "name": "people_created_at_idx",
           "columns": [
             {
               "expression": "created_at",
@@ -647,8 +680,8 @@
           "method": "btree",
           "with": {}
         },
-        "members_email_idx": {
-          "name": "members_email_idx",
+        "people_email_idx": {
+          "name": "people_email_idx",
           "columns": [
             {
               "expression": "email",
@@ -658,6 +691,138 @@
             }
           ],
           "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "people_plan_id_membership_plans_id_fk": {
+          "name": "people_plan_id_membership_plans_id_fk",
+          "tableFrom": "people",
+          "tableTo": "membership_plans",
+          "columnsFrom": [
+            "plan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.membership_plans": {
+      "name": "membership_plans",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "enum_membership_plans_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'square'"
+        },
+        "square_plan_variation_id": {
+          "name": "square_plan_variation_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "price_cents": {
+          "name": "price_cents",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cadence": {
+          "name": "cadence",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "membership_plans_square_plan_variation_id_idx": {
+          "name": "membership_plans_square_plan_variation_id_idx",
+          "columns": [
+            {
+              "expression": "square_plan_variation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "membership_plans_updated_at_idx": {
+          "name": "membership_plans_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "membership_plans_created_at_idx": {
+          "name": "membership_plans_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -958,35 +1123,17 @@
           "primaryKey": false,
           "notNull": false
         },
-        "price_cents": {
-          "name": "price_cents",
+        "default_price_cents": {
+          "name": "default_price_cents",
           "type": "numeric",
           "primaryKey": false,
           "notNull": true
         },
-        "capacity": {
-          "name": "capacity",
+        "default_capacity": {
+          "name": "default_capacity",
           "type": "numeric",
           "primaryKey": false,
           "notNull": true
-        },
-        "start_date": {
-          "name": "start_date",
-          "type": "timestamp(3) with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "schedule_text": {
-          "name": "schedule_text",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "instructor_id": {
-          "name": "instructor_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
         },
         "status": {
           "name": "status",
@@ -1042,21 +1189,6 @@
           "method": "btree",
           "with": {}
         },
-        "classes_instructor_idx": {
-          "name": "classes_instructor_idx",
-          "columns": [
-            {
-              "expression": "instructor_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "classes_updated_at_idx": {
           "name": "classes_updated_at_idx",
           "columns": [
@@ -1101,13 +1233,388 @@
           ],
           "onDelete": "set null",
           "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.class_instances_days_of_week": {
+      "name": "class_instances_days_of_week",
+      "schema": "",
+      "columns": {
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
         },
-        "classes_instructor_id_users_id_fk": {
-          "name": "classes_instructor_id_users_id_fk",
-          "tableFrom": "classes",
+        "parent_id": {
+          "name": "parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "enum_class_instances_days_of_week",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "class_instances_days_of_week_order_idx": {
+          "name": "class_instances_days_of_week_order_idx",
+          "columns": [
+            {
+              "expression": "order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "class_instances_days_of_week_parent_idx": {
+          "name": "class_instances_days_of_week_parent_idx",
+          "columns": [
+            {
+              "expression": "parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "class_instances_days_of_week_parent_fk": {
+          "name": "class_instances_days_of_week_parent_fk",
+          "tableFrom": "class_instances_days_of_week",
+          "tableTo": "class_instances",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.class_instances_skip_dates": {
+      "name": "class_instances_skip_dates",
+      "schema": "",
+      "columns": {
+        "_order": {
+          "name": "_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "_parent_id": {
+          "name": "_parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "class_instances_skip_dates_order_idx": {
+          "name": "class_instances_skip_dates_order_idx",
+          "columns": [
+            {
+              "expression": "_order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "class_instances_skip_dates_parent_id_idx": {
+          "name": "class_instances_skip_dates_parent_id_idx",
+          "columns": [
+            {
+              "expression": "_parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "class_instances_skip_dates_parent_id_fk": {
+          "name": "class_instances_skip_dates_parent_id_fk",
+          "tableFrom": "class_instances_skip_dates",
+          "tableTo": "class_instances",
+          "columnsFrom": [
+            "_parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.class_instances": {
+      "name": "class_instances",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "class_id": {
+          "name": "class_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "label": {
+          "name": "label",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "instructor_id": {
+          "name": "instructor_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "start_time": {
+          "name": "start_time",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_time": {
+          "name": "end_time",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "capacity": {
+          "name": "capacity",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "price_cents": {
+          "name": "price_cents",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "image_id": {
+          "name": "image_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location": {
+          "name": "location",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_class_instances_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'draft'"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "class_instances_class_idx": {
+          "name": "class_instances_class_idx",
+          "columns": [
+            {
+              "expression": "class_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "class_instances_instructor_idx": {
+          "name": "class_instances_instructor_idx",
+          "columns": [
+            {
+              "expression": "instructor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "class_instances_image_idx": {
+          "name": "class_instances_image_idx",
+          "columns": [
+            {
+              "expression": "image_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "class_instances_updated_at_idx": {
+          "name": "class_instances_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "class_instances_created_at_idx": {
+          "name": "class_instances_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "class_instances_class_id_classes_id_fk": {
+          "name": "class_instances_class_id_classes_id_fk",
+          "tableFrom": "class_instances",
+          "tableTo": "classes",
+          "columnsFrom": [
+            "class_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "class_instances_instructor_id_users_id_fk": {
+          "name": "class_instances_instructor_id_users_id_fk",
+          "tableFrom": "class_instances",
           "tableTo": "users",
           "columnsFrom": [
             "instructor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "class_instances_image_id_media_id_fk": {
+          "name": "class_instances_image_id_media_id_fk",
+          "tableFrom": "class_instances",
+          "tableTo": "media",
+          "columnsFrom": [
+            "image_id"
           ],
           "columnsTo": [
             "id"
@@ -1132,11 +1639,17 @@
           "primaryKey": true,
           "notNull": true
         },
-        "class_id": {
-          "name": "class_id",
+        "class_instance_id": {
+          "name": "class_instance_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "person_id": {
+          "name": "person_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "customer_name": {
           "name": "customer_name",
@@ -1192,11 +1705,26 @@
         }
       },
       "indexes": {
-        "bookings_class_idx": {
-          "name": "bookings_class_idx",
+        "bookings_class_instance_idx": {
+          "name": "bookings_class_instance_idx",
           "columns": [
             {
-              "expression": "class_id",
+              "expression": "class_instance_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "bookings_person_idx": {
+          "name": "bookings_person_idx",
+          "columns": [
+            {
+              "expression": "person_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1254,12 +1782,25 @@
         }
       },
       "foreignKeys": {
-        "bookings_class_id_classes_id_fk": {
-          "name": "bookings_class_id_classes_id_fk",
+        "bookings_class_instance_id_class_instances_id_fk": {
+          "name": "bookings_class_instance_id_class_instances_id_fk",
           "tableFrom": "bookings",
-          "tableTo": "classes",
+          "tableTo": "class_instances",
           "columnsFrom": [
-            "class_id"
+            "class_instance_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "bookings_person_id_people_id_fk": {
+          "name": "bookings_person_id_people_id_fk",
+          "tableFrom": "bookings",
+          "tableTo": "people",
+          "columnsFrom": [
+            "person_id"
           ],
           "columnsTo": [
             "id"
@@ -1441,10 +1982,10 @@
         }
       },
       "foreignKeys": {
-        "payments_member_id_members_id_fk": {
-          "name": "payments_member_id_members_id_fk",
+        "payments_member_id_people_id_fk": {
+          "name": "payments_member_id_people_id_fk",
           "tableFrom": "payments",
-          "tableTo": "members",
+          "tableTo": "people",
           "columnsFrom": [
             "member_id"
           ],
@@ -1502,6 +2043,12 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
+        },
+        "person_id": {
+          "name": "person_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "email": {
           "name": "email",
@@ -1630,6 +2177,21 @@
         }
       },
       "indexes": {
+        "firing_requests_person_idx": {
+          "name": "firing_requests_person_idx",
+          "columns": [
+            {
+              "expression": "person_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "firing_requests_photo_idx": {
           "name": "firing_requests_photo_idx",
           "columns": [
@@ -1692,6 +2254,19 @@
         }
       },
       "foreignKeys": {
+        "firing_requests_person_id_people_id_fk": {
+          "name": "firing_requests_person_id_people_id_fk",
+          "tableFrom": "firing_requests",
+          "tableTo": "people",
+          "columnsFrom": [
+            "person_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
         "firing_requests_photo_id_media_id_fk": {
           "name": "firing_requests_photo_id_media_id_fk",
           "tableFrom": "firing_requests",
@@ -1878,8 +2453,14 @@
           "primaryKey": false,
           "notNull": false
         },
-        "members_id": {
-          "name": "members_id",
+        "people_id": {
+          "name": "people_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "membership_plans_id": {
+          "name": "membership_plans_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -1892,6 +2473,12 @@
         },
         "classes_id": {
           "name": "classes_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "class_instances_id": {
+          "name": "class_instances_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -1976,11 +2563,26 @@
           "method": "btree",
           "with": {}
         },
-        "payload_locked_documents_rels_members_id_idx": {
-          "name": "payload_locked_documents_rels_members_id_idx",
+        "payload_locked_documents_rels_people_id_idx": {
+          "name": "payload_locked_documents_rels_people_id_idx",
           "columns": [
             {
-              "expression": "members_id",
+              "expression": "people_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_membership_plans_id_idx": {
+          "name": "payload_locked_documents_rels_membership_plans_id_idx",
+          "columns": [
+            {
+              "expression": "membership_plans_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2011,6 +2613,21 @@
           "columns": [
             {
               "expression": "classes_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_class_instances_id_idx": {
+          "name": "payload_locked_documents_rels_class_instances_id_idx",
+          "columns": [
+            {
+              "expression": "class_instances_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2094,12 +2711,25 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "payload_locked_documents_rels_members_fk": {
-          "name": "payload_locked_documents_rels_members_fk",
+        "payload_locked_documents_rels_people_fk": {
+          "name": "payload_locked_documents_rels_people_fk",
           "tableFrom": "payload_locked_documents_rels",
-          "tableTo": "members",
+          "tableTo": "people",
           "columnsFrom": [
-            "members_id"
+            "people_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_membership_plans_fk": {
+          "name": "payload_locked_documents_rels_membership_plans_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "membership_plans",
+          "columnsFrom": [
+            "membership_plans_id"
           ],
           "columnsTo": [
             "id"
@@ -2126,6 +2756,19 @@
           "tableTo": "classes",
           "columnsFrom": [
             "classes_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_class_instances_fk": {
+          "name": "payload_locked_documents_rels_class_instances_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "class_instances",
+          "columnsFrom": [
+            "class_instances_id"
           ],
           "columnsTo": [
             "id"
@@ -2304,8 +2947,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "members_id": {
-          "name": "members_id",
+        "people_id": {
+          "name": "people_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -2372,11 +3015,11 @@
           "method": "btree",
           "with": {}
         },
-        "payload_preferences_rels_members_id_idx": {
-          "name": "payload_preferences_rels_members_id_idx",
+        "payload_preferences_rels_people_id_idx": {
+          "name": "payload_preferences_rels_people_id_idx",
           "columns": [
             {
-              "expression": "members_id",
+              "expression": "people_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2415,12 +3058,12 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "payload_preferences_rels_members_fk": {
-          "name": "payload_preferences_rels_members_fk",
+        "payload_preferences_rels_people_fk": {
+          "name": "payload_preferences_rels_people_fk",
           "tableFrom": "payload_preferences_rels",
-          "tableTo": "members",
+          "tableTo": "people",
           "columnsFrom": [
-            "members_id"
+            "people_id"
           ],
           "columnsTo": [
             "id"
@@ -3393,17 +4036,27 @@
       "schema": "public",
       "values": [
         "admin",
-        "editor"
+        "editor",
+        "instructor"
       ]
     },
-    "public.enum_members_status": {
-      "name": "enum_members_status",
+    "public.enum_people_status": {
+      "name": "enum_people_status",
       "schema": "public",
       "values": [
+        "none",
         "active",
         "past_due",
         "paused",
         "cancelled"
+      ]
+    },
+    "public.enum_membership_plans_kind": {
+      "name": "enum_membership_plans_kind",
+      "schema": "public",
+      "values": [
+        "square",
+        "free"
       ]
     },
     "public.enum_classes_category": {
@@ -3422,6 +4075,29 @@
       "values": [
         "active",
         "archived"
+      ]
+    },
+    "public.enum_class_instances_days_of_week": {
+      "name": "enum_class_instances_days_of_week",
+      "schema": "public",
+      "values": [
+        "SU",
+        "MO",
+        "TU",
+        "WE",
+        "TH",
+        "FR",
+        "SA"
+      ]
+    },
+    "public.enum_class_instances_status": {
+      "name": "enum_class_instances_status",
+      "schema": "public",
+      "values": [
+        "draft",
+        "published",
+        "cancelled",
+        "completed"
       ]
     },
     "public.enum_bookings_status": {
@@ -3467,6 +4143,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "eabfcffb-6f9c-44e2-bbe0-8dbcbc22e3b1",
+  "id": "87c00065-4ffa-404d-af27-7bbb49ac09e1",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }
