@@ -42,4 +42,31 @@ describe('Users RBAC', () => {
       payload.update({ collection: 'users', id: user.id, data: { roles: [] } }),
     ).rejects.toThrow()
   })
+
+  it('lets a non-admin (instructor) read and update only their own record', async () => {
+    const payload = await getTestPayload()
+    const me = await payload.create({
+      collection: 'users',
+      data: { name: 'InstSelf', email: `instself-${Date.now()}@test.local`, password: 'test12345', roles: ['instructor'] },
+    })
+    const someoneElse = await payload.create({
+      collection: 'users',
+      data: { name: 'InstOther', email: `instother-${Date.now()}@test.local`, password: 'test12345', roles: ['instructor'] },
+    })
+
+    // Reads are scoped to self — this is what makes /admin/account work for them.
+    const visible = await payload.find({ collection: 'users', overrideAccess: false, user: me })
+    expect(visible.docs.map((d) => d.id)).toEqual([me.id])
+
+    // Can update their own profile.
+    const updated = await payload.update({
+      collection: 'users', id: me.id, overrideAccess: false, user: me, data: { bio: 'I throw mugs.' },
+    })
+    expect(updated.bio).toBe('I throw mugs.')
+
+    // Cannot update anyone else.
+    await expect(
+      payload.update({ collection: 'users', id: someoneElse.id, overrideAccess: false, user: me, data: { bio: 'nope' } }),
+    ).rejects.toThrow()
+  })
 })

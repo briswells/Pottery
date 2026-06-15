@@ -1,6 +1,6 @@
 import type { CollectionConfig, FieldAccess } from 'payload'
 import { isAdmin } from '../access/isAdmin'
-import { isAdminOrEditor } from '../access/isAdminOrEditor'
+import { adminEditorOrSelf } from '../access/adminEditorOrSelf'
 
 /** Field-level access: only admins may update the roles field. */
 const adminOnlyField: FieldAccess = ({ req: { user } }) =>
@@ -11,9 +11,9 @@ export const Users: CollectionConfig = {
   auth: true,
   admin: { useAsTitle: 'name', group: 'People' },
   access: {
-    read: isAdminOrEditor,
+    read: adminEditorOrSelf,
     create: isAdmin,
-    update: isAdminOrEditor,
+    update: adminEditorOrSelf,
     delete: isAdmin,
   },
   fields: [
