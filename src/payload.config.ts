@@ -39,7 +39,18 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
     components: {
-      beforeNavLinks: ['/admin/MembersNavLink#default'],
+      beforeNavLinks: ['/admin/MembersNavLink#default', '/admin/MyClassesNavLink#default'],
+      views: {
+        myClasses: {
+          Component: '/admin/views/MyClasses#default',
+          path: '/my-classes',
+          exact: true,
+        },
+        myClassRoster: {
+          Component: '/admin/views/MyClassRoster#default',
+          path: '/my-classes/:id',
+        },
+      },
     },
   },
   onInit: async (payload) => {
