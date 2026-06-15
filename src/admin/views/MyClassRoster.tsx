@@ -48,7 +48,7 @@ function statusPill(status: string) {
 export default async function MyClassRoster({ initPageResult, params, searchParams }: AdminViewServerProps) {
   const { req, permissions, visibleEntities, locale } = initPageResult
   const { user, payload } = req
-  if (!user) redirect('/admin/login')
+  if (!user || user.collection !== 'users') redirect('/admin/login')
 
   const wrap = (children: React.ReactNode) => (
     <DefaultTemplate

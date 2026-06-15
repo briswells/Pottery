@@ -29,7 +29,7 @@ function classTitle(inst: ClassInstance): string {
 export default async function MyClasses({ initPageResult, params, searchParams }: AdminViewServerProps) {
   const { req, permissions, visibleEntities, locale } = initPageResult
   const { user, payload } = req
-  if (!user) redirect('/admin/login')
+  if (!user || user.collection !== 'users') redirect('/admin/login')
 
   // Scoped to this instructor by the collection's read access (overrideAccess: false + user).
   const { docs } = await payload.find({
