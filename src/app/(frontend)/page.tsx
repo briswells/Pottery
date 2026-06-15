@@ -15,17 +15,19 @@ export default async function HomePage() {
   const heroImgUrl = mediaUrl(home.heroImage, 'hero')
   const heroImgAlt = mediaAlt(home.heroImage) || home.heroHeadline || 'Portside Pottery studio'
 
-  // Deliberate, clean single photo per category card.
+  // Deliberate, clean single photo per category card. Each card has its own
+  // dedicated image field; when one is unset we fall back to a story-section or
+  // gallery image so existing sites keep working until editors set the new fields.
   // NOTE: do NOT use gallery[2] (collage.jpg) — it's a multi-photo collage and looks broken in a card.
   const galleryItems = home.gallery ?? []
   const sections = home.sections ?? []
   // Take a class → the instructor/people shot; Become a member & Visit → clean studio shots
-  const cat0 = (galleryItems[0] ? mediaUrl(galleryItems[0]) : null) || (sections[0]?.image ? mediaUrl(sections[0].image) : null)
-  const cat1 = (sections[1]?.image ? mediaUrl(sections[1].image) : null) || (galleryItems[4] ? mediaUrl(galleryItems[4]) : null)
-  const cat2 = (sections[2]?.image ? mediaUrl(sections[2].image) : null) || (galleryItems[1] ? mediaUrl(galleryItems[1]) : null)
-  const cardAlt0 = (galleryItems[0] ? mediaAlt(galleryItems[0]) : '') || 'A pottery class at Portside'
-  const cardAlt1 = (sections[1]?.image ? mediaAlt(sections[1].image) : '') || 'Inside the Portside studio'
-  const cardAlt2 = (sections[2]?.image ? mediaAlt(sections[2].image) : '') || 'Visit Portside Pottery'
+  const cat0 = (home.classCardImage ? mediaUrl(home.classCardImage) : null) || (galleryItems[0] ? mediaUrl(galleryItems[0]) : null) || (sections[0]?.image ? mediaUrl(sections[0].image) : null)
+  const cat1 = (home.memberCardImage ? mediaUrl(home.memberCardImage) : null) || (sections[1]?.image ? mediaUrl(sections[1].image) : null) || (galleryItems[4] ? mediaUrl(galleryItems[4]) : null)
+  const cat2 = (home.visitCardImage ? mediaUrl(home.visitCardImage) : null) || (sections[2]?.image ? mediaUrl(sections[2].image) : null) || (galleryItems[1] ? mediaUrl(galleryItems[1]) : null)
+  const cardAlt0 = (home.classCardImage ? mediaAlt(home.classCardImage) : '') || (galleryItems[0] ? mediaAlt(galleryItems[0]) : '') || 'A pottery class at Portside'
+  const cardAlt1 = (home.memberCardImage ? mediaAlt(home.memberCardImage) : '') || (sections[1]?.image ? mediaAlt(sections[1].image) : '') || 'Inside the Portside studio'
+  const cardAlt2 = (home.visitCardImage ? mediaAlt(home.visitCardImage) : '') || (sections[2]?.image ? mediaAlt(sections[2].image) : '') || 'Visit Portside Pottery'
 
   return (
     <div>

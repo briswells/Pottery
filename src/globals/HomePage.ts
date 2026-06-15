@@ -11,6 +11,13 @@ export const HomePage: GlobalConfig = {
     { name: 'heroHeadline', type: 'text', required: true, defaultValue: 'Where clay meets community' },
     { name: 'heroSubtext', type: 'textarea' },
     { name: 'heroImage', type: 'upload', relationTo: 'media' },
+    {
+      name: 'visitCardImage', type: 'upload', relationTo: 'media',
+      label: '“Visit the studio” card image',
+      admin: { description: 'Images for the three “What we offer” cards at the top of the homepage. Each card is independent — if left blank, it falls back to a story-section or gallery image.' },
+    },
+    { name: 'classCardImage', type: 'upload', relationTo: 'media', label: '“Take a class” card image' },
+    { name: 'memberCardImage', type: 'upload', relationTo: 'media', label: '“Become a member” card image' },
     { name: 'sections', type: 'array', maxRows: 6, labels: { singular: 'Section', plural: 'Sections' }, fields: [
       { name: 'heading', type: 'text', required: true },
       { name: 'body', type: 'textarea', required: true },

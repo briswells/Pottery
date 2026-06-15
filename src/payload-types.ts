@@ -943,6 +943,12 @@ export interface HomePage {
   heroHeadline: string;
   heroSubtext?: string | null;
   heroImage?: (number | null) | Media;
+  /**
+   * Images for the three “What we offer” cards at the top of the homepage. Each card is independent — if left blank, it falls back to a story-section or gallery image.
+   */
+  visitCardImage?: (number | null) | Media;
+  classCardImage?: (number | null) | Media;
+  memberCardImage?: (number | null) | Media;
   sections?:
     | {
         heading: string;
@@ -1029,6 +1035,9 @@ export interface HomePageSelect<T extends boolean = true> {
   heroHeadline?: T;
   heroSubtext?: T;
   heroImage?: T;
+  visitCardImage?: T;
+  classCardImage?: T;
+  memberCardImage?: T;
   sections?:
     | T
     | {
