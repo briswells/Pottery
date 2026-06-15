@@ -40,7 +40,7 @@ describe('ClassInstances', () => {
     expect(inst.priceCents).toBe(22000)
     expect(inst.capacity).toBe(8)
     expect(inst.status).toBe('draft')
-    expect(inst.label).toContain('2026-07-07')
+    expect(inst.label).toBe(cls.title)
   })
 
   it('allows overriding price and capacity per instance', async () => {

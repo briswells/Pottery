@@ -5,7 +5,7 @@ import { computeEndDate } from '../lib/schedule'
  * Fills a class-instance's priceCents / capacity / numberOfClasses from its parent
  * class when left blank, derives endDate from the (possibly inherited) session count
  * so admins set an end date OR a number of classes, and defaults the `label` (used as
- * the instance title) to the class title + start date when the admin leaves it blank.
+ * the instance title) to the class title when the admin leaves it blank.
  */
 export const applyClassDefaults: CollectionBeforeValidateHook = async ({ data, req }) => {
   if (!data) return data
@@ -28,12 +28,8 @@ export const applyClassDefaults: CollectionBeforeValidateHook = async ({ data, r
     if (computed) data.endDate = computed
   }
 
-  // Default the title, but keep an admin-provided one (e.g. "… — Tuesday Nights").
-  if (!data.label) {
-    const dateLabel = data.startDate
-      ? new Date(data.startDate).toISOString().slice(0, 10)
-      : 'unscheduled'
-    data.label = `${cls.title} — ${dateLabel}`
-  }
+  // Default the title to the class name, but keep an admin-provided one
+  // (e.g. "… — Tuesday Nights"). The admin UI prefills this client-side too.
+  if (!data.label) data.label = cls.title
   return data
 }

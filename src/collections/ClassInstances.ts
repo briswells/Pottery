@@ -36,18 +36,24 @@ export const ClassInstances: CollectionConfig = {
   fields: [
     { name: 'class', type: 'relationship', relationTo: 'classes', required: true },
     {
+      name: 'autofill', type: 'ui',
+      admin: { components: { Field: '/admin/ClassInstanceAutofill#ClassInstanceAutofill' } },
+    },
+    {
       name: 'label', type: 'text', label: 'Title',
-      admin: { description: 'This run’s name. Leave blank to auto-fill from the class + start date; set it to tell concurrent runs apart, e.g. “… — Tuesday Nights” vs “… — Wednesday Nights”.' },
+      admin: { description: 'Auto-filled from the class — edit to tell concurrent runs apart, e.g. add “ — Tuesday Nights”.' },
     },
     { name: 'instructor', type: 'relationship', relationTo: 'users', required: true },
     { name: 'startDate', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly' }, description: 'First (or only) meeting date' } },
+    { name: 'startTime', type: 'text', required: true, validate: timeValidate, admin: { description: '24-hour HH:MM, e.g. 18:00' } },
+    { name: 'endTime', type: 'text', required: true, validate: timeValidate, admin: { description: '24-hour HH:MM, e.g. 20:00' } },
     {
       name: 'daysOfWeek', type: 'select', hasMany: true, options: [...DAYS_OF_WEEK],
       admin: { description: 'Which days the class meets (multi-week courses).' },
     },
     {
       name: 'numberOfClasses', type: 'number', min: 1,
-      admin: { description: 'For a multi-week course, how many sessions it runs. Fills in the end date automatically — set this OR an end date, not both.' },
+      admin: { description: 'For a multi-week course, how many sessions it runs (inherited from the class). Fills in the end date automatically — set this OR an end date, not both.' },
     },
     {
       name: 'endDate', type: 'date',
@@ -56,8 +62,6 @@ export const ClassInstances: CollectionConfig = {
         description: 'Last meeting date. Leave blank for a single-day class, or set "Number of classes" instead and this fills in automatically.',
       },
     },
-    { name: 'startTime', type: 'text', required: true, validate: timeValidate, admin: { description: '24-hour HH:MM, e.g. 18:00' } },
-    { name: 'endTime', type: 'text', required: true, validate: timeValidate, admin: { description: '24-hour HH:MM, e.g. 20:00' } },
     {
       name: 'skipDates', type: 'array',
       labels: { singular: 'Skip date', plural: 'Skip dates' },

@@ -355,7 +355,7 @@ export interface ClassInstance {
   id: number;
   class: number | Class;
   /**
-   * This run’s name. Leave blank to auto-fill from the class + start date; set it to tell concurrent runs apart, e.g. “… — Tuesday Nights” vs “… — Wednesday Nights”.
+   * Auto-filled from the class — edit to tell concurrent runs apart, e.g. add “ — Tuesday Nights”.
    */
   label?: string | null;
   instructor: number | User;
@@ -364,18 +364,6 @@ export interface ClassInstance {
    */
   startDate: string;
   /**
-   * Which days the class meets (multi-week courses).
-   */
-  daysOfWeek?: ('SU' | 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA')[] | null;
-  /**
-   * For a multi-week course, how many sessions it runs. Fills in the end date automatically — set this OR an end date, not both.
-   */
-  numberOfClasses?: number | null;
-  /**
-   * Last meeting date. Leave blank for a single-day class, or set "Number of classes" instead and this fills in automatically.
-   */
-  endDate?: string | null;
-  /**
    * 24-hour HH:MM, e.g. 18:00
    */
   startTime: string;
@@ -383,6 +371,18 @@ export interface ClassInstance {
    * 24-hour HH:MM, e.g. 20:00
    */
   endTime: string;
+  /**
+   * Which days the class meets (multi-week courses).
+   */
+  daysOfWeek?: ('SU' | 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA')[] | null;
+  /**
+   * For a multi-week course, how many sessions it runs (inherited from the class). Fills in the end date automatically — set this OR an end date, not both.
+   */
+  numberOfClasses?: number | null;
+  /**
+   * Last meeting date. Leave blank for a single-day class, or set "Number of classes" instead and this fills in automatically.
+   */
+  endDate?: string | null;
   /**
    * Dates to exclude (e.g. holidays).
    */
@@ -781,11 +781,11 @@ export interface ClassInstancesSelect<T extends boolean = true> {
   label?: T;
   instructor?: T;
   startDate?: T;
+  startTime?: T;
+  endTime?: T;
   daysOfWeek?: T;
   numberOfClasses?: T;
   endDate?: T;
-  startTime?: T;
-  endTime?: T;
   skipDates?:
     | T
     | {
