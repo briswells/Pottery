@@ -22,10 +22,3 @@ export const dollarsToCents = (input: string): number | null => {
   if (!Number.isFinite(dollars)) return null
   return Math.round(dollars * 100)
 }
-
-export const CATEGORY_LABELS: Record<string, string> = {
-  'wheel-series': 'Wheel-throwing series',
-  'day-camp': 'Day camp',
-  'raku': 'Raku',
-  'daytime-multiweek': 'Daytime multi-week',
-}

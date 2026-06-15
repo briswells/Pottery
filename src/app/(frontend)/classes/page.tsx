@@ -1,7 +1,7 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import Link from 'next/link'
-import { usd, CATEGORY_LABELS } from '../../../lib/format'
+import { usd } from '../../../lib/format'
 import { mediaUrl, mediaAlt } from '../../../lib/media'
 import { formatDate } from '../../../lib/schedule'
 
@@ -38,7 +38,7 @@ export default async function ClassesPage() {
     <div style={{ padding: '40px 0' }}>
       <h1>Classes</h1>
       <p style={{ marginBottom: 16 }}>
-        <Link href="/schedule">View the full schedule →</Link>
+        <Link href="/schedule">View class calendar →</Link>
       </p>
       {classes.length === 0 ? (
         <p>New classes are being scheduled — check back soon.</p>
@@ -55,7 +55,6 @@ export default async function ClassesPage() {
                   </div>
                 )}
                 <div className="pp-card-body">
-                  <div className="pp-kicker">{CATEGORY_LABELS[c.category] ?? c.category}</div>
                   <h2>
                     <Link href={`/classes/${c.slug}`}>{c.title}</Link>
                   </h2>

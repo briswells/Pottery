@@ -77,6 +77,36 @@ export function expandSessions(
   return out
 }
 
+/**
+ * Date ("...T00:00:00.000Z") of the Nth meeting, i.e. the last meeting date, given a start
+ * date, the weekdays a course meets, and a target session count. Counts only days whose
+ * weekday is in daysOfWeek and that aren't in skipDates, so a skipped holiday pushes the end
+ * date out and the course still delivers `count` sessions. Returns null when it can't be
+ * derived (no meeting days, or count < 1) — i.e. a single-day class with no end date.
+ */
+export function computeEndDate(
+  startDate: string,
+  daysOfWeek: (string | WeekdayCode)[] | null | undefined,
+  count: number,
+  skipDates?: { date: string }[] | null,
+): string | null {
+  const days = daysOfWeek ?? []
+  if (days.length === 0 || !Number.isFinite(count) || count < 1) return null
+  const skip = new Set((skipDates ?? []).map((s) => ymd(new Date(s.date))))
+  const cursor = new Date(startDate)
+  cursor.setUTCHours(0, 0, 0, 0)
+  let seen = 0
+  // Bound the walk so a misconfiguration can't loop forever (~10 years of days).
+  for (let i = 0; i < 3700; i++) {
+    const key = ymd(cursor)
+    if (days.includes(WEEKDAY_CODES[cursor.getUTCDay()]) && !skip.has(key)) {
+      if (++seen === count) return `${key}T00:00:00.000Z`
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  }
+  return null
+}
+
 /** A fixed 6×7 month grid of "YYYY-MM-DD" strings, weeks starting Sunday. month is 1-based. */
 export function monthGrid(year: number, month: number): string[][] {
   const first = new Date(Date.UTC(year, month - 1, 1))

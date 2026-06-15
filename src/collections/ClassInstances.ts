@@ -41,10 +41,20 @@ export const ClassInstances: CollectionConfig = {
     },
     { name: 'instructor', type: 'relationship', relationTo: 'users', required: true },
     { name: 'startDate', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly' }, description: 'First (or only) meeting date' } },
-    { name: 'endDate', type: 'date', admin: { date: { pickerAppearance: 'dayOnly' }, description: 'Last meeting date. Leave blank for a single-day class.' } },
     {
       name: 'daysOfWeek', type: 'select', hasMany: true, options: [...DAYS_OF_WEEK],
       admin: { description: 'Which days the class meets (multi-week courses).' },
+    },
+    {
+      name: 'numberOfClasses', type: 'number', min: 1,
+      admin: { description: 'For a multi-week course, how many sessions it runs. Fills in the end date automatically — set this OR an end date, not both.' },
+    },
+    {
+      name: 'endDate', type: 'date',
+      admin: {
+        date: { pickerAppearance: 'dayOnly' },
+        description: 'Last meeting date. Leave blank for a single-day class, or set "Number of classes" instead and this fills in automatically.',
+      },
     },
     { name: 'startTime', type: 'text', required: true, validate: timeValidate, admin: { description: '24-hour HH:MM, e.g. 18:00' } },
     { name: 'endTime', type: 'text', required: true, validate: timeValidate, admin: { description: '24-hour HH:MM, e.g. 20:00' } },

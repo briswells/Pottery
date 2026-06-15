@@ -325,7 +325,6 @@ export interface Class {
    * Auto-filled from title; edit to override
    */
   slug?: string | null;
-  category: 'wheel-series' | 'day-camp' | 'raku' | 'daytime-multiweek';
   skillLevel?: string | null;
   description?: string | null;
   /**
@@ -361,13 +360,17 @@ export interface ClassInstance {
    */
   startDate: string;
   /**
-   * Last meeting date. Leave blank for a single-day class.
-   */
-  endDate?: string | null;
-  /**
    * Which days the class meets (multi-week courses).
    */
   daysOfWeek?: ('SU' | 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA')[] | null;
+  /**
+   * For a multi-week course, how many sessions it runs. Fills in the end date automatically — set this OR an end date, not both.
+   */
+  numberOfClasses?: number | null;
+  /**
+   * Last meeting date. Leave blank for a single-day class, or set "Number of classes" instead and this fills in automatically.
+   */
+  endDate?: string | null;
   /**
    * 24-hour HH:MM, e.g. 18:00
    */
@@ -755,7 +758,6 @@ export interface MediaSelect<T extends boolean = true> {
 export interface ClassesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
-  category?: T;
   skillLevel?: T;
   description?: T;
   image?: T;
@@ -774,8 +776,9 @@ export interface ClassInstancesSelect<T extends boolean = true> {
   label?: T;
   instructor?: T;
   startDate?: T;
-  endDate?: T;
   daysOfWeek?: T;
+  numberOfClasses?: T;
+  endDate?: T;
   startTime?: T;
   endTime?: T;
   skipDates?:

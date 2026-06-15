@@ -1,7 +1,7 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { notFound } from 'next/navigation'
-import { usd, CATEGORY_LABELS } from '../../../../../../lib/format'
+import { usd } from '../../../../../../lib/format'
 import { seatsRemaining } from '../../../../../../lib/occupancy'
 import { scheduleSummary } from '../../../../../../lib/schedule'
 import { BookingForm } from '../../BookingForm'
@@ -25,7 +25,6 @@ export default async function SignupPage({ params }: { params: Promise<{ slug: s
 
   return (
     <div style={{ padding: '40px 0', maxWidth: 720 }}>
-      <div className="pp-kicker">{CATEGORY_LABELS[cls.category] ?? cls.category}</div>
       <h1>{cls.title}</h1>
       <div style={{ color: 'var(--pp-muted)' }}>{scheduleSummary(inst)}</div>
       <p style={{ fontSize: 22, fontWeight: 600 }}>{usd(inst.priceCents ?? 0)}</p>

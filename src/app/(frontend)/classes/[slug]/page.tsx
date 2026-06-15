@@ -2,7 +2,7 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { usd, CATEGORY_LABELS } from '../../../../lib/format'
+import { usd } from '../../../../lib/format'
 import { mediaUrl, mediaAlt } from '../../../../lib/media'
 import { seatsRemaining } from '../../../../lib/occupancy'
 import { scheduleSummary } from '../../../../lib/schedule'
@@ -42,7 +42,6 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ sl
           <img src={bannerUrl} alt={mediaAlt(cls.image)} loading="lazy" />
         </div>
       )}
-      <div className="pp-kicker">{CATEGORY_LABELS[cls.category] ?? cls.category}</div>
       <h1>{cls.title}</h1>
       {cls.skillLevel && <div style={{ color: 'var(--pp-muted)' }}>Skill level: {cls.skillLevel}</div>}
       {cls.description && <p style={{ marginTop: 16 }}>{cls.description}</p>}

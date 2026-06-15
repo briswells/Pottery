@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseHHMM, dateParts, formatTime, formatDate, expandSessions, monthGrid, scheduleSummary } from '../../src/lib/schedule'
+import { parseHHMM, dateParts, formatTime, formatDate, expandSessions, computeEndDate, monthGrid, scheduleSummary } from '../../src/lib/schedule'
 
 describe('parseHHMM', () => {
   it('parses 24-hour times', () => {
@@ -98,6 +98,34 @@ describe('expandSessions', () => {
       e,
     )
     expect(out).toEqual(['2026-07-07'])
+  })
+})
+
+describe('computeEndDate', () => {
+  it('returns the date of the Nth weekly meeting', () => {
+    // Sep 1 2026 is a Tuesday; six Tuesdays land on Oct 6.
+    expect(computeEndDate('2026-09-01T00:00:00.000Z', ['TU'], 6)).toBe('2026-10-06T00:00:00.000Z')
+  })
+
+  it('counts across multiple meeting days', () => {
+    // Jul 7 2026 is a Tuesday; Tue/Fri sessions: 7,10,14,17 → 4th is Jul 17.
+    expect(computeEndDate('2026-07-07T00:00:00.000Z', ['TU', 'FR'], 4)).toBe('2026-07-17T00:00:00.000Z')
+  })
+
+  it('pushes the end date out past skipped dates so N sessions still occur', () => {
+    // Skipping Sep 15 means the 6th Tuesday becomes Oct 13.
+    expect(
+      computeEndDate('2026-09-01T00:00:00.000Z', ['TU'], 6, [{ date: '2026-09-15T00:00:00.000Z' }]),
+    ).toBe('2026-10-13T00:00:00.000Z')
+  })
+
+  it('returns the start date for a single session', () => {
+    expect(computeEndDate('2026-09-01T00:00:00.000Z', ['TU'], 1)).toBe('2026-09-01T00:00:00.000Z')
+  })
+
+  it('returns null when no meeting days or count are given', () => {
+    expect(computeEndDate('2026-09-01T00:00:00.000Z', [], 6)).toBeNull()
+    expect(computeEndDate('2026-09-01T00:00:00.000Z', ['TU'], 0)).toBeNull()
   })
 })
 

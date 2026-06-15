@@ -5,7 +5,7 @@ import { slugifyFromTitle } from '../hooks/slugify'
 
 export const Classes: CollectionConfig = {
   slug: 'classes',
-  admin: { useAsTitle: 'title', group: 'Studio', defaultColumns: ['title', 'category', 'status'] },
+  admin: { useAsTitle: 'title', group: 'Studio', defaultColumns: ['title', 'status'] },
   access: {
     read: anyone,
     create: isAdminOrEditor,
@@ -18,15 +18,6 @@ export const Classes: CollectionConfig = {
       name: 'slug', type: 'text', unique: true, index: true,
       admin: { position: 'sidebar', description: 'Auto-filled from title; edit to override' },
       hooks: { beforeValidate: [slugifyFromTitle] },
-    },
-    {
-      name: 'category', type: 'select', required: true,
-      options: [
-        { label: 'Wheel-throwing series', value: 'wheel-series' },
-        { label: 'Day camp', value: 'day-camp' },
-        { label: 'Raku', value: 'raku' },
-        { label: 'Daytime multi-week', value: 'daytime-multiweek' },
-      ],
     },
     { name: 'skillLevel', type: 'text' },
     { name: 'description', type: 'textarea' },

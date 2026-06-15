@@ -127,12 +127,12 @@ async function run() {
 
   // Classes (templates)
   await ensureClass(payload, '6wk-wheel-throwing-tuesdays', {
-    title: '6-Week Wheel Throwing', slug: '6wk-wheel-throwing-tuesdays', category: 'wheel-series', skillLevel: 'Beginner',
+    title: '6-Week Wheel Throwing', slug: '6wk-wheel-throwing-tuesdays', skillLevel: 'Beginner',
     description: 'Six weeks of wheel-throwing fundamentals.', defaultPriceCents: 22000, defaultCapacity: 8,
     status: 'active',
   })
   await ensureClass(payload, 'kids-day-camp-pottery-pizza', {
-    title: 'Kids Day Camp: Pottery & Pizza', slug: 'kids-day-camp-pottery-pizza', category: 'day-camp', skillLevel: 'All ages',
+    title: 'Kids Day Camp: Pottery & Pizza', slug: 'kids-day-camp-pottery-pizza', skillLevel: 'All ages',
     description: 'A fun day of clay and pizza for kids.', defaultPriceCents: 6500, defaultCapacity: 12,
     status: 'active',
   })
@@ -149,7 +149,7 @@ async function run() {
 
   // Class instances (scheduled runs)
   await ensureInstance(payload, '6wk-wheel-throwing-tuesdays', {
-    instructor: ericUser.id, startDate: '2026-09-01', endDate: '2026-10-06',
+    instructor: ericUser.id, startDate: '2026-09-01', numberOfClasses: 6,
     daysOfWeek: ['TU'], startTime: '18:00', endTime: '20:00', status: 'published',
   })
   await ensureInstance(payload, 'kids-day-camp-pottery-pizza', {

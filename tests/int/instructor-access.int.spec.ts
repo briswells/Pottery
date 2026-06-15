@@ -11,7 +11,7 @@ describe('Instructor access scoping', () => {
   it('an instructor reads only their own instances; public reads only published', async () => {
     const payload = await getTestPayload()
     const cls = await payload.create({ collection: 'classes', data: {
-      title: `Acc ${Date.now()}`, category: 'raku', defaultPriceCents: 5000, defaultCapacity: 5,
+      title: `Acc ${Date.now()}`, defaultPriceCents: 5000, defaultCapacity: 5,
     } })
     const mine = await payload.create({ collection: 'users', data: {
       name: 'Mine', email: `mine-${Date.now()}@test.local`, password: 'test12345', roles: ['instructor'],

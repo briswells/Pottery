@@ -3,7 +3,7 @@ import { getTestPayload } from './helpers'
 
 async function makeClass(payload: any) {
   return payload.create({ collection: 'classes', data: {
-    title: `Inst Class ${Date.now()}-${Math.random()}`, category: 'wheel-series',
+    title: `Inst Class ${Date.now()}-${Math.random()}`,
     defaultPriceCents: 22000, defaultCapacity: 8,
   } })
 }

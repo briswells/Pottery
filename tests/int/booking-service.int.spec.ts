@@ -12,7 +12,7 @@ function deps(overrides = {}) {
 
 async function makeInstance(payload: any, capacity: number, status = 'published') {
   const cls = await payload.create({ collection: 'classes', data: {
-    title: `Svc ${Date.now()}-${Math.random()}`, category: 'wheel-series', defaultPriceCents: 22000, defaultCapacity: capacity,
+    title: `Svc ${Date.now()}-${Math.random()}`, defaultPriceCents: 22000, defaultCapacity: capacity,
   } })
   const user = await payload.create({ collection: 'users', data: {
     name: 'Inst', email: `inst-${Date.now()}-${Math.random()}@test.local`, password: 'test12345', roles: ['instructor'],

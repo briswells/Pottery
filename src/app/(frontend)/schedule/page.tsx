@@ -54,6 +54,9 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
 
   return (
     <div style={{ padding: '40px 0' }}>
+      <p style={{ marginBottom: 16 }}>
+        <Link href="/classes">← Back to classes</Link>
+      </p>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h1>{MONTH_NAMES[month - 1]} {year}</h1>
         <div style={{ display: 'flex', gap: 8 }}>

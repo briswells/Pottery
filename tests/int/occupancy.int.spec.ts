@@ -4,7 +4,7 @@ import { seatsRemaining } from '../../src/lib/occupancy'
 
 async function makeInstance(payload: any, capacity: number) {
   const cls = await payload.create({ collection: 'classes', data: {
-    title: `Cap ${Date.now()}-${Math.random()}`, category: 'raku', defaultPriceCents: 1000, defaultCapacity: capacity,
+    title: `Cap ${Date.now()}-${Math.random()}`, defaultPriceCents: 1000, defaultCapacity: capacity,
   } })
   const user = await payload.create({ collection: 'users', data: {
     name: 'Inst', email: `inst-${Date.now()}-${Math.random()}@test.local`, password: 'test12345', roles: ['instructor'],
