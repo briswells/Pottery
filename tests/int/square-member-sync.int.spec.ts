@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { getTestPayload } from './helpers'
-import { ensureMemberFromSubscription } from '../../src/services/square-member-sync'
+import { ensureMemberFromSubscription, mapSubscriptionStatus } from '../../src/services/square-member-sync'
 import { upsertPersonByEmail } from '../../src/services/people'
 
 // Block any real Square call from the reconcile hook so we can assert auto-create
@@ -24,6 +24,26 @@ async function makeSquarePlan(payload: any, variationId: string) {
   return payload.create({ collection: 'membership-plans', overrideAccess: true, context: { fromPlanSync: true },
     data: { name: `Plan ${variationId}`, kind: 'square', squarePlanVariationId: variationId, active: true } })
 }
+
+describe('mapSubscriptionStatus', () => {
+  it('maps recognized Square statuses', () => {
+    expect(mapSubscriptionStatus('ACTIVE')).toBe('active')
+    expect(mapSubscriptionStatus('PAUSED')).toBe('paused')
+    expect(mapSubscriptionStatus('CANCELED')).toBe('cancelled')
+    expect(mapSubscriptionStatus('DEACTIVATED')).toBe('cancelled')
+  })
+
+  it('treats a scheduled cancellation (canceled_date set) as cancelled even while ACTIVE', () => {
+    // This is the regression: Square reports ACTIVE until period end, but a member
+    // who cancelled should not read as active.
+    expect(mapSubscriptionStatus('ACTIVE', '2026-07-15')).toBe('cancelled')
+  })
+
+  it('returns undefined for an unknown status so callers keep the existing value', () => {
+    expect(mapSubscriptionStatus('SOMETHING_NEW')).toBeUndefined()
+    expect(mapSubscriptionStatus(undefined)).toBeUndefined()
+  })
+})
 
 describe('ensureMemberFromSubscription', () => {
   beforeEach(() => { sub.create.mockClear() })

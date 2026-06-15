@@ -4,7 +4,7 @@ import { WebhooksHelper } from 'square'
 import { sendEmail } from '../../../../lib/email'
 import { syncSquarePlans } from '../../../../services/sync-square-plans'
 import { squareMembershipGateway, type MembershipGateway } from '../../../../lib/membership-gateway'
-import { ensureMemberFromSubscription, SQUARE_SUBSCRIPTION_STATUS_MAP, type SquareSubscriptionInput } from '../../../../services/square-member-sync'
+import { ensureMemberFromSubscription, mapSubscriptionStatus, type SquareSubscriptionInput } from '../../../../services/square-member-sync'
 
 export async function handleCatalogVersionUpdated(payload: Awaited<ReturnType<typeof getPayload>>) {
   await syncSquarePlans({ payload, gateway: squareMembershipGateway })
@@ -22,6 +22,7 @@ function normalizeSubscription(raw: any): SquareSubscriptionInput | null {
     planVariationId: raw.plan_variation_id ?? raw.planVariationId,
     status: raw.status,
     startDate: raw.start_date ?? raw.startDate,
+    canceledDate: raw.canceled_date ?? raw.canceledDate,
   }
 }
 
@@ -185,7 +186,10 @@ export async function POST(req: Request) {
       }
     }
     if (member && sub?.status) {
-      const nextStatus = SQUARE_SUBSCRIPTION_STATUS_MAP[sub.status] ?? member.status
+      // Square keeps a sub ACTIVE until its scheduled cancel date, so a scheduled
+      // cancellation arrives as ACTIVE with canceled_date set — treat that as cancelled.
+      const canceledDate = sub.canceled_date ?? sub.canceledDate
+      const nextStatus = mapSubscriptionStatus(sub.status, canceledDate) ?? member.status
       // Idempotent: only write when something actually changes (also avoids
       // needless churn through the People afterChange → Square hook).
       if (member.subscriptionStatus !== sub.status || member.status !== nextStatus) {

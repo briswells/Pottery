@@ -12,12 +12,30 @@ export const SQUARE_SUBSCRIPTION_STATUS_MAP: Record<string, Person['status']> = 
   DEACTIVATED: 'cancelled',
 }
 
+/**
+ * Map a Square subscription's raw status to our membership status. A subscription
+ * with a `canceled_date` is treated as cancelled even while Square still reports it
+ * ACTIVE until that date — otherwise a scheduled (e.g. self-serve) cancellation
+ * would show as active for the rest of the billing period, and the very webhook that
+ * scheduling it triggers would revert a member we just cancelled back to active.
+ * Returns undefined for an unrecognized status so callers can keep the existing value.
+ */
+export function mapSubscriptionStatus(
+  rawStatus: string | undefined,
+  canceledDate?: string | null,
+): Person['status'] | undefined {
+  if (canceledDate) return 'cancelled'
+  return rawStatus ? SQUARE_SUBSCRIPTION_STATUS_MAP[rawStatus] : undefined
+}
+
 export interface SquareSubscriptionInput {
   id: string
   customerId?: string
   planVariationId?: string
   status?: string
   startDate?: string
+  /** Set by Square once a cancellation is scheduled; the sub stays ACTIVE until then. */
+  canceledDate?: string
 }
 
 export interface EnsureMemberDeps {
@@ -90,7 +108,7 @@ export async function ensureMemberFromSubscription(
     return null
   }
 
-  const status = SQUARE_SUBSCRIPTION_STATUS_MAP[sub.status ?? 'ACTIVE'] ?? 'active'
+  const status = mapSubscriptionStatus(sub.status, sub.canceledDate) ?? 'active'
   const promoted = await payload.update({
     collection: 'people',
     id: person.id,
