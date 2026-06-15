@@ -8,6 +8,8 @@ export interface FiringInvoiceInput {
   description: string
   amountCents: number
   referenceId: string
+  /** Reuse this existing Square customer (e.g. a member's) instead of creating a new one. */
+  customerId?: string
 }
 
 export interface FiringInvoiceResult {
@@ -37,14 +39,18 @@ export const squareFiringInvoiceGateway: FiringInvoiceGateway = {
     const client = getSquareClient()
     const locationId = SQUARE_LOCATION_ID()
 
-    const customerRes = await client.customers.create({
-      idempotencyKey: randomUUID(),
-      givenName: input.name,
-      emailAddress: input.email,
-      phoneNumber: input.phone,
-    })
-    const customerId = customerRes.customer?.id
-    if (!customerId) throw new Error('Square customer was not created')
+    // Reuse a known customer when the caller resolved one by email; otherwise create.
+    let customerId = input.customerId
+    if (!customerId) {
+      const customerRes = await client.customers.create({
+        idempotencyKey: randomUUID(),
+        givenName: input.name,
+        emailAddress: input.email,
+        phoneNumber: input.phone,
+      })
+      customerId = customerRes.customer?.id
+      if (!customerId) throw new Error('Square customer was not created')
+    }
 
     const orderRes = await client.orders.create({
       idempotencyKey: randomUUID(),

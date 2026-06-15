@@ -32,6 +32,24 @@ export async function createAndSendFiringInvoice(
   }
 
   try {
+    // Reuse an existing Square customer when we already know this email (a member,
+    // or someone invoiced before) so the firing attaches to their existing profile
+    // instead of spawning a duplicate customer. Best-effort: fall back to creating
+    // a new customer if the lookup fails.
+    let existingCustomerId: string | undefined
+    try {
+      const { docs } = await payload.find({
+        collection: 'people',
+        where: { email: { equals: request.email.trim().toLowerCase() } },
+        limit: 1,
+        overrideAccess: true,
+        req,
+      })
+      existingCustomerId = docs[0]?.squareCustomerId ?? undefined
+    } catch (e) {
+      console.error(`Firing ${request.id} customer lookup failed; creating a new customer:`, e)
+    }
+
     const result = await gateway.createAndSendInvoice({
       name: request.name,
       email: request.email,
@@ -39,6 +57,7 @@ export async function createAndSendFiringInvoice(
       description: request.description,
       amountCents,
       referenceId: `firing-${request.id}`,
+      customerId: existingCustomerId,
     })
     let personId: number | undefined
     try {

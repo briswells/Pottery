@@ -90,6 +90,33 @@ describe('createAndSendFiringInvoice', () => {
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ req }))
   })
 
+  it('reuses an existing Square customer when a person with that email already has one', async () => {
+    const find = vi.fn(async () => ({ docs: [{ id: 7, squareCustomerId: 'cus_member' }] }))
+    const update = vi.fn(async (args: any) => ({ id: args.id, ...args.data }))
+    const payload = { find, update } as any
+    const gw = fakeGateway()
+    const request = { id: 'r2', name: 'Mem', email: 'Member@Test.local', phone: null, description: 'bowl', quotedPriceCents: 4500 } as any
+
+    await createAndSendFiringInvoice({ payload, gateway: gw }, request)
+
+    const arg = (gw.createAndSendInvoice as any).mock.calls[0][0]
+    expect(arg.customerId).toBe('cus_member')
+  })
+
+  it('creates a new Square customer when no person/email match exists', async () => {
+    const find = vi.fn(async () => ({ docs: [] }))
+    const create = vi.fn(async (args: any) => ({ id: 1, ...args.data }))
+    const update = vi.fn(async (args: any) => ({ id: args.id, ...args.data }))
+    const payload = { find, create, update } as any
+    const gw = fakeGateway()
+    const request = { id: 'r3', name: 'New', email: 'new@test.local', phone: null, description: 'mug', quotedPriceCents: 4500 } as any
+
+    await createAndSendFiringInvoice({ payload, gateway: gw }, request)
+
+    const arg = (gw.createAndSendInvoice as any).mock.calls[0][0]
+    expect(arg.customerId).toBeUndefined()
+  })
+
   it('fails without charging when no price is set', async () => {
     const payload = await getTestPayload()
     const req = await makeRequest(payload, undefined)
