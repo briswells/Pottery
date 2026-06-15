@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { getTestPayload } from './helpers'
-import { ensureMemberFromSubscription, mapSubscriptionStatus } from '../../src/services/square-member-sync'
+import { ensureMemberFromSubscription, mapSubscriptionStatus, isInvoicePastDue } from '../../src/services/square-member-sync'
 import { upsertPersonByEmail } from '../../src/services/people'
 
 // Block any real Square call from the reconcile hook so we can assert auto-create
@@ -42,6 +42,28 @@ describe('mapSubscriptionStatus', () => {
   it('returns undefined for an unknown status so callers keep the existing value', () => {
     expect(mapSubscriptionStatus('SOMETHING_NEW')).toBeUndefined()
     expect(mapSubscriptionStatus(undefined)).toBeUndefined()
+  })
+})
+
+describe('isInvoicePastDue', () => {
+  const due = '2026-06-10'
+
+  it('is not past due before the due date (new member with a fresh invoice)', () => {
+    expect(isInvoicePastDue(due, 3, new Date('2026-06-09T12:00:00Z'))).toBe(false)
+  })
+
+  it('is not past due while still within the grace window', () => {
+    // Due Jun 10 + 3 days grace → still within grace on Jun 12.
+    expect(isInvoicePastDue(due, 3, new Date('2026-06-12T00:00:00Z'))).toBe(false)
+  })
+
+  it('is past due once the due date + grace has passed', () => {
+    expect(isInvoicePastDue(due, 3, new Date('2026-06-14T00:00:00Z'))).toBe(true)
+  })
+
+  it('is not past due for an unknown or unparseable due date', () => {
+    expect(isInvoicePastDue(undefined, 3, new Date('2026-12-01T00:00:00Z'))).toBe(false)
+    expect(isInvoicePastDue('not-a-date', 3, new Date('2026-12-01T00:00:00Z'))).toBe(false)
   })
 })
 

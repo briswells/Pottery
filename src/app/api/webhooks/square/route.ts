@@ -4,7 +4,7 @@ import { WebhooksHelper } from 'square'
 import { sendEmail } from '../../../../lib/email'
 import { syncSquarePlans } from '../../../../services/sync-square-plans'
 import { squareMembershipGateway, type MembershipGateway } from '../../../../lib/membership-gateway'
-import { ensureMemberFromSubscription, mapSubscriptionStatus, type SquareSubscriptionInput } from '../../../../services/square-member-sync'
+import { ensureMemberFromSubscription, mapSubscriptionStatus, isInvoicePastDue, type SquareSubscriptionInput } from '../../../../services/square-member-sync'
 
 export async function handleCatalogVersionUpdated(payload: Awaited<ReturnType<typeof getPayload>>) {
   await syncSquarePlans({ payload, gateway: squareMembershipGateway })
@@ -148,7 +148,12 @@ export async function POST(req: Request) {
   } else if (event.type === 'invoice.updated') {
     const invoice = event.data?.object?.invoice
     const status: string | undefined = invoice?.status // UNPAID | PAYMENT_PENDING | CANCELED | ...
-    if (status === 'UNPAID' || status === 'PAYMENT_PENDING') {
+    const dueDate = invoice?.payment_requests?.[0]?.due_date ?? invoice?.payment_requests?.[0]?.dueDate
+    const graceDays = Number(process.env.MEMBERSHIP_GRACE_DAYS ?? '3')
+    // A freshly issued invoice is unpaid until its due date — only escalate to past_due
+    // once it's genuinely overdue (due date + grace), so new members aren't told their
+    // payment "failed" the moment the first invoice is created.
+    if ((status === 'UNPAID' || status === 'PAYMENT_PENDING') && isInvoicePastDue(dueDate, graceDays, new Date())) {
       const subscriptionId = invoice?.subscription_id ?? invoice?.subscriptionId
       let member = await findMemberBySubscription(subscriptionId)
       if (!member && subscriptionId) {

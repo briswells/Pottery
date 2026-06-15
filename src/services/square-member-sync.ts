@@ -28,6 +28,24 @@ export function mapSubscriptionStatus(
   return rawStatus ? SQUARE_SUBSCRIPTION_STATUS_MAP[rawStatus] : undefined
 }
 
+/**
+ * Whether an unpaid membership invoice should escalate to "past due". A freshly
+ * issued invoice is unpaid by design until its due date, so we only treat it as a
+ * failed/overdue payment once the due date plus a grace window has passed — that way
+ * a new member isn't told their payment "failed" the moment their first invoice is
+ * created. An unknown/unparseable due date is treated as not yet past due.
+ */
+export function isInvoicePastDue(
+  dueDate: string | null | undefined,
+  graceDays: number,
+  now: Date,
+): boolean {
+  if (!dueDate) return false
+  const due = new Date(dueDate).getTime()
+  if (Number.isNaN(due)) return false
+  return now.getTime() > due + graceDays * 86_400_000
+}
+
 export interface SquareSubscriptionInput {
   id: string
   customerId?: string
