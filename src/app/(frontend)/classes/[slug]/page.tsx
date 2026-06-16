@@ -70,8 +70,13 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ sl
                 {remaining > 0 ? (
                   <p style={{ marginTop: 8 }}>
                     <Link className="pp-btn" href={`/classes/${slug}/signup/${inst.id}`}>
-                      Sign up ({remaining} {remaining === 1 ? 'seat' : 'seats'} left)
+                      Sign up
                     </Link>
+                    {remaining <= 2 && (
+                      <span style={{ marginLeft: 8, fontWeight: 600 }}>
+                        {remaining} {remaining === 1 ? 'seat' : 'seats'} remaining
+                      </span>
+                    )}
                   </p>
                 ) : (
                   <p style={{ marginTop: 8, fontWeight: 600 }}>Full</p>
