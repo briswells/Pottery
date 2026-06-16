@@ -25,6 +25,7 @@ import { HomePage } from './globals/HomePage'
 import { MembershipPage } from './globals/MembershipPage'
 import { FiringsPage } from './globals/FiringsPage'
 import { syncSquarePlans, ensureFreePlan } from './services/sync-square-plans'
+import { reconcileSquareMembers } from './services/reconcile-square-members'
 import { squareMembershipGateway } from './lib/membership-gateway'
 import { resendEmailAdapter, parseFromAddress } from './lib/payload-email-adapter'
 
@@ -73,6 +74,33 @@ export default buildConfig({
       await syncSquarePlans({ payload, gateway: squareMembershipGateway })
     } catch (e) {
       payload.logger.error(`Startup plan sync failed: ${e instanceof Error ? e.message : e}`)
+    }
+
+    // Reconcile members from Square. This runs on every boot (initial sync +
+    // recovery for anything missed while the app was down) and on a timer (so
+    // missed webhooks are caught even without a restart). It is intentionally
+    // NOT awaited: a slow or unreachable Square API must never block the app
+    // from booting and serving — we just retry on the next run. Idempotent.
+    const reconcileMembers = (syncPlans: boolean) =>
+      reconcileSquareMembers({ payload, gateway: squareMembershipGateway, syncPlans })
+        .then((r) =>
+          payload.logger.info(
+            `Square member reconcile: processed ${r.processed}, skipped ${r.skipped}, failed ${r.failed} across ${r.pages} page(s).`,
+          ),
+        )
+        .catch((e) =>
+          payload.logger.error(`Square member reconcile failed: ${e instanceof Error ? e.message : e}`),
+        )
+
+    // Initial sync now (plans were just synced above, so skip the redundant pass).
+    void reconcileMembers(false)
+
+    // Periodic safety net. Default 6h; set SQUARE_MEMBER_SYNC_INTERVAL_MINUTES=0 to disable.
+    const intervalMinutes = Number(process.env.SQUARE_MEMBER_SYNC_INTERVAL_MINUTES ?? 360)
+    if (Number.isFinite(intervalMinutes) && intervalMinutes > 0) {
+      const timer = setInterval(() => void reconcileMembers(true), intervalMinutes * 60_000)
+      // Don't let the timer keep short-lived CLI processes (migrate/seed) alive.
+      timer.unref?.()
     }
   },
   // Reject very large uploads before sharp ever decodes them — this is the hard

@@ -35,6 +35,7 @@ COPY --from=build /app/package.json ./package.json
 # tsconfig.json carries the @payload-config path alias the Payload CLI resolves.
 COPY --from=build /app/tsconfig.json ./tsconfig.json
 COPY --from=build /app/src ./src
+COPY --from=build /app/scripts ./scripts
 COPY --from=build /app/node_modules ./node_modules
 EXPOSE 3000
 CMD ["node", "server.js"]
