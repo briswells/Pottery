@@ -6,6 +6,11 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
+// Keep sharp's (off-heap, libvips) memory footprint small on low-RAM hosts:
+// process one image at a time and don't retain decoded buffers between uploads.
+sharp.concurrency(1)
+sharp.cache(false)
+
 import { Users } from './collections/Users'
 import { People } from './collections/People'
 import { MembershipPlans } from './collections/MembershipPlans'
@@ -69,6 +74,12 @@ export default buildConfig({
     } catch (e) {
       payload.logger.error(`Startup plan sync failed: ${e instanceof Error ? e.message : e}`)
     }
+  },
+  // Reject very large uploads before sharp ever decodes them — this is the hard
+  // cap that bounds the worst-case image-processing memory spike. 15MB is well
+  // above a normal phone photo (2–8MB).
+  upload: {
+    limits: { fileSize: 15_000_000 },
   },
   collections: [Users, People, MembershipPlans, Media, Classes, ClassInstances, Bookings, Payments, FiringRequests],
   globals: [SiteSettings, HomePage, MembershipPage, FiringsPage],
