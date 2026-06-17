@@ -2,6 +2,7 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { WebhooksHelper } from 'square'
 import { sendEmail } from '../../../../lib/email'
+import { getNotifyEmail } from '../../../../lib/notify-email'
 import { syncSquarePlans } from '../../../../services/sync-square-plans'
 import { squareMembershipGateway, type MembershipGateway } from '../../../../lib/membership-gateway'
 import { ensureMemberFromSubscription, mapSubscriptionStatus, isInvoicePastDue, type SquareSubscriptionInput } from '../../../../services/square-member-sync'
@@ -168,8 +169,11 @@ export async function POST(req: Request) {
           status: 'past_due', lastPaymentStatus: 'FAILED',
         } })
         // Notify staff + member; no automatic lockout (per design decision).
-        await sendEmail({ to: process.env.STAFF_NOTIFY_EMAIL!, subject: `Membership payment failed: ${member.name}`,
-          html: `<p>${member.name} (${member.email}) has a failed/overdue membership payment. Square will retry; follow up as needed.</p>` })
+        const notifyTo = await getNotifyEmail(payload)
+        if (notifyTo) {
+          await sendEmail({ to: notifyTo, subject: `Membership payment failed: ${member.name}`,
+            html: `<p>${member.name} (${member.email}) has a failed/overdue membership payment. Square will retry; follow up as needed.</p>` })
+        }
         await sendEmail({ to: member.email, subject: 'Your Portside Pottery payment needs attention',
           html: `<p>Hi ${member.name}, we couldn't process your latest membership payment. Please update your card or contact the studio. Your access is unchanged for now.</p>` })
       }

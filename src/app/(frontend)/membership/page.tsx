@@ -1,6 +1,7 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import Link from 'next/link'
+import { resolveNotifyEmail } from '../../../lib/notify-email'
 
 export const metadata = { title: 'Membership' }
 
@@ -9,6 +10,8 @@ export const dynamic = 'force-dynamic'
 export default async function MembershipPage() {
   const payload = await getPayload({ config: await config })
   const m = await payload.findGlobal({ slug: 'membership-page' })
+  const settings = await payload.findGlobal({ slug: 'site-settings' })
+  const inquiryEmail = resolveNotifyEmail(settings.email)
 
   return (
     <div style={{ padding: '40px 0', maxWidth: 680 }}>
@@ -32,7 +35,7 @@ export default async function MembershipPage() {
       )}
 
       {/* Membership requires staff approval — this is a request, not self-serve signup. */}
-      <a className="pp-btn" href="mailto:getcreative@portsidepottery.com?subject=Membership">
+      <a className="pp-btn" href={`mailto:${inquiryEmail}?subject=Membership`}>
         Ask about membership
       </a>
       <p style={{ marginTop: 16 }}>

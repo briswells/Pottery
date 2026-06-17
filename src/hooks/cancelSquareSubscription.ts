@@ -2,11 +2,11 @@ import type { CollectionAfterChangeHook } from 'payload'
 import { getSquareClient } from '../lib/square'
 import { sendEmail } from '../lib/email'
 import { formatDate } from '../lib/schedule'
+import { getNotifyEmail } from '../lib/notify-email'
 import type { Person } from '../payload-types'
 
 /** Email the studio when a member cancels: who, their shelf, and their last day. */
-async function notifyStaffOfCancellation(member: Person, lastDay: string | null): Promise<void> {
-  const to = process.env.STAFF_NOTIFY_EMAIL
+async function notifyStaffOfCancellation(member: Person, lastDay: string | null, to: string | undefined): Promise<void> {
   if (!to) return
   const shelf = member.shelfLabel || 'none on file'
   const lastDayText = lastDay ? formatDate(lastDay) : 'the end of the current billing period'
@@ -43,7 +43,7 @@ export const cancelSquareSubscription: CollectionAfterChangeHook<Person> = async
     if (becamePaused) await client.subscriptions.pause({ subscriptionId: doc.squareSubscriptionId })
     if (becameCancelled) {
       const res = await client.subscriptions.cancel({ subscriptionId: doc.squareSubscriptionId })
-      await notifyStaffOfCancellation(doc, res.subscription?.canceledDate ?? null)
+      await notifyStaffOfCancellation(doc, res.subscription?.canceledDate ?? null, await getNotifyEmail(req.payload))
     }
   } catch (e) {
     // Surface but don't crash the admin save; staff can retry.

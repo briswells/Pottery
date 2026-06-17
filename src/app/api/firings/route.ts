@@ -1,6 +1,7 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { sendEmail } from '../../../lib/email'
+import { getNotifyEmail } from '../../../lib/notify-email'
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024 // 10 MB
 
@@ -85,9 +86,10 @@ export async function POST(req: Request) {
     })
   } catch (e) { console.error('Firing confirmation email failed:', e) }
   try {
-    if (process.env.STAFF_NOTIFY_EMAIL) {
+    const notifyTo = await getNotifyEmail(payload)
+    if (notifyTo) {
       await sendEmail({
-        to: process.env.STAFF_NOTIFY_EMAIL,
+        to: notifyTo,
         subject: `New Cone 10 firing request from ${name}`,
         html: `<p>${name} (${email}${phone ? `, ${phone}` : ''}) requested a firing.</p>
 <p><strong>Piece:</strong> ${description}<br/><strong>Size (in):</strong> ${dims}, qty ${num(form.get('quantity')) ?? 1}</p>

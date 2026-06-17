@@ -5,6 +5,7 @@ import config from '@payload-config'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
 import { mediaUrl } from '../../lib/media'
+import { resolveNotifyEmail } from '../../lib/notify-email'
 import '../../styles/globals.css'
 
 const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces' })
@@ -57,7 +58,7 @@ export default async function FrontendLayout({ children }: { children: React.Rea
           studioName={settings.studioName ?? 'Portside Pottery'}
           logoUrl={logoUrl}
           phone={settings.phone}
-          email={settings.email}
+          email={resolveNotifyEmail(settings.email)}
           addressLine={settings.addressLine}
           hours={settings.hours}
           socials={settings.socials}
