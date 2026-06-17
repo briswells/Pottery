@@ -23,6 +23,9 @@ export const HomePage: GlobalConfig = {
       { name: 'body', type: 'textarea', required: true },
       { name: 'image', type: 'upload', relationTo: 'media' },
     ] },
-    { name: 'gallery', type: 'upload', relationTo: 'media', hasMany: true },
+    // Retired: the gallery is now driven by the per-image “Include in gallery”
+    // checkbox on Media. Kept (hidden) so existing data isn’t dropped; the
+    // values were backfilled into that checkbox by migration.
+    { name: 'gallery', type: 'upload', relationTo: 'media', hasMany: true, admin: { hidden: true } },
   ],
 }

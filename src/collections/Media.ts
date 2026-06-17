@@ -22,6 +22,15 @@ export const Media: CollectionConfig = {
     mimeTypes: ['image/*'],
   },
   fields: [
-    { name: 'alt', type: 'text', required: true, admin: { description: 'Accessibility description' } },
+    { name: 'alt', type: 'text', admin: { description: 'Accessibility description (optional)' } },
+    {
+      name: 'includeInGallery',
+      type: 'checkbox',
+      defaultValue: false,
+      label: 'Include in gallery',
+      admin: {
+        description: 'Show this image in the public gallery. In a bulk upload, set it once and use “apply to all”.',
+      },
+    },
   ],
 }

@@ -2,6 +2,7 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import Link from 'next/link'
 import { mediaUrl, mediaAlt } from '../../lib/media'
+import { getGalleryMedia } from '../../lib/gallery'
 
 // Content is CMS-managed; render per-request so admin edits appear immediately
 // (and so `next build` doesn't try to prerender these DB-backed pages).
@@ -18,7 +19,7 @@ export default async function HomePage() {
   // dedicated image field; when one is unset we fall back to a story-section or
   // gallery image so existing sites keep working until editors set the new fields.
   // NOTE: do NOT use gallery[2] (collage.jpg) — it's a multi-photo collage and looks broken in a card.
-  const galleryItems = home.gallery ?? []
+  const galleryItems = await getGalleryMedia(payload)
   const sections = home.sections ?? []
   // Take a class → the instructor/people shot; Become a member & Visit → clean studio shots
   const cat0 = (home.classCardImage ? mediaUrl(home.classCardImage) : null) || (galleryItems[0] ? mediaUrl(galleryItems[0]) : null) || (sections[0]?.image ? mediaUrl(sections[0].image) : null)
@@ -126,13 +127,13 @@ export default async function HomePage() {
       })}
 
       {/* ── GALLERY TEASER (true masonry, zero crop) ── */}
-      {home.gallery && home.gallery.length > 0 && (
+      {galleryItems.length > 0 && (
         <section className="pp-gallery-section">
           <div className="pp-kicker">Studio life</div>
           <h2>From the studio</h2>
           <p className="pp-gallery-intro">A glimpse into life at Portside — the work, the people, the process.</p>
           <div className="pp-gallery">
-            {home.gallery.map((item, i) => {
+            {galleryItems.slice(0, 8).map((item, i) => {
               const imgUrl = mediaUrl(item)
               const imgAlt = mediaAlt(item)
               if (!imgUrl) return null

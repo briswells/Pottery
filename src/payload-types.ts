@@ -209,9 +209,13 @@ export interface User {
 export interface Media {
   id: number;
   /**
-   * Accessibility description
+   * Accessibility description (optional)
    */
-  alt: string;
+  alt?: string | null;
+  /**
+   * Show this image in the public gallery. In a bulk upload, set it once and use “apply to all”.
+   */
+  includeInGallery?: boolean | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -518,6 +522,10 @@ export interface FiringRequest {
   squareInvoiceUrl?: string | null;
   invoicedAt?: string | null;
   paidAt?: string | null;
+  /**
+   * Set when marked Completed. The attached photo is auto-deleted 2 weeks after this.
+   */
+  completedAt?: string | null;
   lastInvoiceError?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -719,6 +727,7 @@ export interface MembershipPlansSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  includeInGallery?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -857,6 +866,7 @@ export interface FiringRequestsSelect<T extends boolean = true> {
   squareInvoiceUrl?: T;
   invoicedAt?: T;
   paidAt?: T;
+  completedAt?: T;
   lastInvoiceError?: T;
   updatedAt?: T;
   createdAt?: T;

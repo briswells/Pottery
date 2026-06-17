@@ -1,6 +1,7 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { mediaUrl, mediaAlt } from '../../../lib/media'
+import { getGalleryMedia } from '../../../lib/gallery'
 
 export const metadata = {
   title: 'Gallery',
@@ -11,9 +12,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function GalleryPage() {
   const payload = await getPayload({ config: await config })
-  const home = await payload.findGlobal({ slug: 'home-page', depth: 2 })
-
-  const galleryItems = home.gallery ?? []
+  const galleryItems = await getGalleryMedia(payload)
 
   return (
     <div>
