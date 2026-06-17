@@ -26,6 +26,7 @@ import { MembershipPage } from './globals/MembershipPage'
 import { FiringsPage } from './globals/FiringsPage'
 import { syncSquarePlans, ensureFreePlan } from './services/sync-square-plans'
 import { reconcileSquareMembers } from './services/reconcile-square-members'
+import { expireFiringRequestMedia } from './services/expire-firing-media'
 import { squareMembershipGateway } from './lib/membership-gateway'
 import { resendEmailAdapter, parseFromAddress } from './lib/payload-email-adapter'
 
@@ -68,6 +69,20 @@ export default buildConfig({
     } catch (e) {
       payload.logger.error(`Ensuring Free plan failed: ${e instanceof Error ? e.message : e}`)
     }
+
+    // Expire firing-request photos two weeks after completion. Runs on boot and
+    // daily; independent of Square. Non-blocking so it never delays serving.
+    const expireMedia = () =>
+      expireFiringRequestMedia(payload)
+        .then((r) => {
+          if (r.deleted || r.failed)
+            payload.logger.info(`Firing media expiry: deleted ${r.deleted}, failed ${r.failed}.`)
+        })
+        .catch((e) => payload.logger.error(`Firing media expiry failed: ${e instanceof Error ? e.message : e}`))
+    void expireMedia()
+    const firingTimer = setInterval(() => void expireMedia(), 24 * 60 * 60 * 1000)
+    firingTimer.unref?.()
+
     // Keep the Square plans fresh on boot. Needs Square creds; never breaks boot.
     if (!process.env.SQUARE_ACCESS_TOKEN) return
     try {

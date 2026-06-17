@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 import { isAdmin } from '../access/isAdmin'
 import { isAdminOrEditor } from '../access/isAdminOrEditor'
 import { sendFiringInvoice } from '../hooks/sendFiringInvoice'
+import { setFiringCompletedAt } from '../hooks/setFiringCompletedAt'
 
 export const FiringRequests: CollectionConfig = {
   slug: 'firing-requests',
@@ -17,6 +18,7 @@ export const FiringRequests: CollectionConfig = {
     delete: isAdmin,
   },
   hooks: {
+    beforeChange: [setFiringCompletedAt],
     afterChange: [sendFiringInvoice],
   },
   fields: [
@@ -62,6 +64,10 @@ export const FiringRequests: CollectionConfig = {
     { name: 'squareInvoiceUrl', type: 'text', admin: { readOnly: true } },
     { name: 'invoicedAt', type: 'date', admin: { readOnly: true } },
     { name: 'paidAt', type: 'date', admin: { readOnly: true } },
+    {
+      name: 'completedAt', type: 'date',
+      admin: { readOnly: true, description: 'Set when marked Completed. The attached photo is auto-deleted 2 weeks after this.' },
+    },
     { name: 'lastInvoiceError', type: 'text', admin: { readOnly: true } },
   ],
 }
