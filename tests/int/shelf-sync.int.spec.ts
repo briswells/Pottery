@@ -82,4 +82,5 @@ afterAll(async () => {
   const p = await getTestPayload()
   await p.delete({ collection: 'people', where: { email: { contains: '@shelftest.local' } }, overrideAccess: true })
   await p.delete({ collection: 'shelves', where: { name: { contains: 'PLAN-SHELF' } }, overrideAccess: true })
+  await p.delete({ collection: 'shelf-tags', where: { name: { contains: 'Back room' } }, overrideAccess: true })
 })
