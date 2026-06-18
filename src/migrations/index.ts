@@ -5,6 +5,7 @@ import * as migration_20260615_153003_add_favicon_to_site_settings from './20260
 import * as migration_20260615_194316_add_homepage_card_images from './20260615_194316_add_homepage_card_images';
 import * as migration_20260616_222948_add_include_in_gallery from './20260616_222948_add_include_in_gallery';
 import * as migration_20260616_224012_add_firing_completed_at from './20260616_224012_add_firing_completed_at';
+import * as migration_20260618_190331_add_shelves from './20260618_190331_add_shelves';
 
 export const migrations = [
   {
@@ -40,6 +41,11 @@ export const migrations = [
   {
     up: migration_20260616_224012_add_firing_completed_at.up,
     down: migration_20260616_224012_add_firing_completed_at.down,
-    name: '20260616_224012_add_firing_completed_at'
+    name: '20260616_224012_add_firing_completed_at',
+  },
+  {
+    up: migration_20260618_190331_add_shelves.up,
+    down: migration_20260618_190331_add_shelves.down,
+    name: '20260618_190331_add_shelves'
   },
 ];
