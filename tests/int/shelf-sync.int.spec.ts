@@ -60,6 +60,24 @@ describe('syncShelfAssignment', () => {
   })
 })
 
+describe('shelf/tag deletion', () => {
+  it('clears the member ref when an assigned shelf is deleted', async () => {
+    const p = await getTestPayload()
+    const s = await mkShelf(p, 'del'); const m = await mkMember(p)
+    await p.update({ collection: 'people', id: m.id, overrideAccess: true, data: { shelf: s.id } })
+    await p.delete({ collection: 'shelves', id: s.id, overrideAccess: true })
+    expect((await personOf(p, m.id)).shelf).toBeFalsy()
+  })
+
+  it('nulls a shelf tag when the tag is deleted', async () => {
+    const p = await getTestPayload()
+    const tag = await p.create({ collection: 'shelf-tags', overrideAccess: true, data: { name: `Back room del ${Date.now()}` } })
+    const s = await p.create({ collection: 'shelves', overrideAccess: true, data: { name: `PLAN-SHELF-tagdel-${Date.now()}`, tag: tag.id } })
+    await p.delete({ collection: 'shelf-tags', id: tag.id, overrideAccess: true })
+    expect((await shelfOf(p, s.id)).tag).toBeFalsy()
+  })
+})
+
 afterAll(async () => {
   const p = await getTestPayload()
   await p.delete({ collection: 'people', where: { email: { contains: '@shelftest.local' } }, overrideAccess: true })
