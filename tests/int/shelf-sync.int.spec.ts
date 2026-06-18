@@ -33,6 +33,31 @@ describe('syncShelfAssignment', () => {
     expect((await personOf(p, m1.id)).shelf).toBeFalsy()
     expect((await shelfOf(p, s.id)).assignedMember).toBe(m2.id)
   })
+
+  it('frees the shelf when Square reports the sub truly ended', async () => {
+    const p = await getTestPayload()
+    const s = await mkShelf(p, 'exp'); const m = await mkMember(p)
+    await p.update({ collection: 'people', id: m.id, overrideAccess: true, data: { shelf: s.id, subscriptionStatus: 'ACTIVE' } })
+    await p.update({ collection: 'people', id: m.id, overrideAccess: true, context: { fromSquareWebhook: true }, data: { subscriptionStatus: 'DEACTIVATED', status: 'cancelled' } })
+    expect((await personOf(p, m.id)).shelf).toBeFalsy()
+    expect((await shelfOf(p, s.id)).assignedMember).toBeFalsy()
+  })
+
+  it('keeps the shelf on a scheduled cancel (still ACTIVE in Square)', async () => {
+    const p = await getTestPayload()
+    const s = await mkShelf(p, 'sched'); const m = await mkMember(p)
+    await p.update({ collection: 'people', id: m.id, overrideAccess: true, data: { shelf: s.id, subscriptionStatus: 'ACTIVE' } })
+    await p.update({ collection: 'people', id: m.id, overrideAccess: true, context: { fromSquareWebhook: true }, data: { status: 'cancelled' } })
+    expect((await personOf(p, m.id)).shelf).toBe(s.id)
+  })
+
+  it('keeps the shelf when only paused', async () => {
+    const p = await getTestPayload()
+    const s = await mkShelf(p, 'pause'); const m = await mkMember(p)
+    await p.update({ collection: 'people', id: m.id, overrideAccess: true, data: { shelf: s.id, subscriptionStatus: 'ACTIVE' } })
+    await p.update({ collection: 'people', id: m.id, overrideAccess: true, context: { fromSquareWebhook: true }, data: { subscriptionStatus: 'PAUSED', status: 'paused' } })
+    expect((await personOf(p, m.id)).shelf).toBe(s.id)
+  })
 })
 
 afterAll(async () => {
