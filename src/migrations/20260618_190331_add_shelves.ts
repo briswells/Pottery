@@ -52,9 +52,9 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
 
   ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_shelves_fk";
   
-  DROP INDEX "people_shelf_idx";
-  DROP INDEX "payload_locked_documents_rels_shelf_tags_id_idx";
-  DROP INDEX "payload_locked_documents_rels_shelves_id_idx";
+  DROP INDEX IF EXISTS "people_shelf_idx";
+  DROP INDEX IF EXISTS "payload_locked_documents_rels_shelf_tags_id_idx";
+  DROP INDEX IF EXISTS "payload_locked_documents_rels_shelves_id_idx";
   ALTER TABLE "people" ADD COLUMN "shelf_label" varchar;
   ALTER TABLE "people" DROP COLUMN "shelf_id";
   ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "shelf_tags_id";

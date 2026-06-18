@@ -1,4 +1,4 @@
-import { describe, it, expect, afterAll, vi } from 'vitest'
+import { describe, it, expect, afterAll } from 'vitest'
 import { getTestPayload } from './helpers'
 import { resolveShelfName } from '../../src/hooks/cancelSquareSubscription'
 
