@@ -4,6 +4,7 @@ import { isAdminOrEditor } from '../access/isAdminOrEditor'
 import { cancelSquareSubscription } from '../hooks/cancelSquareSubscription'
 import { cancelSquareSubscriptionOnDelete } from '../hooks/cancelSquareSubscriptionOnDelete'
 import { reconcileMemberSubscription } from '../hooks/reconcileMemberSubscription'
+import { syncShelfAssignment } from '../hooks/syncShelfAssignment'
 
 // One record per human. Everyone who interacts with the studio (class booking,
 // firing request, membership) is a Person; "being a member" means having a `plan`.
@@ -24,7 +25,7 @@ export const People: CollectionConfig = {
     delete: isAdmin,
   },
   hooks: {
-    afterChange: [reconcileMemberSubscription, cancelSquareSubscription],
+    afterChange: [reconcileMemberSubscription, cancelSquareSubscription, syncShelfAssignment],
     beforeDelete: [cancelSquareSubscriptionOnDelete],
   },
   fields: [
