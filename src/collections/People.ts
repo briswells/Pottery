@@ -15,7 +15,7 @@ export const People: CollectionConfig = {
   admin: {
     group: 'People',
     useAsTitle: 'name',
-    defaultColumns: ['name', 'plan', 'status', 'shelfLabel', 'subscriptionStatus'],
+    defaultColumns: ['name', 'plan', 'status', 'shelf', 'subscriptionStatus'],
   },
   access: {
     read: isAdminOrEditor,
@@ -54,7 +54,15 @@ export const People: CollectionConfig = {
       ],
     },
     { name: 'joinedDate', type: 'date' },
-    { name: 'shelfLabel', type: 'text', admin: { description: 'e.g. "Shelf B-12"', condition: (data) => Boolean(data?.plan) } },
+    {
+      name: 'shelf', type: 'relationship', relationTo: 'shelves', hasMany: false,
+      admin: { condition: (data) => Boolean(data?.plan) },
+      filterOptions: ({ id }) => {
+        const clauses: Record<string, unknown>[] = [{ assignedMember: { exists: false } }]
+        if (id) clauses.push({ assignedMember: { equals: id } })
+        return { or: clauses }
+      },
+    },
     { name: 'notes', type: 'textarea' },
     // Square linkage
     { name: 'squareCustomerId', type: 'text', index: true, admin: { readOnly: true } },

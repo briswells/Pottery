@@ -36,6 +36,20 @@ describe('shelves', () => {
   })
 })
 
+describe('people.shelf', () => {
+  it('stores a shelf relationship and no longer has shelfLabel', async () => {
+    const payload = await getTestPayload()
+    const shelf = await payload.create({ collection: 'shelves', overrideAccess: true, data: { name: `PLAN-SHELF-rel-${Date.now()}` } })
+    const member = await payload.create({
+      collection: 'people', overrideAccess: true,
+      data: { name: 'ShelfRel', email: `rel-${Date.now()}@shelftest.local`, status: 'active', shelf: shelf.id },
+    })
+    expect(member).not.toHaveProperty('shelfLabel')
+    const fresh = await payload.findByID({ collection: 'people', id: member.id, depth: 0, overrideAccess: true })
+    expect(fresh.shelf).toBe(shelf.id)
+  })
+})
+
 afterAll(async () => {
   const payload = await getTestPayload()
   await payload.delete({ collection: 'people', where: { email: { contains: '@shelftest.local' } }, overrideAccess: true })

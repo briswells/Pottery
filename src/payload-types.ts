@@ -77,6 +77,8 @@ export interface Config {
     bookings: Booking;
     payments: Payment;
     'firing-requests': FiringRequest;
+    'shelf-tags': ShelfTag;
+    shelves: Shelf;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -97,6 +99,8 @@ export interface Config {
     bookings: BookingsSelect<false> | BookingsSelect<true>;
     payments: PaymentsSelect<false> | PaymentsSelect<true>;
     'firing-requests': FiringRequestsSelect<false> | FiringRequestsSelect<true>;
+    'shelf-tags': ShelfTagsSelect<false> | ShelfTagsSelect<true>;
+    shelves: ShelvesSelect<false> | ShelvesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -260,10 +264,7 @@ export interface Person {
   phone?: string | null;
   status?: ('none' | 'active' | 'past_due' | 'paused' | 'cancelled') | null;
   joinedDate?: string | null;
-  /**
-   * e.g. "Shelf B-12"
-   */
-  shelfLabel?: string | null;
+  shelf?: (number | null) | Shelf;
   notes?: string | null;
   squareCustomerId?: string | null;
   squareSubscriptionId?: string | null;
@@ -315,6 +316,36 @@ export interface MembershipPlan {
    * Square plans removed from Square are set inactive by sync.
    */
   active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Filter by "Assigned Member → exists: No" to see currently-unassigned shelves.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "shelves".
+ */
+export interface Shelf {
+  id: number;
+  /**
+   * Free-form shelf number/name, e.g. "B-12".
+   */
+  name: string;
+  tag?: (number | null) | ShelfTag;
+  /**
+   * Set automatically from the member's page.
+   */
+  assignedMember?: (number | null) | Person;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "shelf-tags".
+ */
+export interface ShelfTag {
+  id: number;
+  name: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -589,6 +620,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'firing-requests';
         value: number | FiringRequest;
+      } | null)
+    | ({
+        relationTo: 'shelf-tags';
+        value: number | ShelfTag;
+      } | null)
+    | ({
+        relationTo: 'shelves';
+        value: number | Shelf;
       } | null);
   globalSlug?: string | null;
   user:
@@ -681,7 +720,7 @@ export interface PeopleSelect<T extends boolean = true> {
   phone?: T;
   status?: T;
   joinedDate?: T;
-  shelfLabel?: T;
+  shelf?: T;
   notes?: T;
   squareCustomerId?: T;
   squareSubscriptionId?: T;
@@ -868,6 +907,26 @@ export interface FiringRequestsSelect<T extends boolean = true> {
   paidAt?: T;
   completedAt?: T;
   lastInvoiceError?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "shelf-tags_select".
+ */
+export interface ShelfTagsSelect<T extends boolean = true> {
+  name?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "shelves_select".
+ */
+export interface ShelvesSelect<T extends boolean = true> {
+  name?: T;
+  tag?: T;
+  assignedMember?: T;
   updatedAt?: T;
   createdAt?: T;
 }
