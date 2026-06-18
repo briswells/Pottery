@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, Where } from 'payload'
 import { isAdmin } from '../access/isAdmin'
 import { isAdminOrEditor } from '../access/isAdminOrEditor'
 import { cancelSquareSubscription } from '../hooks/cancelSquareSubscription'
@@ -59,7 +59,7 @@ export const People: CollectionConfig = {
       name: 'shelf', type: 'relationship', relationTo: 'shelves', hasMany: false,
       admin: { condition: (data) => Boolean(data?.plan) },
       filterOptions: ({ id }) => {
-        const clauses: Record<string, unknown>[] = [{ assignedMember: { exists: false } }]
+        const clauses: Where[] = [{ assignedMember: { exists: false } }]
         if (id) clauses.push({ assignedMember: { equals: id } })
         return { or: clauses }
       },
