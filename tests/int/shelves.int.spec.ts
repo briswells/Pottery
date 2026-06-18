@@ -13,6 +13,29 @@ describe('shelf-tags', () => {
   })
 })
 
+describe('shelves', () => {
+  it('creates a shelf with required name and optional tag', async () => {
+    const payload = await getTestPayload()
+    const shelf = await payload.create({
+      collection: 'shelves', overrideAccess: true,
+      data: { name: `PLAN-SHELF-${Date.now()}` },
+    })
+    expect(shelf.name).toContain('PLAN-SHELF')
+    expect(shelf.assignedMember).toBeFalsy()
+  })
+
+  it('can be filtered by unassigned (assignedMember exists:false)', async () => {
+    const payload = await getTestPayload()
+    await payload.create({ collection: 'shelves', overrideAccess: true, data: { name: `PLAN-SHELF-unassigned-${Date.now()}` } })
+    const { docs } = await payload.find({
+      collection: 'shelves', overrideAccess: true,
+      where: { assignedMember: { exists: false } }, limit: 100,
+    })
+    expect(docs.length).toBeGreaterThan(0)
+    expect(docs.every((d) => !d.assignedMember)).toBe(true)
+  })
+})
+
 afterAll(async () => {
   const payload = await getTestPayload()
   await payload.delete({ collection: 'people', where: { email: { contains: '@shelftest.local' } }, overrideAccess: true })

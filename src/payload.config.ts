@@ -21,6 +21,7 @@ import { Bookings } from './collections/Bookings'
 import { Payments } from './collections/Payments'
 import { FiringRequests } from './collections/FiringRequests'
 import { ShelfTags } from './collections/ShelfTags'
+import { Shelves } from './collections/Shelves'
 import { SiteSettings } from './globals/SiteSettings'
 import { HomePage } from './globals/HomePage'
 import { MembershipPage } from './globals/MembershipPage'
@@ -125,7 +126,7 @@ export default buildConfig({
   upload: {
     limits: { fileSize: 15_000_000 },
   },
-  collections: [Users, People, MembershipPlans, Media, Classes, ClassInstances, Bookings, Payments, FiringRequests, ShelfTags],
+  collections: [Users, People, MembershipPlans, Media, Classes, ClassInstances, Bookings, Payments, FiringRequests, ShelfTags, Shelves],
   globals: [SiteSettings, HomePage, MembershipPage, FiringsPage],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
