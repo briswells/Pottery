@@ -1,14 +1,25 @@
-import type { CollectionAfterChangeHook } from 'payload'
+import type { CollectionAfterChangeHook, Payload } from 'payload'
 import { getSquareClient } from '../lib/square'
 import { sendEmail } from '../lib/email'
 import { formatDate } from '../lib/schedule'
 import { getNotifyEmail } from '../lib/notify-email'
 import type { Person } from '../payload-types'
 
+/** Resolve a member's assigned shelf name for staff emails, or "none on file". */
+export async function resolveShelfName(payload: Payload, shelfRef: number | { id?: number } | null | undefined): Promise<string> {
+  const id = shelfRef == null ? null : typeof shelfRef === 'object' ? shelfRef.id ?? null : shelfRef
+  if (!id) return 'none on file'
+  try {
+    const shelf = await payload.findByID({ collection: 'shelves', id, depth: 0, overrideAccess: true })
+    return shelf?.name || 'none on file'
+  } catch {
+    return 'none on file'
+  }
+}
+
 /** Email the studio when a member cancels: who, their shelf, and their last day. */
-async function notifyStaffOfCancellation(member: Person, lastDay: string | null, to: string | undefined): Promise<void> {
+async function notifyStaffOfCancellation(member: Person, lastDay: string | null, to: string | undefined, shelf: string): Promise<void> {
   if (!to) return
-  const shelf = member.shelfLabel || 'none on file'
   const lastDayText = lastDay ? formatDate(lastDay) : 'the end of the current billing period'
   try {
     await sendEmail({
@@ -43,7 +54,7 @@ export const cancelSquareSubscription: CollectionAfterChangeHook<Person> = async
     if (becamePaused) await client.subscriptions.pause({ subscriptionId: doc.squareSubscriptionId })
     if (becameCancelled) {
       const res = await client.subscriptions.cancel({ subscriptionId: doc.squareSubscriptionId })
-      await notifyStaffOfCancellation(doc, res.subscription?.canceledDate ?? null, await getNotifyEmail(req.payload))
+      await notifyStaffOfCancellation(doc, res.subscription?.canceledDate ?? null, await getNotifyEmail(req.payload), await resolveShelfName(req.payload, doc.shelf))
     }
   } catch (e) {
     // Surface but don't crash the admin save; staff can retry.
