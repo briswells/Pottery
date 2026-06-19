@@ -336,6 +336,7 @@ export interface Shelf {
    * Set automatically from the member's page.
    */
   assignedMember?: (number | null) | Person;
+  sortKey?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -927,6 +928,7 @@ export interface ShelvesSelect<T extends boolean = true> {
   name?: T;
   tag?: T;
   assignedMember?: T;
+  sortKey?: T;
   updatedAt?: T;
   createdAt?: T;
 }

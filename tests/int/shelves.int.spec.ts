@@ -1,5 +1,6 @@
 import { describe, it, expect, afterAll } from 'vitest'
 import { getTestPayload } from './helpers'
+import { naturalSortKey } from '../../src/lib/naturalSort'
 
 describe('shelf-tags', () => {
   it('creates a tag with a unique name', async () => {
@@ -47,6 +48,57 @@ describe('people.shelf', () => {
     expect(member).not.toHaveProperty('shelfLabel')
     const fresh = await payload.findByID({ collection: 'people', id: member.id, depth: 0, overrideAccess: true })
     expect(fresh.shelf).toBe(shelf.id)
+  })
+})
+
+describe('natural shelf sorting', () => {
+  const cmp = (a: string, b: string) => {
+    const ka = naturalSortKey(a)
+    const kb = naturalSortKey(b)
+    return ka < kb ? -1 : ka > kb ? 1 : 0
+  }
+
+  it('orders numbers numerically and before letters', () => {
+    const names = ['B-12', '10', '2', 'A1', '1', '20']
+    expect([...names].sort(cmp)).toEqual(['1', '2', '10', '20', 'A1', 'B-12'])
+  })
+
+  it('computes and stores sortKey from the name on a shelf', async () => {
+    const payload = await getTestPayload()
+    const name = `PLAN-SHELF-sortkey-${Date.now()}`
+    const s = await payload.create({ collection: 'shelves', overrideAccess: true, data: { name } })
+    const fresh = await payload.findByID({ collection: 'shelves', id: s.id, depth: 0, overrideAccess: true })
+    expect((fresh as { sortKey?: string }).sortKey).toBe(naturalSortKey(name))
+  })
+})
+
+describe('duplicate name messages', () => {
+  // The friendly message surfaces as the field-level validation error (shown
+  // inline under the Name field in the admin), not the generic top-level message.
+  const fieldErrorText = (err: unknown): string => {
+    const e = err as { data?: { errors?: { message?: string }[] }; message?: string }
+    const fromData = (e?.data?.errors ?? []).map((x) => x?.message).join(' ')
+    return `${fromData} ${e?.message ?? ''}`
+  }
+
+  it('rejects a duplicate shelf name with a friendly message', async () => {
+    const payload = await getTestPayload()
+    const name = `PLAN-SHELF-dup-${Date.now()}`
+    await payload.create({ collection: 'shelves', overrideAccess: true, data: { name } })
+    const err = await payload
+      .create({ collection: 'shelves', overrideAccess: true, data: { name } })
+      .catch((e) => e)
+    expect(fieldErrorText(err)).toMatch(/a shelf with that name already exists/i)
+  })
+
+  it('rejects a duplicate shelf-tag name with a friendly message', async () => {
+    const payload = await getTestPayload()
+    const name = `Back room dup ${Date.now()}`
+    await payload.create({ collection: 'shelf-tags', overrideAccess: true, data: { name } })
+    const err = await payload
+      .create({ collection: 'shelf-tags', overrideAccess: true, data: { name } })
+      .catch((e) => e)
+    expect(fieldErrorText(err)).toMatch(/a tag with that name already exists/i)
   })
 })
 

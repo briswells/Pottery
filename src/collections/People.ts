@@ -57,7 +57,7 @@ export const People: CollectionConfig = {
     { name: 'joinedDate', type: 'date' },
     {
       name: 'shelf', type: 'relationship', relationTo: 'shelves', hasMany: false,
-      admin: { condition: (data) => Boolean(data?.plan) },
+      admin: { condition: (data) => Boolean(data?.plan), sortOptions: 'sortKey' },
       filterOptions: ({ id }) => {
         const clauses: Where[] = [{ assignedMember: { exists: false } }]
         if (id) clauses.push({ assignedMember: { equals: id } })

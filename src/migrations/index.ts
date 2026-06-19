@@ -6,6 +6,7 @@ import * as migration_20260615_194316_add_homepage_card_images from './20260615_
 import * as migration_20260616_222948_add_include_in_gallery from './20260616_222948_add_include_in_gallery';
 import * as migration_20260616_224012_add_firing_completed_at from './20260616_224012_add_firing_completed_at';
 import * as migration_20260618_190331_add_shelves from './20260618_190331_add_shelves';
+import * as migration_20260619_192701_add_shelf_sort_key from './20260619_192701_add_shelf_sort_key';
 
 export const migrations = [
   {
@@ -46,6 +47,11 @@ export const migrations = [
   {
     up: migration_20260618_190331_add_shelves.up,
     down: migration_20260618_190331_add_shelves.down,
-    name: '20260618_190331_add_shelves'
+    name: '20260618_190331_add_shelves',
+  },
+  {
+    up: migration_20260619_192701_add_shelf_sort_key.up,
+    down: migration_20260619_192701_add_shelf_sort_key.down,
+    name: '20260619_192701_add_shelf_sort_key'
   },
 ];
