@@ -57,22 +57,29 @@ export async function validateCoupon(
   if (coupon.appliesTo === 'class' && relId(coupon.class) !== args.classId) return { ok: false, reason: REASONS.wrongClass }
 
   // Usage checks hit bookings only when a limit is configured.
-  if (coupon.maxRedemptions != null || coupon.onePerCustomer) {
-    const { docs: uses } = await payload.find({
+  if (coupon.maxRedemptions != null) {
+    const { totalDocs: uses } = await payload.count({
       collection: 'bookings',
       where: { and: [{ coupon: { equals: coupon.id } }, { status: { in: ['paid', 'pending'] } }] },
-      limit: Math.max(coupon.maxRedemptions ?? 0, 500),
+      overrideAccess: true,
+    })
+    if (uses >= coupon.maxRedemptions) return { ok: false, reason: REASONS.fullyRedeemed }
+  }
+
+  if (coupon.onePerCustomer && args.customerEmail) {
+    const email = args.customerEmail.trim().toLowerCase()
+    // `like` is case-insensitive-contains in Payload/Postgres — it can over-match
+    // substrings, so confirm exact (case-insensitive) equality in JS on the small
+    // candidate set. No cap: a true duplicate always contains itself.
+    const { docs: candidates } = await payload.find({
+      collection: 'bookings',
+      where: { and: [{ coupon: { equals: coupon.id } }, { status: { in: ['paid', 'pending'] } }, { customerEmail: { like: email } }] },
+      limit: 100,
       depth: 0,
       overrideAccess: true,
     })
-    if (coupon.maxRedemptions != null && uses.length >= coupon.maxRedemptions) {
-      return { ok: false, reason: REASONS.fullyRedeemed }
-    }
-    if (coupon.onePerCustomer && args.customerEmail) {
-      const email = args.customerEmail.trim().toLowerCase()
-      if (uses.some((b) => (b.customerEmail ?? '').toLowerCase() === email)) {
-        return { ok: false, reason: REASONS.alreadyUsed }
-      }
+    if (candidates.some((b) => (b.customerEmail ?? '').toLowerCase() === email)) {
+      return { ok: false, reason: REASONS.alreadyUsed }
     }
   }
 
