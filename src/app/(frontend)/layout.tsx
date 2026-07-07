@@ -50,6 +50,7 @@ export default async function FrontendLayout({ children }: { children: React.Rea
           studioName={settings.studioName ?? 'Portside Pottery'}
           logoUrl={logoUrl}
           phone={settings.phone}
+          email={resolveNotifyEmail(settings.email)}
           hours={settings.hours}
           socials={settings.socials}
         />

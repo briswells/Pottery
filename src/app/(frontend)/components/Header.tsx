@@ -7,12 +7,14 @@ export function Header({
   studioName,
   logoUrl,
   phone,
+  email,
   hours,
   socials,
 }: {
   studioName: string
   logoUrl: string | null
   phone?: string | null
+  email?: string | null
   hours?: { days?: string | null; time?: string | null }[] | null
   socials?: Socials | null
 }) {
@@ -31,9 +33,15 @@ export function Header({
             {phone && (
               <a href={`tel:${phone.replace(/\D/g, '')}`}>{phone}</a>
             )}
+            {email && (
+              <>
+                {phone && <span className="pp-utility-sep">·</span>}
+                <a href={`mailto:${email}`}>{email}</a>
+              </>
+            )}
             {hoursLine && (
               <>
-                <span className="pp-utility-sep">·</span>
+                {(phone || email) && <span className="pp-utility-sep">·</span>}
                 <span>{hoursLine}</span>
               </>
             )}
