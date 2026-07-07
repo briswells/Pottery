@@ -33,6 +33,14 @@ describe('coupons collection', () => {
     const fixed = await p.create({ collection: 'coupons', overrideAccess: true, data: { code: CP(), discountType: 'fixed', amountOffCents: 5000 } })
     expect(fixed.amountOffCents).toBe(5000)
   })
+
+  it('normalizes an explicit null appliesTo to all', async () => {
+    const p = await getTestPayload()
+    const c = await p.create({ collection: 'coupons', overrideAccess: true, data: {
+      code: CP(), discountType: 'percent', percentOff: 10, appliesTo: null as never,
+    } })
+    expect(c.appliesTo).toBe('all')
+  })
 })
 
 afterAll(async () => {

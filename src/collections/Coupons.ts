@@ -61,11 +61,15 @@ export const Coupons: CollectionConfig = {
       validate: validateAmountOffCents,
     },
     {
+      // Not `required: true` — that makes the generated create type demand the field
+      // even though defaultValue backfills it. The hook below closes the residual
+      // gap (explicit null → 'all') so appliesTo is never null in practice.
       name: 'appliesTo', type: 'select', defaultValue: 'all',
       options: [
         { label: 'All classes', value: 'all' },
         { label: 'A specific class', value: 'class' },
       ],
+      hooks: { beforeValidate: [({ value }) => value ?? 'all'] },
     },
     {
       name: 'class', type: 'relationship', relationTo: 'classes', hasMany: false,
