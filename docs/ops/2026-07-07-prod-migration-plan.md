@@ -8,15 +8,15 @@
 Stand up the production stack on a new droplet under all-new accounts, verify it
 end-to-end at `dev.portsidepottery.com`, connect production Square, then leave
 GoDaddy entirely (registrar → Cloudflare, mailbox → Purelymail) and cut the real
-domain over. GoDaddy remains registrar through Phases 1–2; Cloudflare serves DNS
-from Phase 1 on.
+domain over. GoDaddy remains registrar AND DNS host through Phases 1–2 (only a new `dev`
+A record is added); the entire DNS estate moves to Cloudflare in Phase 3.
 
 | | Current (dev) | Target (prod) |
 |---|---|---|
 | Droplet | 206.189.255.28 (`~/.ssh/id_ed25519`) | **138.197.232.44** (`~/.ssh/id_ed25519_portside`) |
 | Domain | brianwells.org | dev.portsidepottery.com → portsidepottery.com (Phase 3) |
 | Registrar | — | GoDaddy → Cloudflare Registrar (Phase 3) |
-| DNS/CDN/Tunnel | Cloudflare (personal acct) | **New** Cloudflare account (from Phase 1) |
+| DNS/CDN/Tunnel | Cloudflare (personal acct) | GoDaddy DNS + Caddy direct TLS (Ph 1–2) → **new** Cloudflare acct (Ph 3) |
 | Email sending | Resend (zerakan.com domain) | **New** Resend account, `email.portsidepottery.com` |
 | Mailbox (inbound) | — | getcreative@portsidepottery.com: GoDaddy → **Purelymail** (Phase 3) |
 | Media | Droplet-local Docker volume | **Cloudflare R2** from day one |
@@ -47,24 +47,17 @@ from Phase 1 on.
     IdentitiesOnly yes
   ```
 
-### 1.1 DNS foundation — move DNS to Cloudflare WITHOUT breaking the live site/email
-1. **Export a full DNS record list from GoDaddy first** (screenshot + zone export).
-   The records that must survive: the current website's A/CNAME records, **MX**,
-   and every TXT (SPF, DKIM, domain verifications).
-2. New Cloudflare account → Add site `portsidepottery.com` (Free plan) →
-   Cloudflare scans and imports records. **Diff the imported zone against the
-   GoDaddy export line by line**; add anything missed (MX and TXT are the usual
-   casualties).
-3. Set the imported website records to **DNS-only (grey cloud)** initially — the
-   GoDaddy-hosted site must behave byte-identically after the switch. (Proxying
-   the old site is a later optimization, not part of this migration.)
-4. At GoDaddy: replace the nameservers with the two Cloudflare-assigned ones.
-5. **Verify before proceeding** (allow up to 24h, usually minutes):
-   - `dig NS portsidepottery.com +short` → Cloudflare pair
-   - `dig MX portsidepottery.com +short` → unchanged values
-   - Old website loads; a test email to getcreative@portsidepottery.com arrives.
+### 1.1 DNS — single new record at GoDaddy (REVISED: full DNS migration deferred to Phase 3)
+DNS stays entirely at GoDaddy through Phases 1–2 — zero risk to the live site
+and mailbox. One new record:
 
-GoDaddy is now registrar-only. Everything else in this plan happens in Cloudflare.
+- **A record**: `dev` → `138.197.232.44` (TTL 600).
+
+Consequence: Cloudflare Tunnel is unavailable until Phase 3 (tunnel hostnames
+require a Cloudflare-served zone), so the droplet serves HTTPS **directly** —
+Caddy (`caddy:2-alpine` in the compose stack) terminates TLS with an automatic
+Let's Encrypt cert for `dev.portsidepottery.com` on ports 80/443. Resend's
+verification records also go into GoDaddy DNS for now.
 
 ### 1.2 Provision the prod droplet (mirror the dev runbook)
 On `portside-prod`:
@@ -78,16 +71,18 @@ On `portside-prod`:
 
 ### 1.3 New service accounts
 1. **Resend (new account):** add domain `email.portsidepottery.com` → put its
-   DKIM/SPF records into the Cloudflare zone → verify → create API key.
+   DKIM/SPF records into **GoDaddy DNS** (they move to Cloudflare with everything
+   else in Phase 3) → verify → create API key.
    `EMAIL_FROM=Portside Pottery <portside@email.portsidepottery.com>`.
    (Subdomain sending cannot conflict with the root domain's mailbox SPF.)
-2. **Cloudflare R2:** create bucket `portside-media` (+ `portside-backups`) →
+2. **Cloudflare R2:** the new Cloudflare account is created now for R2 only — no
+   zone added yet. Create bucket `portside-media` (+ `portside-backups`) →
    R2 API token (Object Read & Write) → note the S3 endpoint
    `https://<account_id>.r2.cloudflarestorage.com`. The app's S3 plugin activates
    automatically when the `S3_*` vars are set (`forcePathStyle` already true).
-3. **Cloudflare Tunnel:** Zero Trust → Tunnels → create `portside-prod` →
-   `cloudflared service install <token>` on the droplet → **Published
-   application route**: `dev.portsidepottery.com` → `HTTP://localhost:3000`.
+3. ~~Cloudflare Tunnel~~ — deferred to Phase 3 (needs Cloudflare DNS). Caddy
+   serves HTTPS directly until then (cloudflared is pre-installed on the droplet
+   for later).
 
 ### 1.4 `.env.production` template (prod droplet, chmod 600)
 ```
@@ -129,16 +124,17 @@ No demo seed on prod. First admin via `/admin` create-first-user; then enter Sit
 Settings (studio name, phone, hours, **email = getcreative@portsidepottery.com**,
 logo upload → verifies R2 in passing).
 
-### 1.6 Cloudflare parity + backups
-- Cache Rule: path contains `/api/media/file/` → eligible, Edge TTL 1 month.
-- Smart Tiered Caching on. Email obfuscation is on by default (fine).
+### 1.6 Backups
 - Nightly DB backup: cron `pg_dump` → `portside-backups` R2 bucket via the
   repo's `scripts/backup.sh` (awscli configured with the R2 endpoint). Verify a
   restore once before Phase 2 puts real data in.
+- (Cloudflare cache rules / tiered caching move to Phase 3, when the domain is
+  behind Cloudflare. Caddy's gzip + the app's Cache-Control headers suffice for
+  the verification phase.)
 
 ### Phase 1 exit checklist
-- [ ] Old GoDaddy site + mailbox unaffected (spot-check after 24h)
-- [ ] `https://dev.portsidepottery.com` home/admin 200 through the tunnel
+- [ ] Old GoDaddy site + mailbox unaffected (no NS change was made — spot-check anyway)
+- [ ] `https://dev.portsidepottery.com` home/admin 200 via Caddy (valid Let's Encrypt cert)
 - [ ] Contact form → email arrives (Reply-To = visitor); honeypot post sends nothing
 - [ ] Media upload lands in R2 and serves; gallery checkbox flow works
 - [ ] Sandbox booking: card (normal ZIP), declined card (ZIP 99999 → friendly
@@ -179,7 +175,27 @@ logo upload → verifies R2 in passing).
 
 ## Phase 3 — Leave GoDaddy entirely
 
-Order matters: **mailbox first**, then registrar, then apex cutover, then teardown.
+Order matters: **DNS to Cloudflare first**, then mailbox, then registrar, then
+apex cutover, then teardown.
+
+### 3.0 DNS migration to Cloudflare (moved here from Phase 1)
+1. **Export a full DNS record list from GoDaddy** (screenshot + zone export).
+   The records that must survive: the current website's A/CNAME records, **MX**,
+   every TXT (SPF, DKIM, verifications), the `dev` A record, and Resend's
+   `email.` subdomain records.
+2. In the existing Cloudflare account (created for R2 in Phase 1): Add site
+   `portsidepottery.com` (Free) → **diff the imported zone against the GoDaddy
+   export line by line**; add anything missed (MX and TXT are the usual
+   casualties).
+3. Set the imported website + `dev` records to **DNS-only (grey cloud)** so
+   everything behaves byte-identically after the switch.
+4. At GoDaddy: replace the nameservers with the Cloudflare pair.
+5. **Verify:** `dig NS/MX +short` unchanged values; old site loads; a test email
+   to getcreative@ arrives; `dev.portsidepottery.com` still serves (Caddy is
+   IP-based, unaffected).
+6. Optional now or at 3.3: switch `dev`/apex serving from Caddy-direct to a
+   Cloudflare Tunnel + proxied records (cloudflared is already installed), and
+   add the media cache rule + tiered caching.
 
 ### 3.1 Mailbox migration → Purelymail (with full backup/restore)
 1. Identify what GoDaddy sold: legacy **Workspace Email** (IMAP:
@@ -240,3 +256,6 @@ Order matters: **mailbox first**, then registrar, then apex cutover, then teardo
 - Resend sends from `email.portsidepottery.com` (subdomain isolation).
 - The existing GoDaddy site + mailbox must not break during Phases 1–2.
 - Old dev instance (brianwells.org / 206.189.255.28) stays as dev/staging.
+- REVISED 2026-07-07: DNS stays at GoDaddy through Phases 1–2 (single `dev` A
+  record + Caddy direct TLS); the full Cloudflare DNS migration is Phase 3.0.
+  Cleaner: the live site/email carry zero risk until one deliberate migration.
