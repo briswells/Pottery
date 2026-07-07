@@ -660,7 +660,9 @@ a { color: var(--pp-terracotta); }
   text-decoration: none;
   margin-bottom: 14px;
 }
-.pp-footer-brand .pp-footer-logo img { height: 52px; width: auto; }
+/* The footer is dark, so render the (dark, transparent-background) logo as
+   white — same asset as the header, inverted for contrast. */
+.pp-footer-brand .pp-footer-logo img { height: 52px; width: auto; filter: brightness(0) invert(1); }
 .pp-footer-brand .pp-footer-logo-text {
   font-family: var(--font-fraunces), Georgia, serif;
   font-size: 18px;
