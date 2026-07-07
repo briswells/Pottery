@@ -78,4 +78,12 @@ describe('submitContactMessage', () => {
     expect(arg.subject).not.toMatch(/[\r\n]/)
     expect(arg.subject).toContain('Bob Bcc: evil@x.com')
   })
+
+  it('honeypot drop wins even when validation would fail', async () => {
+    const payload = await getTestPayload()
+    const d = deps()
+    const res = await submitContactMessage({ payload, ...d }, { ...VALID, website: 'x', name: '' })
+    expect(res).toEqual({ ok: true })
+    expect(d.sendEmail).not.toHaveBeenCalled()
+  })
 })

@@ -22,7 +22,9 @@ export default async function ContactPage() {
         Questions about classes, membership, or visiting the studio? Send us a note and
         we&apos;ll get back to you{email ? <> — or email us directly at <a href={`mailto:${email}`}>{email}</a></> : null}.
       </p>
-      <ContactForm />
+      {/* Server clock, captured fresh per request (page is force-dynamic) so it matches the server-side comparison. */}
+      {/* eslint-disable-next-line react-hooks/purity */}
+      <ContactForm startedAt={Date.now()} />
     </div>
   )
 }

@@ -1,10 +1,7 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 
-export function ContactForm() {
-  // Captured once at mount; the server rejects submits arriving too soon after.
-  // eslint-disable-next-line react-hooks/purity
-  const startedAt = useRef(Date.now())
+export function ContactForm({ startedAt }: { startedAt: number }) {
   const [form, setForm] = useState({ name: '', email: '', message: '', website: '' })
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
@@ -18,7 +15,7 @@ export function ContactForm() {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, startedAt: startedAt.current }),
+        body: JSON.stringify({ ...form, startedAt }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Something went wrong.')
