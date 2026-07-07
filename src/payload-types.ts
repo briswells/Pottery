@@ -477,7 +477,49 @@ export interface Booking {
   customerPhone?: string | null;
   status: 'pending' | 'paid' | 'cancelled' | 'refunded';
   amountCents: number;
+  /**
+   * Coupon discount applied. Original price = amount + discount.
+   */
+  discountCents?: number | null;
+  coupon?: (number | null) | Coupon;
   squarePaymentId?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons".
+ */
+export interface Coupon {
+  id: number;
+  /**
+   * Customers enter this at checkout. Stored uppercase; entry is case-insensitive.
+   */
+  code: string;
+  discountType: 'percent' | 'fixed';
+  /**
+   * 1–100
+   */
+  percentOff?: number | null;
+  amountOffCents?: number | null;
+  appliesTo?: ('all' | 'class') | null;
+  /**
+   * Covers every session of this class.
+   */
+  class?: (number | null) | Class;
+  active?: boolean | null;
+  /**
+   * Optional — code stops working after this date.
+   */
+  expiresAt?: string | null;
+  /**
+   * Optional — total uses allowed across all customers.
+   */
+  maxRedemptions?: number | null;
+  /**
+   * Each email can use this code once.
+   */
+  onePerCustomer?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -502,9 +544,9 @@ export interface Payment {
   firingRequest?: (number | null) | FiringRequest;
   amountCents: number;
   /**
-   * Square payment or invoice id
+   * Square payment or invoice id (empty for $0 coupon bookings).
    */
-  squareId: string;
+  squareId?: string | null;
   /**
    * Mirrors the raw Square payment/invoice status (e.g. COMPLETED).
    */
@@ -561,43 +603,6 @@ export interface FiringRequest {
    */
   completedAt?: string | null;
   lastInvoiceError?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "coupons".
- */
-export interface Coupon {
-  id: number;
-  /**
-   * Customers enter this at checkout. Stored uppercase; entry is case-insensitive.
-   */
-  code: string;
-  discountType: 'percent' | 'fixed';
-  /**
-   * 1–100
-   */
-  percentOff?: number | null;
-  amountOffCents?: number | null;
-  appliesTo?: ('all' | 'class') | null;
-  /**
-   * Covers every session of this class.
-   */
-  class?: (number | null) | Class;
-  active?: boolean | null;
-  /**
-   * Optional — code stops working after this date.
-   */
-  expiresAt?: string | null;
-  /**
-   * Optional — total uses allowed across all customers.
-   */
-  maxRedemptions?: number | null;
-  /**
-   * Each email can use this code once.
-   */
-  onePerCustomer?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -905,6 +910,8 @@ export interface BookingsSelect<T extends boolean = true> {
   customerPhone?: T;
   status?: T;
   amountCents?: T;
+  discountCents?: T;
+  coupon?: T;
   squarePaymentId?: T;
   updatedAt?: T;
   createdAt?: T;

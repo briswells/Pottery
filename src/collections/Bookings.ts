@@ -34,6 +34,14 @@ export const Bookings: CollectionConfig = {
         },
       },
     },
+    {
+      name: 'discountCents', type: 'number', label: 'Discount',
+      admin: {
+        description: 'Coupon discount applied. Original price = amount + discount.',
+        components: { Field: '/admin/PriceField#PriceField', Cell: '/admin/PriceCell#PriceCell' },
+      },
+    },
+    { name: 'coupon', type: 'relationship', relationTo: 'coupons', hasMany: false },
     { name: 'squarePaymentId', type: 'text', index: true },
   ],
 }

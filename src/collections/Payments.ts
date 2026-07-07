@@ -31,7 +31,7 @@ export const Payments: CollectionConfig = {
         },
       },
     },
-    { name: 'squareId', type: 'text', required: true, index: true, admin: { description: 'Square payment or invoice id' } },
+    { name: 'squareId', type: 'text', index: true, admin: { description: 'Square payment or invoice id (empty for $0 coupon bookings).' } },
     { name: 'status', type: 'text', required: true, admin: { description: 'Mirrors the raw Square payment/invoice status (e.g. COMPLETED).' } },
     { name: 'paidAt', type: 'date' },
   ],
