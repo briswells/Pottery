@@ -101,6 +101,41 @@ describe('createPaidBooking with coupons', () => {
       classInstanceId: inst.id, sourceId: 'cnon:x', couponCode: c.code, customerName: 'F2', customerEmail: 'F@CPTEST.LOCAL',
     })).rejects.toThrow('That code has already been used with this email.')
   })
+
+  it('books a natively free class (no coupon) and still sends the confirmation email', async () => {
+    const p = await getTestPayload()
+    const { inst } = await makeInstance(p, 0)
+    const d = deps()
+    const booking = await createPaidBooking({ payload: p, ...d }, {
+      classInstanceId: inst.id, customerName: 'G', customerEmail: 'g@cptest.local',
+    })
+    expect(d.charge).not.toHaveBeenCalled()
+    expect(booking.status).toBe('paid')
+    expect(d.sendEmail).toHaveBeenCalledTimes(1)
+    const html: string = (d.sendEmail as any).mock.calls[0][0].html
+    expect(html).toContain('Amount paid: $0.00.')
+  })
+
+  it('confirmation email shows the coupon amount line variants', async () => {
+    const p = await getTestPayload()
+    const { inst } = await makeInstance(p)
+    const c = await mkCoupon(p) // 30% default
+    const d = deps()
+    await createPaidBooking({ payload: p, ...d }, {
+      classInstanceId: inst.id, sourceId: 'cnon:x', couponCode: c.code, customerName: 'H', customerEmail: 'h@cptest.local',
+    })
+    const html: string = (d.sendEmail as any).mock.calls[0][0].html
+    expect(html).toContain(`Amount paid: $154.00 (${c.code} applied).`)
+
+    const { inst: inst2 } = await makeInstance(p)
+    const free = await mkCoupon(p, { percentOff: 100 })
+    const d2 = deps()
+    await createPaidBooking({ payload: p, ...d2 }, {
+      classInstanceId: inst2.id, couponCode: free.code, customerName: 'I', customerEmail: 'i@cptest.local',
+    })
+    const html2: string = (d2.sendEmail as any).mock.calls[0][0].html
+    expect(html2).toContain(`Free with code ${free.code}.`)
+  })
 })
 
 afterAll(async () => {

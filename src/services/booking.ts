@@ -121,7 +121,7 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
     const summary = scheduleSummary(inst)
     const ics = buildClassIcs(inst, cls.title)
     const amountLine =
-      finalCents === 0
+      couponId != null && finalCents === 0
         ? `Free with code ${input.couponCode!.trim().toUpperCase()}.`
         : discountCents > 0
           ? `Amount paid: ${usd(finalCents)} (${input.couponCode!.trim().toUpperCase()} applied).`
