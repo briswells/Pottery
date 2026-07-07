@@ -38,7 +38,7 @@ function escapeHtml(s: string): string {
  * success WITHOUT sending so bots get no signal.
  */
 export async function submitContactMessage(deps: ContactDeps, input: ContactInput): Promise<ContactResult> {
-  const name = (input.name ?? '').trim()
+  const name = (input.name ?? '').replace(/[\r\n\t\v\f  ]+/g, ' ').trim().slice(0, 200)
   const email = (input.email ?? '').trim()
   const message = (input.message ?? '').trim()
 

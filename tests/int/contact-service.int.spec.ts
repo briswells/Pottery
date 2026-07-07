@@ -68,4 +68,14 @@ describe('submitContactMessage', () => {
     expect(res).toMatchObject({ ok: false, status: 500 })
     expect((res as any).error).toMatch(/email us directly/i)
   })
+
+  it('strips CR/LF from the name before it reaches the subject', async () => {
+    const payload = await getTestPayload()
+    const d = deps()
+    const res = await submitContactMessage({ payload, ...d }, { ...VALID, name: 'Bob\r\nBcc: evil@x.com' })
+    expect(res).toEqual({ ok: true })
+    const arg: any = d.sendEmail.mock.calls[0][0]
+    expect(arg.subject).not.toMatch(/[\r\n]/)
+    expect(arg.subject).toContain('Bob Bcc: evil@x.com')
+  })
 })
