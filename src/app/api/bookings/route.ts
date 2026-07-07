@@ -12,8 +12,8 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const { classInstanceId, sourceId, customerName, customerEmail, customerPhone } = body ?? {}
-  if (!classInstanceId || !sourceId || !customerName || !customerEmail) {
+  const { classInstanceId, sourceId, couponCode, customerName, customerEmail, customerPhone } = body ?? {}
+  if (!classInstanceId || !customerName || !customerEmail) {
     return Response.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   try {
     const booking = await createPaidBooking(
       { payload, charge: chargeCard, sendEmail },
-      { classInstanceId, sourceId, customerName, customerEmail, customerPhone },
+      { classInstanceId, sourceId, couponCode, customerName, customerEmail, customerPhone },
     )
     return Response.json({ ok: true, bookingId: booking.id })
   } catch (e: any) {
