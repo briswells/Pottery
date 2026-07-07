@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     )
     return Response.json({ ok: true, bookingId: booking.id })
   } catch (e: any) {
-    const full = /full/i.test(e?.message ?? '')
+    const full = /this class is full/i.test(e?.message ?? '')
     return Response.json({ error: e?.message ?? 'Booking failed' }, { status: full ? 409 : 402 })
   }
 }

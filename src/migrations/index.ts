@@ -58,6 +58,6 @@ export const migrations = [
   {
     up: migration_20260707_184022_add_coupons.up,
     down: migration_20260707_184022_add_coupons.down,
-    name: '20260707_184022_add_coupons'
+    name: '20260707_184022_add_coupons',
   },
 ];
