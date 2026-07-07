@@ -53,11 +53,49 @@ export function BookingForm({
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [form, setForm] = useState({ customerName: '', customerEmail: '', customerPhone: '' })
+  const [couponInput, setCouponInput] = useState('')
+  const [applied, setApplied] = useState<{
+    code: string
+    discountCents: number
+    finalCents: number
+  } | null>(null)
+  const [couponMsg, setCouponMsg] = useState<string | null>(null)
+
+  const effectiveCents = applied ? applied.finalCents : priceCents
+  const effectiveLabel = `$${(effectiveCents / 100).toFixed(2)}`
+  const isFree = applied !== null && applied.finalCents === 0
 
   const formRef = useRef(form)
   useEffect(() => {
     formRef.current = form
   }, [form])
+
+  const appliedRef = useRef(applied)
+  useEffect(() => {
+    appliedRef.current = applied
+  }, [applied])
+
+  async function applyCoupon() {
+    setCouponMsg(null)
+    const code = couponInput.trim()
+    if (!code) return
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, classInstanceId, email: formRef.current.customerEmail }),
+      })
+      const data = await res.json()
+      if (!data.ok) {
+        setApplied(null)
+        setCouponMsg(data.reason ?? "That code isn't valid.")
+        return
+      }
+      setApplied({ code: data.code, discountCents: data.discountCents, finalCents: data.finalCents })
+    } catch {
+      setCouponMsg('Could not check that code — please try again.')
+    }
+  }
 
   // Reveal payment options only once a full, well-formed email is present —
   // not on the first keystroke. Keeps wallets/card from flickering in mid-typing.
@@ -69,7 +107,7 @@ export function BookingForm({
   const busyRef = useRef(false)
 
   const completeBooking = useCallback(
-    async (sourceId: string) => {
+    async (sourceId: string | null) => {
       if (busyRef.current) return
       busyRef.current = true
       setBusy(true)
@@ -81,7 +119,8 @@ export function BookingForm({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             classInstanceId,
-            sourceId,
+            ...(sourceId ? { sourceId } : {}),
+            ...(appliedRef.current ? { couponCode: appliedRef.current.code } : {}),
             customerName: f.customerName,
             customerEmail: f.customerEmail,
             customerPhone: f.customerPhone,
@@ -221,27 +260,62 @@ export function BookingForm({
         </p>
       ) : (
         <>
-          {/* Card first, with its Book & pay submit. */}
-          <form onSubmit={submitCard} style={{ display: 'grid', gap: 10, marginTop: 12 }}>
-            <div id="card-container" />
-            <PoweredBySquare />
-            <button className="pp-btn" type="submit" disabled={!ready || busy}>
-              {busy ? 'Processing…' : `Book & pay ${priceLabel}`}
+          {/* Coupon code — preview only; the server re-validates at charge time. */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <input
+              className="pp-input"
+              aria-label="Coupon code"
+              placeholder="Coupon code (optional)"
+              value={couponInput}
+              onChange={(e) => setCouponInput(e.target.value)}
+              style={{ flex: 1 }}
+            />
+            <button type="button" className="pp-btn" onClick={applyCoupon} disabled={busy}>
+              Apply
             </button>
-          </form>
+          </div>
+          {applied && (
+            <p style={{ marginTop: 6, fontSize: 13 }}>
+              {applied.code} applied: <s>{priceLabel}</s> <strong>{effectiveLabel}</strong>
+            </p>
+          )}
+          {couponMsg && <p style={{ marginTop: 6, fontSize: 13, color: '#b3261e' }}>{couponMsg}</p>}
 
-          {/* Wallets below the card. */}
-          {payments && (
+          {isFree ? (
+            <button
+              className="pp-btn"
+              style={{ marginTop: 12 }}
+              disabled={busy}
+              onClick={() => void completeBooking(null)}
+            >
+              {busy ? 'Processing…' : 'Book free'}
+            </button>
+          ) : (
             <>
-              <div className="pp-or-divider">or pay with</div>
-              <WalletButtons
-                payments={payments}
-                priceCents={priceCents}
-                referenceId={`booking-instance-${classInstanceId}`}
-                disabled={busy}
-                onToken={completeBooking}
-                onError={setMsg}
-              />
+              {/* Card first, with its Book & pay submit. */}
+              <form onSubmit={submitCard} style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+                <div id="card-container" />
+                <PoweredBySquare />
+                <button className="pp-btn" type="submit" disabled={!ready || busy}>
+                  {busy ? 'Processing…' : `Book & pay ${effectiveLabel}`}
+                </button>
+              </form>
+
+              {/* Wallets below the card. */}
+              {payments && (
+                <>
+                  <div className="pp-or-divider">or pay with</div>
+                  <WalletButtons
+                    key={effectiveCents}
+                    payments={payments}
+                    priceCents={effectiveCents}
+                    referenceId={`booking-instance-${classInstanceId}`}
+                    disabled={busy}
+                    onToken={completeBooking}
+                    onError={setMsg}
+                  />
+                </>
+              )}
             </>
           )}
         </>
