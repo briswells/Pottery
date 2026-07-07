@@ -53,6 +53,7 @@ export function Footer({
             <li><Link href="/membership">Membership</Link></li>
             <li><Link href="/gallery">Gallery</Link></li>
             <li><Link href="/staff">Meet the Staff</Link></li>
+            <li><Link href="/contact">Contact</Link></li>
             <li><Link href="/visit">Visit Us</Link></li>
           </ul>
         </div>

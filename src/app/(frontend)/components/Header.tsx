@@ -80,6 +80,7 @@ export function Header({
           <Link href="/membership">Membership</Link>
           <Link href="/gallery">Gallery</Link>
           <Link href="/staff">Meet the Staff</Link>
+          <Link href="/contact">Contact</Link>
           <Link href="/visit">Visit Us</Link>
           <Link href="/classes" className="pp-nav-cta">Book a class</Link>
         </nav>

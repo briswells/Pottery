@@ -38,6 +38,7 @@ export function MobileNav() {
         <Link href="/membership" onClick={() => setOpen(false)}>Membership</Link>
         <Link href="/gallery" onClick={() => setOpen(false)}>Gallery</Link>
         <Link href="/staff" onClick={() => setOpen(false)}>Meet the Staff</Link>
+        <Link href="/contact" onClick={() => setOpen(false)}>Contact</Link>
         <Link href="/visit" onClick={() => setOpen(false)}>Visit Us</Link>
         <Link href="/classes" className="pp-nav-cta" onClick={() => setOpen(false)}>Book a class</Link>
       </nav>

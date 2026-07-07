@@ -20,7 +20,7 @@ describe('submitContactMessage', () => {
     const res = await submitContactMessage({ payload, ...d }, VALID)
     expect(res).toEqual({ ok: true })
     expect(d.sendEmail).toHaveBeenCalledTimes(1)
-    const arg: any = d.sendEmail.mock.calls[0][0]
+    const arg: any = (d.sendEmail.mock.calls as any[])[0][0]
     expect(arg.to).toBeTruthy() // site-settings email or STAFF_NOTIFY_EMAIL fallback
     expect(arg.replyTo).toBe('jo@example.com')
     expect(arg.subject).toBe('New message from Jo Potter — website contact form')
@@ -74,7 +74,7 @@ describe('submitContactMessage', () => {
     const d = deps()
     const res = await submitContactMessage({ payload, ...d }, { ...VALID, name: 'Bob\r\nBcc: evil@x.com' })
     expect(res).toEqual({ ok: true })
-    const arg: any = d.sendEmail.mock.calls[0][0]
+    const arg: any = (d.sendEmail.mock.calls as any[])[0][0]
     expect(arg.subject).not.toMatch(/[\r\n]/)
     expect(arg.subject).toContain('Bob Bcc: evil@x.com')
   })

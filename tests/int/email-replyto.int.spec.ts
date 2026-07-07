@@ -18,6 +18,6 @@ describe('sendEmail replyTo', () => {
   it('omits replyTo when not provided', async () => {
     send.mockClear()
     await sendEmail({ to: 'a@b.co', subject: 's', html: '<p>x</p>' })
-    expect(send.mock.calls[0][0]).not.toHaveProperty('replyTo')
+    expect((send.mock.calls as any[])[0][0]).not.toHaveProperty('replyTo')
   })
 })
