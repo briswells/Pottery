@@ -29,7 +29,7 @@ export function ContactForm() {
     }
   }
 
-  if (sent) return <p style={{ marginTop: 24, fontWeight: 600 }}>Thanks — we&apos;ll get back to you soon.</p>
+  if (sent) return <p role="status" style={{ marginTop: 24, fontWeight: 600 }}>Thanks — we&apos;ll get back to you soon.</p>
 
   return (
     <form onSubmit={submit} style={{ display: 'grid', gap: 10, marginTop: 24, maxWidth: 480 }}>
@@ -73,7 +73,7 @@ export function ContactForm() {
       <button className="pp-btn" type="submit" disabled={busy}>
         {busy ? 'Sending…' : 'Send message'}
       </button>
-      {error && <p style={{ color: '#b3261e' }}>{error}</p>}
+      {error && <p role="alert" style={{ color: '#b3261e' }}>{error}</p>}
     </form>
   )
 }
