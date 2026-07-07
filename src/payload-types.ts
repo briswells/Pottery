@@ -79,6 +79,7 @@ export interface Config {
     'firing-requests': FiringRequest;
     'shelf-tags': ShelfTag;
     shelves: Shelf;
+    coupons: Coupon;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -101,6 +102,7 @@ export interface Config {
     'firing-requests': FiringRequestsSelect<false> | FiringRequestsSelect<true>;
     'shelf-tags': ShelfTagsSelect<false> | ShelfTagsSelect<true>;
     shelves: ShelvesSelect<false> | ShelvesSelect<true>;
+    coupons: CouponsSelect<false> | CouponsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -564,6 +566,43 @@ export interface FiringRequest {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons".
+ */
+export interface Coupon {
+  id: number;
+  /**
+   * Customers enter this at checkout. Stored uppercase; entry is case-insensitive.
+   */
+  code: string;
+  discountType: 'percent' | 'fixed';
+  /**
+   * 1–100
+   */
+  percentOff?: number | null;
+  amountOffCents?: number | null;
+  appliesTo?: ('all' | 'class') | null;
+  /**
+   * Covers every session of this class.
+   */
+  class?: (number | null) | Class;
+  active?: boolean | null;
+  /**
+   * Optional — code stops working after this date.
+   */
+  expiresAt?: string | null;
+  /**
+   * Optional — total uses allowed across all customers.
+   */
+  maxRedemptions?: number | null;
+  /**
+   * Each email can use this code once.
+   */
+  onePerCustomer?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -629,6 +668,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'shelves';
         value: number | Shelf;
+      } | null)
+    | ({
+        relationTo: 'coupons';
+        value: number | Coupon;
       } | null);
   globalSlug?: string | null;
   user:
@@ -929,6 +972,24 @@ export interface ShelvesSelect<T extends boolean = true> {
   tag?: T;
   assignedMember?: T;
   sortKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons_select".
+ */
+export interface CouponsSelect<T extends boolean = true> {
+  code?: T;
+  discountType?: T;
+  percentOff?: T;
+  amountOffCents?: T;
+  appliesTo?: T;
+  class?: T;
+  active?: T;
+  expiresAt?: T;
+  maxRedemptions?: T;
+  onePerCustomer?: T;
   updatedAt?: T;
   createdAt?: T;
 }
