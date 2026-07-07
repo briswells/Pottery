@@ -10,6 +10,8 @@ export interface EmailInput {
   subject: string
   html: string
   attachments?: EmailAttachment[]
+  /** Sets the Reply-To header — e.g. a contact-form visitor's address. */
+  replyTo?: string
 }
 
 let resend: Resend | null = null
@@ -20,7 +22,7 @@ export function getResend(): Resend {
   return resend
 }
 
-export async function sendEmail({ to, subject, html, attachments }: EmailInput): Promise<void> {
+export async function sendEmail({ to, subject, html, attachments, replyTo }: EmailInput): Promise<void> {
   // Resend resolves with { data, error } instead of throwing on API errors,
   // so surface a failure explicitly rather than reporting a false success.
   const { error } = await getResend().emails.send({
@@ -29,6 +31,7 @@ export async function sendEmail({ to, subject, html, attachments }: EmailInput):
     subject,
     html,
     ...(attachments ? { attachments } : {}),
+    ...(replyTo ? { replyTo } : {}),
   })
   if (error) throw new Error(`Email send failed: ${error.message}`)
 }
