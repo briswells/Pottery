@@ -6,6 +6,7 @@ import { usd } from '../lib/format'
 import { scheduleSummary } from '../lib/schedule'
 import { buildClassIcs } from '../lib/ics'
 import { upsertPersonByEmail } from './people'
+import { validateCoupon } from './coupons'
 
 export interface BookingDeps {
   payload: Payload
@@ -15,7 +16,9 @@ export interface BookingDeps {
 
 export interface BookingInput {
   classInstanceId: number | string
-  sourceId: string
+  /** Square card/wallet token. Optional ONLY when a coupon brings the total to $0. */
+  sourceId?: string
+  couponCode?: string
   customerName: string
   customerEmail: string
   customerPhone?: string
@@ -35,6 +38,23 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
   const priceCents = inst.priceCents
   const capacity = inst.capacity
 
+  // Authoritative coupon check — the form's preview is cosmetic. The pending
+  // booking created below carries the coupon, so it holds a redemption slot.
+  let couponId: number | null = null
+  let discountCents = 0
+  let finalCents = priceCents
+  if (input.couponCode) {
+    const classId = typeof cls === 'object' ? (cls.id as number) : (cls as number)
+    const check = await validateCoupon({ payload }, {
+      code: input.couponCode, classId, priceCents, customerEmail: input.customerEmail,
+    })
+    if (!check.ok) throw new Error(check.reason)
+    couponId = check.coupon.id as number
+    discountCents = check.discountCents
+    finalCents = check.finalCents
+  }
+  if (finalCents > 0 && !input.sourceId) throw new Error('Payment information is required')
+
   // Reserve a seat by creating a pending booking, then re-check occupancy.
   const remaining = await seatsRemaining(payload, inst.id)
   if (remaining <= 0) throw new Error('This class is full')
@@ -44,7 +64,8 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
     overrideAccess: true,
     data: {
       classInstance: inst.id, customerName: input.customerName, customerEmail: input.customerEmail,
-      customerPhone: input.customerPhone, amountCents: priceCents, status: 'pending',
+      customerPhone: input.customerPhone, amountCents: finalCents, status: 'pending',
+      ...(couponId != null ? { coupon: couponId, discountCents } : {}),
     },
   })
 
@@ -55,25 +76,31 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
     throw new Error('This class is full')
   }
 
-  let charge: ChargeResult
-  try {
-    charge = await deps.charge({
-      sourceId: input.sourceId, amountCents: priceCents,
-      referenceId: `booking-${pending.id}`, note: `Class: ${cls.title}`,
-    })
-  } catch (e) {
-    await payload.update({ collection: 'bookings', id: pending.id, overrideAccess: true, data: { status: 'cancelled' } })
-    throw e
+  let charge: ChargeResult | null = null
+  if (finalCents > 0) {
+    try {
+      charge = await deps.charge({
+        sourceId: input.sourceId!, amountCents: finalCents,
+        referenceId: `booking-${pending.id}`, note: `Class: ${cls.title}`,
+      })
+    } catch (e) {
+      await payload.update({ collection: 'bookings', id: pending.id, overrideAccess: true, data: { status: 'cancelled' } })
+      throw e
+    }
   }
 
   const booking = await payload.update({
     collection: 'bookings', id: pending.id, overrideAccess: true,
-    data: { status: 'paid', squarePaymentId: charge.paymentId },
+    data: { status: 'paid', ...(charge ? { squarePaymentId: charge.paymentId } : {}) },
   })
 
   await payload.create({
     collection: 'payments', overrideAccess: true,
-    data: { type: 'booking', booking: pending.id, amountCents: priceCents, squareId: charge.paymentId, status: charge.status, paidAt: new Date().toISOString() },
+    data: {
+      type: 'booking', booking: pending.id, amountCents: finalCents,
+      ...(charge ? { squareId: charge.paymentId } : {}),
+      status: charge?.status ?? 'COMPLETED', paidAt: new Date().toISOString(),
+    },
   })
 
   // Link the booking to a Person (find-or-create by email). A failure here must
@@ -93,10 +120,16 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
   try {
     const summary = scheduleSummary(inst)
     const ics = buildClassIcs(inst, cls.title)
+    const amountLine =
+      finalCents === 0
+        ? `Free with code ${input.couponCode!.trim().toUpperCase()}.`
+        : discountCents > 0
+          ? `Amount paid: ${usd(finalCents)} (${input.couponCode!.trim().toUpperCase()} applied).`
+          : `Amount paid: ${usd(finalCents)}.`
     await deps.sendEmail({
       to: input.customerEmail,
       subject: `You're booked: ${cls.title}`,
-      html: `<p>Thanks, ${input.customerName}! You're registered for <strong>${cls.title}</strong> (${summary}).</p><p>Amount paid: ${usd(priceCents)}.</p><p>A calendar invite is attached.</p>`,
+      html: `<p>Thanks, ${input.customerName}! You're registered for <strong>${cls.title}</strong> (${summary}).</p><p>${amountLine}</p><p>A calendar invite is attached.</p>`,
       attachments: [{ filename: 'class.ics', content: Buffer.from(ics) }],
     })
   } catch (e) {
