@@ -1,5 +1,6 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import { notFound } from 'next/navigation'
 import { FiringRequestForm } from './FiringRequestForm'
 
 export const metadata = {
@@ -9,7 +10,12 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic'
 
+// Custom firings are hidden from the public site for now. The page 404s (nav
+// link also removed in Header) — delete the notFound() call to re-enable.
+const FIRINGS_PAGE_HIDDEN = true
+
 export default async function FiringsPage() {
+  if (FIRINGS_PAGE_HIDDEN) notFound()
   const payload = await getPayload({ config: await config })
   const page = await payload.findGlobal({ slug: 'firings-page' })
 

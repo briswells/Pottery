@@ -1,6 +1,5 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import Link from 'next/link'
 import { resolveNotifyEmail } from '../../../lib/notify-email'
 
 export const metadata = { title: 'Membership' }
@@ -38,11 +37,8 @@ export default async function MembershipPage() {
       <a className="pp-btn" href={`mailto:${inquiryEmail}?subject=Membership`}>
         Ask about membership
       </a>
-      <p style={{ marginTop: 16 }}>
-        <Link href="/membership/cancel" style={{ color: 'var(--pp-muted)', fontSize: 14 }}>
-          Cancel my membership
-        </Link>
-      </p>
+      {/* Self-serve "Cancel my membership" link hidden for now; the
+          /membership/cancel flow itself still works if linked directly. */}
     </div>
   )
 }
