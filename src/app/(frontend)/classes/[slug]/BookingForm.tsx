@@ -281,7 +281,7 @@ export function BookingForm({
           )}
           {couponMsg && <p style={{ marginTop: 6, fontSize: 13, color: '#b3261e' }}>{couponMsg}</p>}
 
-          {isFree ? (
+          {isFree && (
             <button
               className="pp-btn"
               style={{ marginTop: 12 }}
@@ -290,34 +290,38 @@ export function BookingForm({
             >
               {busy ? 'Processing…' : 'Book free'}
             </button>
-          ) : (
-            <>
-              {/* Card first, with its Book & pay submit. */}
-              <form onSubmit={submitCard} style={{ display: 'grid', gap: 10, marginTop: 12 }}>
-                <div id="card-container" />
-                <PoweredBySquare />
-                <button className="pp-btn" type="submit" disabled={!ready || busy}>
-                  {busy ? 'Processing…' : `Book & pay ${effectiveLabel}`}
-                </button>
-              </form>
-
-              {/* Wallets below the card. */}
-              {payments && (
-                <>
-                  <div className="pp-or-divider">or pay with</div>
-                  <WalletButtons
-                    key={effectiveCents}
-                    payments={payments}
-                    priceCents={effectiveCents}
-                    referenceId={`booking-instance-${classInstanceId}`}
-                    disabled={busy}
-                    onToken={completeBooking}
-                    onError={setMsg}
-                  />
-                </>
-              )}
-            </>
           )}
+
+          {/* Keep the card form MOUNTED while free (hidden via CSS) so the Square
+              card iframe's attach/destroy lifecycle (Effect B) is undisturbed —
+              unmounting #card-container orphans the card instance because the
+              effect's deps don't include isFree. */}
+          <div style={isFree ? { display: 'none' } : undefined}>
+            {/* Card first, with its Book & pay submit. */}
+            <form onSubmit={submitCard} style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+              <div id="card-container" />
+              <PoweredBySquare />
+              <button className="pp-btn" type="submit" disabled={!ready || busy || isFree}>
+                {busy ? 'Processing…' : `Book & pay ${effectiveLabel}`}
+              </button>
+            </form>
+
+            {/* Wallets below the card. */}
+            {payments && (
+              <>
+                <div className="pp-or-divider">or pay with</div>
+                <WalletButtons
+                  key={effectiveCents}
+                  payments={payments}
+                  priceCents={effectiveCents}
+                  referenceId={`booking-instance-${classInstanceId}`}
+                  disabled={busy}
+                  onToken={completeBooking}
+                  onError={setMsg}
+                />
+              </>
+            )}
+          </div>
         </>
       )}
 
