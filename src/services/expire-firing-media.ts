@@ -9,14 +9,11 @@ export interface ExpireFiringMediaResult {
 }
 
 /**
- * Delete the uploaded photos on any firing request that has been "completed" for
- * more than two weeks. Photos are detached from the request first so a deleted
- * media row never leaves a dangling reference. Each firing photo is dedicated to
- * its request (uploaded via /api/firings), so deleting it is safe. Idempotent:
- * once the photos are gone the request no longer matches.
- *
- * NOTE: minimally adapted (Task 2) to the new `photos` array shape — Task 3 does
- * the real rework + tests for this service.
+ * Delete all uploaded photos on any firing request that has been "completed" for
+ * more than two weeks. All photos in the request are deleted: the array is detached
+ * first so a deleted media row never leaves a dangling reference. Each firing photo
+ * is dedicated to its request (uploaded via /api/firings), so deleting is safe.
+ * Idempotent: once the photos are gone the request no longer matches the query.
  */
 export async function expireFiringRequestMedia(payload: Payload): Promise<ExpireFiringMediaResult> {
   const cutoff = new Date(Date.now() - FIRING_MEDIA_TTL_MS).toISOString()
