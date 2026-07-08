@@ -64,6 +64,6 @@ export const migrations = [
   {
     up: migration_20260708_214254_paid_firings.up,
     down: migration_20260708_214254_paid_firings.down,
-    name: '20260708_214254_paid_firings'
+    name: '20260708_214254_paid_firings',
   },
 ];

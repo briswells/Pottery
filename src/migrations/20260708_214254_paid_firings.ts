@@ -15,6 +15,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   
   ALTER TABLE "firing_requests" ALTER COLUMN "status" SET DATA TYPE text;
   ALTER TABLE "firing_requests" ALTER COLUMN "status" SET DEFAULT 'pending'::text;
+  UPDATE "firing_requests" SET "status" = 'cancelled' WHERE "status" IN ('submitted','approved','invoiced','invoice_failed');
   DROP TYPE "public"."enum_firing_requests_status";
   CREATE TYPE "public"."enum_firing_requests_status" AS ENUM('pending', 'paid', 'completed', 'cancelled', 'refunded');
   ALTER TABLE "firing_requests" ALTER COLUMN "status" SET DEFAULT 'pending'::"public"."enum_firing_requests_status";
@@ -22,8 +23,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   DROP INDEX "firing_requests_photo_idx";
   DROP INDEX "firing_requests_square_invoice_id_idx";
   ALTER TABLE "firing_requests" ALTER COLUMN "status" DROP NOT NULL;
-  ALTER TABLE "firing_requests" ADD COLUMN "half_shelves" numeric NOT NULL;
-  ALTER TABLE "firing_requests" ADD COLUMN "amount_cents" numeric NOT NULL;
+  ALTER TABLE "firing_requests" ADD COLUMN "half_shelves" numeric DEFAULT 1 NOT NULL;
+  ALTER TABLE "firing_requests" ADD COLUMN "amount_cents" numeric DEFAULT 0 NOT NULL;
+  ALTER TABLE "firing_requests" ALTER COLUMN "half_shelves" DROP DEFAULT;
+  ALTER TABLE "firing_requests" ALTER COLUMN "amount_cents" DROP DEFAULT;
   ALTER TABLE "firing_requests" ADD COLUMN "discount_cents" numeric;
   ALTER TABLE "firing_requests" ADD COLUMN "coupon_id" integer;
   ALTER TABLE "firing_requests" ADD COLUMN "square_payment_id" varchar;
