@@ -389,7 +389,7 @@ export function FiringRequestForm() {
               onChange={(e) => setStonewareConfirmed(e.target.checked)}
               style={{ marginTop: 3 }}
             />
-            <span>My piece(s) are stoneware clay, suitable for a Cone 10 firing.</span>
+            <span>My piece(s) are stoneware — no porcelain, earthenware, or low-fire clay.</span>
           </label>
 
           <label style={{ display: 'block', marginTop: 12, fontSize: 14, color: 'var(--pp-muted)' }}>

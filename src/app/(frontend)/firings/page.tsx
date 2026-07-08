@@ -22,7 +22,8 @@ export default async function FiringsPage() {
     day: 'numeric',
     year: 'numeric',
   })
-  const shelfPriceLabel = `$${(FIRING_HALF_SHELF_CENTS / 100).toFixed(2)}`
+  // Whole-dollar prices read cleaner without cents ("$25", not "$25.00").
+  const shelfPriceLabel = `$${(FIRING_HALF_SHELF_CENTS / 100).toFixed(2).replace(/\.00$/, '')}`
 
   return (
     <div style={{ padding: '40px 0', maxWidth: 680 }}>
@@ -51,8 +52,9 @@ export default async function FiringsPage() {
           borderRadius: 4,
         }}
       >
-        <strong>Stoneware only.</strong> We fire to Cone 10 — earthenware and low-fire clays cannot
-        go through this kiln. You&apos;ll confirm your pieces are stoneware before submitting.
+        <strong>Stoneware only.</strong> We fire to Cone 10 — no earthenware, no low-fire clay, and
+        no porcelain (even high-fire porcelain). You&apos;ll confirm your pieces are stoneware before
+        submitting.
       </div>
 
       <p style={{ marginTop: 16 }}>
