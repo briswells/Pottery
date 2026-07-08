@@ -67,7 +67,8 @@ describe('createPaidFiring', () => {
 
     const html: string = (d.sendEmail as any).mock.calls[0][0].html
     expect(html).toContain('$50.00')
-    expect(html).toContain('half shelf')
+    expect(html).toContain('2 half shelves')
+    expect(html).toContain('(11″×22″×6″ each)')
   })
 
   it('30% coupon: discounts the charge and mentions the code in the email', async () => {
@@ -108,6 +109,16 @@ describe('createPaidFiring', () => {
     await expect(createPaidFiring({ payload: p, ...d }, baseInput({
       photoIds: [photo.id], customerEmail: 'fp4@fptest.local',
     }))).rejects.toThrow('Payment information is required')
+  })
+
+  it('rejects a non-integer halfShelves and does not charge', async () => {
+    const p = await getTestPayload()
+    const photo = await mkPhoto(p)
+    const d = deps()
+    await expect(createPaidFiring({ payload: p, ...d }, baseInput({
+      halfShelves: 2.5, photoIds: [photo.id], sourceId: 'cnon:x', customerEmail: 'fp-half@fptest.local',
+    }))).rejects.toThrow('Choose between 1 and 8 half shelves')
+    expect(d.charge).not.toHaveBeenCalled()
   })
 
   it('rejects a class-scoped coupon with the firing-specific reason', async () => {

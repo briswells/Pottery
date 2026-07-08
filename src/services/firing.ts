@@ -27,12 +27,12 @@ export interface FiringInput {
   stonewareConfirmed: boolean
 }
 
-const SIZE_COPY = 'half shelf (11″×22″×6″)'
+const SIZE_COPY = '11″×22″×6″'
 
 export async function createPaidFiring(deps: FiringDeps, input: FiringInput) {
   const { payload } = deps
 
-  if (!Number.isFinite(input.halfShelves) || input.halfShelves < 1 || input.halfShelves > MAX_HALF_SHELVES) {
+  if (!Number.isInteger(input.halfShelves) || input.halfShelves < 1 || input.halfShelves > MAX_HALF_SHELVES) {
     throw new Error('Choose between 1 and 8 half shelves')
   }
   if (input.stonewareConfirmed !== true) {
@@ -131,6 +131,7 @@ export async function createPaidFiring(deps: FiringDeps, input: FiringInput) {
   }
 
   const unit = input.halfShelves === 1 ? 'half shelf' : 'half shelves'
+  const sizeLine = input.halfShelves === 1 ? SIZE_COPY : `${SIZE_COPY} each`
   const amountLine =
     couponId != null && finalCents === 0
       ? `Free with code ${input.couponCode!.trim().toUpperCase()}.`
@@ -144,7 +145,7 @@ export async function createPaidFiring(deps: FiringDeps, input: FiringInput) {
     await deps.sendEmail({
       to: input.customerEmail,
       subject: `We've received your firing request`,
-      html: `<p>Thanks, ${input.customerName}! We've received your firing request for <strong>${input.halfShelves} ${unit}</strong> (${SIZE_COPY} each).</p><p>We'll fire your pieces at the next monthly firing.</p><p>${amountLine}</p>`,
+      html: `<p>Thanks, ${input.customerName}! We've received your firing request for <strong>${input.halfShelves} ${unit}</strong> (${sizeLine}).</p><p>We'll fire your pieces at the next monthly firing.</p><p>${amountLine}</p>`,
     })
   } catch (e) {
     console.error(`Firing request ${pending.id} confirmation email failed:`, e)

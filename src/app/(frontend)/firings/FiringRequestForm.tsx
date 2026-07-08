@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { WalletButtons } from '../classes/[slug]/WalletButtons'
 import { nextFiringDate } from '../../../lib/firing-date'
-import { FIRING_HALF_SHELF_CENTS, MAX_HALF_SHELVES, MAX_FIRING_PHOTOS } from '../../../lib/firing-pricing'
+import { FIRING_HALF_SHELF_CENTS, MAX_HALF_SHELVES, MAX_FIRING_PHOTOS, MAX_PHOTO_BYTES } from '../../../lib/firing-pricing'
 
 declare global {
   interface Window {
@@ -35,8 +35,6 @@ const CARD_STYLE = {
 }
 
 const LOAD_ERROR = 'The payment form could not be loaded. Please refresh and try again.'
-// Matches the server's per-photo cap in src/app/api/firings/route.ts.
-const MAX_PHOTO_BYTES = 10 * 1024 * 1024
 
 export function FiringRequestForm() {
   const cardRef = useRef<any>(null)

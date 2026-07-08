@@ -80,6 +80,7 @@ describe('POST /api/firings', () => {
     form.set('name', 'Jane Doe')
     form.set('email', 'jane@test.local')
     form.set('description', 'a few mugs')
+    form.set('halfShelves', '2')
     const res = await POST(req(form))
     expect(res.status).toBe(400)
     expect((await res.json()).error).toMatch(/1 and 5 photos/)

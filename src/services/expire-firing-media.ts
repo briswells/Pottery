@@ -72,7 +72,6 @@ export async function expireFiringRequestMedia(payload: Payload): Promise<Expire
         id: r.id,
         data: { photos: [] },
         overrideAccess: true,
-        context: { fromFiringHook: true },
       })
       for (const photoId of photoIds) {
         await payload.delete({ collection: 'media', id: photoId, overrideAccess: true })

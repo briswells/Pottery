@@ -3,9 +3,7 @@ import config from '@payload-config'
 import { createPaidFiring } from '../../../services/firing'
 import { chargeCard } from '../../../lib/payments'
 import { sendEmail } from '../../../lib/email'
-import { MAX_FIRING_PHOTOS } from '../../../lib/firing-pricing'
-
-const MAX_PHOTO_BYTES = 10 * 1024 * 1024 // 10 MB
+import { MAX_FIRING_PHOTOS, MAX_HALF_SHELVES, MAX_PHOTO_BYTES } from '../../../lib/firing-pricing'
 
 function num(v: FormDataEntryValue | null): number | undefined {
   if (v == null || v === '') return undefined
@@ -33,6 +31,9 @@ export async function POST(req: Request) {
   const customerPhone = String(form.get('phone') ?? '').trim() || undefined
   const notes = String(form.get('notes') ?? '').trim() || undefined
   const halfShelves = num(form.get('halfShelves'))
+  if (!Number.isInteger(halfShelves) || (halfShelves as number) < 1 || (halfShelves as number) > MAX_HALF_SHELVES) {
+    return Response.json({ error: 'Choose between 1 and 8 half shelves' }, { status: 400 })
+  }
   const stonewareConfirmed = String(form.get('stonewareConfirmed') ?? '') === 'true'
   const couponCode = String(form.get('couponCode') ?? '').trim() || undefined
   const sourceId = String(form.get('sourceId') ?? '').trim() || undefined
