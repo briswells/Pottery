@@ -1,23 +1,28 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import { notFound } from 'next/navigation'
 import { FiringRequestForm } from './FiringRequestForm'
+import { nextFiringDate } from '../../../lib/firing-date'
+import { MAX_HALF_SHELVES, FIRING_HALF_SHELF_CENTS } from '../../../lib/firing-pricing'
 
 export const metadata = {
   title: 'Firings',
-  description: 'Request a custom Cone 10 firing. We quote a price by size — no upfront charge.',
+  description: 'Request a custom Cone 10 firing — pay up front, no invoice to wait on.',
 }
 
 export const dynamic = 'force-dynamic'
 
-// Custom firings are hidden from the public site for now. The page 404s (nav
-// link also removed in Header) — delete the notFound() call to re-enable.
-const FIRINGS_PAGE_HIDDEN = true
-
 export default async function FiringsPage() {
-  if (FIRINGS_PAGE_HIDDEN) notFound()
   const payload = await getPayload({ config: await config })
   const page = await payload.findGlobal({ slug: 'firings-page' })
+
+  const nextDate = nextFiringDate()
+  const nextDateLabel = nextDate.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
+  const shelfPriceLabel = `$${(FIRING_HALF_SHELF_CENTS / 100).toFixed(2)}`
 
   return (
     <div style={{ padding: '40px 0', maxWidth: 680 }}>
@@ -36,6 +41,27 @@ export default async function FiringsPage() {
       )}
 
       {page.pricingNote && <p style={{ marginTop: 16, fontWeight: 600 }}>{page.pricingNote}</p>}
+
+      <div
+        style={{
+          marginTop: 20,
+          padding: '14px 16px',
+          background: 'var(--pp-cream)',
+          borderLeft: '4px solid var(--pp-terracotta)',
+          borderRadius: 4,
+        }}
+      >
+        <strong>Stoneware only.</strong> We fire to Cone 10 — earthenware and low-fire clays cannot
+        go through this kiln. You&apos;ll confirm your pieces are stoneware before submitting.
+      </div>
+
+      <p style={{ marginTop: 16 }}>
+        Half shelf (11″ × 22″ × 6″) — {shelfPriceLabel} each, up to {MAX_HALF_SHELVES} per request.
+      </p>
+
+      <p style={{ marginTop: 8 }}>
+        Next firing: <strong>{nextDateLabel}</strong> — firings happen at least once a month.
+      </p>
 
       <h2 style={{ fontSize: 20, marginTop: 28, marginBottom: 4 }}>Request a firing</h2>
       <FiringRequestForm />

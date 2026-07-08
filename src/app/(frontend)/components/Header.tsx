@@ -78,6 +78,7 @@ export function Header({
           <Link href="/">Home</Link>
           <Link href="/classes">Classes</Link>
           <Link href="/membership">Membership</Link>
+          <Link href="/firings">Firings</Link>
           <Link href="/gallery">Gallery</Link>
           <Link href="/staff">Meet the Staff</Link>
           <Link href="/contact">Contact</Link>
