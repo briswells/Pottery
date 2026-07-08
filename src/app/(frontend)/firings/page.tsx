@@ -53,8 +53,7 @@ export default async function FiringsPage() {
         }}
       >
         <strong>Stoneware only.</strong> We fire to Cone 10 — no earthenware, no low-fire clay, and
-        no porcelain (even high-fire porcelain). You&apos;ll confirm your pieces are stoneware before
-        submitting.
+        no porcelain (even high-fire porcelain).
       </div>
 
       <p style={{ marginTop: 16 }}>
