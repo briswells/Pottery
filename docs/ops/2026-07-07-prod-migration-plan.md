@@ -17,7 +17,7 @@ A record is added); the entire DNS estate moves to Cloudflare in Phase 3.
 | Domain | brianwells.org | dev.portsidepottery.com → portsidepottery.com (Phase 3) |
 | Registrar | — | GoDaddy → Cloudflare Registrar (Phase 3) |
 | DNS/CDN/Tunnel | Cloudflare (personal acct) | GoDaddy DNS + Caddy direct TLS (Ph 1–2) → **new** Cloudflare acct (Ph 3) |
-| Email sending | Resend (zerakan.com domain) | **New** Resend account, `email.portsidepottery.com` |
+| Email sending | Resend (zerakan.com domain) | **New** Resend account, `mail.portsidepottery.com` |
 | Mailbox (inbound) | — | getcreative@portsidepottery.com: GoDaddy → **Purelymail** (Phase 3) |
 | Media | Droplet-local Docker volume | **Cloudflare R2** from day one |
 | Square | Sandbox | Sandbox (Phase 1) → **Production** (Phase 2) |
@@ -70,10 +70,10 @@ On `portside-prod`:
   Postgres password (`openssl rand -hex 16`). Never reuse dev values.
 
 ### 1.3 New service accounts
-1. **Resend (new account):** add domain `email.portsidepottery.com` → put its
+1. **Resend (new account):** add domain `mail.portsidepottery.com` → put its
    DKIM/SPF records into **GoDaddy DNS** (they move to Cloudflare with everything
    else in Phase 3) → verify → create API key.
-   `EMAIL_FROM=Portside Pottery <portside@email.portsidepottery.com>`.
+   `EMAIL_FROM=Portside Pottery <portside@mail.portsidepottery.com>`.
    (Subdomain sending cannot conflict with the root domain's mailbox SPF.)
 2. **Cloudflare R2:** the new Cloudflare account is created now for R2 only — no
    zone added yet. Create bucket `portside-media` (+ `portside-backups`) →
@@ -98,7 +98,7 @@ SQUARE_LOCATION_ID=<sandbox location>
 SQUARE_WEBHOOK_SIGNATURE_KEY=<sandbox webhook key for the NEW url>
 # Email
 RESEND_API_KEY=<new resend key>
-EMAIL_FROM=Portside Pottery <portside@email.portsidepottery.com>
+EMAIL_FROM=Portside Pottery <portside@mail.portsidepottery.com>
 STAFF_NOTIFY_EMAIL=getcreative@portsidepottery.com   # fallback only; Site Settings email wins
 # Media on R2
 S3_BUCKET=portside-media
@@ -253,7 +253,7 @@ apex cutover, then teardown.
 ## Decision log
 - Mailbox destination: **Purelymail** (user choice; IMAP-standard, imapsync-friendly).
 - Media: **R2 from day one**; local `media` volume retained as fallback.
-- Resend sends from `email.portsidepottery.com` (subdomain isolation).
+- Resend sends from `mail.portsidepottery.com` (subdomain isolation).
 - The existing GoDaddy site + mailbox must not break during Phases 1–2.
 - Old dev instance (brianwells.org / 206.189.255.28) stays as dev/staging.
 - REVISED 2026-07-07: DNS stays at GoDaddy through Phases 1–2 (single `dev` A
