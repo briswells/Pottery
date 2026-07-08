@@ -46,7 +46,7 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
   if (input.couponCode) {
     const classId = typeof cls === 'object' ? (cls.id as number) : (cls as number)
     const check = await validateCoupon({ payload }, {
-      code: input.couponCode, classId, priceCents, customerEmail: input.customerEmail,
+      code: input.couponCode, priceCents, customerEmail: input.customerEmail, target: { kind: 'class', classId },
     })
     if (!check.ok) throw new Error(check.reason)
     couponId = check.coupon.id as number

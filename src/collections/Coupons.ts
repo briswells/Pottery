@@ -68,6 +68,7 @@ export const Coupons: CollectionConfig = {
       options: [
         { label: 'All classes', value: 'all' },
         { label: 'A specific class', value: 'class' },
+        { label: 'Firings only', value: 'firing' },
       ],
       hooks: { beforeValidate: [({ value }) => value ?? 'all'] },
     },

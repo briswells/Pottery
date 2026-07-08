@@ -502,7 +502,7 @@ export interface Coupon {
    */
   percentOff?: number | null;
   amountOffCents?: number | null;
-  appliesTo?: ('all' | 'class') | null;
+  appliesTo?: ('all' | 'class' | 'firing') | null;
   /**
    * Covers every session of this class.
    */
