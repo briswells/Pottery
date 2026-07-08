@@ -8,7 +8,7 @@
     "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
     "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
     "devsafe": "rm -rf .next && cross-env NODE_OPTIONS=--no-deprecation next dev",
-    "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
+    "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation S3_BUCKET=importmap-gen S3_ACCESS_KEY_ID=importmap-gen S3_SECRET_ACCESS_KEY=importmap-gen payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "lint": "cross-env NODE_OPTIONS=--no-deprecation eslint .",
     "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:create",
