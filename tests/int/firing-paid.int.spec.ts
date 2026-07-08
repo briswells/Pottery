@@ -175,6 +175,48 @@ describe('createPaidFiring', () => {
       classInstanceId: inst.id, sourceId: 'cnon:x', couponCode: c.code, customerName: 'Dup', customerEmail: 'A@FPTEST.LOCAL',
     })).rejects.toThrow('That code has already been used with this email.')
   })
+
+  it('post-charge bookkeeping failure does not throw or lose the charge', async () => {
+    const p = await getTestPayload()
+    const photo = await mkPhoto(p)
+    const d = deps()
+
+    // Once the charge succeeds, the service must never throw. Intercept only the
+    // paid-status transition on firing-requests (the first payload.update after
+    // the charge) and make it blow up once, to simulate a transient DB error.
+    const realUpdate = p.update.bind(p)
+    let thrown = false
+    const spy = vi.spyOn(p, 'update').mockImplementation(((args: any) => {
+      if (!thrown && args?.collection === 'firing-requests' && args?.data?.status === 'paid') {
+        thrown = true
+        throw new Error('transient db')
+      }
+      return realUpdate(args)
+    }) as any)
+
+    try {
+      const fr = await createPaidFiring({ payload: p, ...d }, baseInput({
+        photoIds: [photo.id], sourceId: 'cnon:x', customerEmail: 'fp9@fptest.local',
+      }))
+
+      expect(d.charge).toHaveBeenCalledWith(expect.objectContaining({ amountCents: 5000 }))
+      expect(thrown).toBe(true)
+      expect(fr).toBeTruthy()
+
+      // The request row must still exist with its photos attached — the caller
+      // (route) must not conclude the request failed and delete them.
+      const { docs } = await p.find({ collection: 'firing-requests', where: { email: { equals: 'fp9@fptest.local' } }, overrideAccess: true })
+      expect(docs).toHaveLength(1)
+      expect(docs[0].photos?.length ?? docs[0].photos).toBeTruthy()
+
+      // The payments row is a separate `create` call (unaffected by the update
+      // failure) and must still be recorded — the charge must not be lost.
+      const pays = await p.find({ collection: 'payments', where: { firingRequest: { equals: docs[0].id } }, overrideAccess: true })
+      expect(pays.docs[0].squareId).toBe('pay_fp')
+    } finally {
+      spy.mockRestore()
+    }
+  })
 })
 
 afterAll(async () => {

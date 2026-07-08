@@ -85,19 +85,38 @@ export async function createPaidFiring(deps: FiringDeps, input: FiringInput) {
     }
   }
 
-  const firing = await payload.update({
-    collection: 'firing-requests', id: pending.id, overrideAccess: true,
-    data: { status: 'paid', paidAt: new Date().toISOString(), ...(charge ? { squarePaymentId: charge.paymentId } : {}) },
-  })
+  // The charge has succeeded (or was legitimately skipped for a $0 total) — from
+  // this point on the service must NEVER throw. A transient DB error here would
+  // otherwise propagate to the route, which treats failure as "never happened"
+  // and deletes the uploaded photos, even though the customer WAS charged.
+  let firing = pending
+  try {
+    firing = await payload.update({
+      collection: 'firing-requests', id: pending.id, overrideAccess: true,
+      data: { status: 'paid', paidAt: new Date().toISOString(), ...(charge ? { squarePaymentId: charge.paymentId } : {}) },
+    })
+  } catch (e) {
+    // The customer HAS been charged — never propagate past this point, or the
+    // caller would treat a paid firing as failed (and delete its photos).
+    console.error(
+      `CRITICAL: firing request ${pending.id} charged (payment ${charge?.paymentId ?? 'free'}) but post-charge bookkeeping failed — reconcile manually:`, e)
+  }
 
-  await payload.create({
-    collection: 'payments', overrideAccess: true,
-    data: {
-      type: 'firing', firingRequest: pending.id, amountCents: finalCents,
-      ...(charge ? { squareId: charge.paymentId } : {}),
-      status: charge?.status ?? 'COMPLETED', paidAt: new Date().toISOString(),
-    },
-  })
+  try {
+    await payload.create({
+      collection: 'payments', overrideAccess: true,
+      data: {
+        type: 'firing', firingRequest: pending.id, amountCents: finalCents,
+        ...(charge ? { squareId: charge.paymentId } : {}),
+        status: charge?.status ?? 'COMPLETED', paidAt: new Date().toISOString(),
+      },
+    })
+  } catch (e) {
+    // The customer HAS been charged — never propagate past this point, or the
+    // caller would treat a paid firing as failed (and delete its photos).
+    console.error(
+      `CRITICAL: firing request ${pending.id} charged (payment ${charge?.paymentId ?? 'free'}) but post-charge bookkeeping failed — reconcile manually:`, e)
+  }
 
   // Link the firing request to a Person (find-or-create by email). A failure here
   // must not fail the already-paid request — log and move on.
@@ -144,5 +163,12 @@ export async function createPaidFiring(deps: FiringDeps, input: FiringInput) {
     console.error(`Firing request ${pending.id} staff notify failed:`, e)
   }
 
-  return await payload.findByID({ collection: 'firing-requests', id: firing.id, overrideAccess: true })
+  try {
+    return await payload.findByID({ collection: 'firing-requests', id: firing.id, overrideAccess: true })
+  } catch (e) {
+    // Still must not throw post-charge — fall back to the in-memory doc.
+    console.error(
+      `CRITICAL: firing request ${firing.id} charged (payment ${charge?.paymentId ?? 'free'}) but final findByID failed — reconcile manually:`, e)
+    return firing
+  }
 }
