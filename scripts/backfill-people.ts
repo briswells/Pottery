@@ -38,7 +38,7 @@ export async function backfillPeople(payload: Payload): Promise<{ linked: number
   }
   for (const f of firings) {
     try {
-      const person = await upsertPersonByEmail({ payload }, { name: f.name, email: f.email, phone: f.phone, squareCustomerId: f.squareCustomerId })
+      const person = await upsertPersonByEmail({ payload }, { name: f.name, email: f.email, phone: f.phone })
       await payload.update({ collection: 'firing-requests', id: f.id, overrideAccess: true, data: { person: person.id } })
       linked++
     } catch (e) {

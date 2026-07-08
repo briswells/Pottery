@@ -20,7 +20,7 @@ describe('backfillPeople', () => {
     const inst = await payload.create({ collection: 'class-instances', data: { class: cls.id, instructor: user.id, startDate: '2026-07-07', startTime: '18:00', endTime: '20:00', status: 'published' } })
     // Booking and firing with no person link, same email, different case.
     await payload.create({ collection: 'bookings', overrideAccess: true, data: { classInstance: inst.id, customerName: 'Shared', customerEmail: 'shared@bf.local', amountCents: 100, status: 'paid' } })
-    await payload.create({ collection: 'firing-requests', overrideAccess: true, data: { name: 'Shared', email: 'SHARED@bf.local', description: 'pot', status: 'submitted' } })
+    await payload.create({ collection: 'firing-requests', overrideAccess: true, data: { name: 'Shared', email: 'SHARED@bf.local', description: 'pot', halfShelves: 1, amountCents: 2500, stonewareConfirmed: true, status: 'pending' } })
 
     await backfillPeople(payload)
 

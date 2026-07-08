@@ -39,8 +39,7 @@ function relId(v: unknown): number | null {
 
 /**
  * Sum paid/pending redemptions of a coupon across bookings AND firing
- * requests. `firing-requests.coupon` doesn't exist until a later task, so
- * that half is guarded — until it lands, only bookings are counted.
+ * requests.
  */
 async function countUsage(payload: Payload, couponId: number): Promise<number> {
   const { totalDocs: bookingUses } = await payload.count({
@@ -48,17 +47,11 @@ async function countUsage(payload: Payload, couponId: number): Promise<number> {
     where: { and: [{ coupon: { equals: couponId } }, { status: { in: ['paid', 'pending'] } }] },
     overrideAccess: true,
   })
-  let firingUses = 0
-  try {
-    const { totalDocs } = await payload.count({
-      collection: 'firing-requests',
-      where: { and: [{ coupon: { equals: couponId } }, { status: { in: ['paid', 'pending'] } }] },
-      overrideAccess: true,
-    })
-    firingUses = totalDocs
-  } catch {
-    // `firing-requests.coupon` field lands in Task 2 — until then, no firing usage to count.
-  }
+  const { totalDocs: firingUses } = await payload.count({
+    collection: 'firing-requests',
+    where: { and: [{ coupon: { equals: couponId } }, { status: { in: ['paid', 'pending'] } }] },
+    overrideAccess: true,
+  })
   return bookingUses + firingUses
 }
 
@@ -78,18 +71,14 @@ async function emailUsed(payload: Payload, couponId: number, email: string): Pro
   })
   if (bookingCandidates.some((b) => (b.customerEmail ?? '').toLowerCase() === email)) return true
 
-  try {
-    const { docs: firingCandidates } = await payload.find({
-      collection: 'firing-requests',
-      where: { and: [{ coupon: { equals: couponId } }, { status: { in: ['paid', 'pending'] } }, { email: { like: email } }] },
-      limit: 100,
-      depth: 0,
-      overrideAccess: true,
-    })
-    if (firingCandidates.some((f) => (f.email ?? '').toLowerCase() === email)) return true
-  } catch {
-    // `firing-requests.coupon` field lands in Task 2 — until then, no firing usage to check.
-  }
+  const { docs: firingCandidates } = await payload.find({
+    collection: 'firing-requests',
+    where: { and: [{ coupon: { equals: couponId } }, { status: { in: ['paid', 'pending'] } }, { email: { like: email } }] },
+    limit: 100,
+    depth: 0,
+    overrideAccess: true,
+  })
+  if (firingCandidates.some((f) => (f.email ?? '').toLowerCase() === email)) return true
   return false
 }
 

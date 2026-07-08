@@ -67,4 +67,20 @@ describe('booking coupon fields', () => {
 afterAll(async () => {
   const p = await getTestPayload()
   await p.delete({ collection: 'coupons', where: { code: { contains: 'CPTEST' } }, overrideAccess: true })
+  // Pre-existing gap: the booking-coupon-fields test above creates a class +
+  // class-instance (+ booking/payments/instructor) that this afterAll never
+  // cleaned up. An orphaned class-instance left a NOT-NULL FK violation for
+  // any later suite that bulk-deletes `classes` (e.g. classes.int.spec.ts's
+  // beforeEach), causing order-dependent full-suite flakes unrelated to those
+  // suites. Clean up in FK-safe order: payments -> bookings -> class-instances
+  // -> classes -> the instructor user.
+  await p.delete({ collection: 'payments', where: { type: { equals: 'booking' } }, overrideAccess: true })
+  await p.delete({ collection: 'bookings', where: { customerEmail: { equals: 'd@test.local' } }, overrideAccess: true })
+  const { docs: cpBkClasses } = await p.find({ collection: 'classes', where: { title: { contains: 'CpBk' } }, limit: 1000, depth: 0, overrideAccess: true })
+  const classIds = cpBkClasses.map((c) => c.id)
+  if (classIds.length > 0) {
+    await p.delete({ collection: 'class-instances', where: { class: { in: classIds } }, overrideAccess: true })
+    await p.delete({ collection: 'classes', where: { id: { in: classIds } }, overrideAccess: true })
+  }
+  await p.delete({ collection: 'users', where: { email: { contains: 'cpbk-' } }, overrideAccess: true })
 })

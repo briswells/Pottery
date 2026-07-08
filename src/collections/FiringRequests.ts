@@ -1,25 +1,31 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, CheckboxFieldValidation, UploadFieldManyValidation } from 'payload'
 import { isAdmin } from '../access/isAdmin'
 import { isAdminOrEditor } from '../access/isAdminOrEditor'
-import { sendFiringInvoice } from '../hooks/sendFiringInvoice'
 import { setFiringCompletedAt } from '../hooks/setFiringCompletedAt'
+
+const validateStonewareConfirmed: CheckboxFieldValidation = (value) =>
+  value === true || 'You must confirm your pieces are stoneware.'
+
+const validatePhotos: UploadFieldManyValidation = (value) => {
+  const arr = Array.isArray(value) ? value : []
+  return arr.length <= 5 || 'At most 5 photos.'
+}
 
 export const FiringRequests: CollectionConfig = {
   slug: 'firing-requests',
   admin: {
     group: 'Studio',
     useAsTitle: 'name',
-    defaultColumns: ['name', 'status', 'quotedPriceCents', 'invoicedAt', 'paidAt'],
+    defaultColumns: ['name', 'halfShelves', 'status', 'amountCents', 'paidAt'],
   },
   access: {
     read: isAdminOrEditor,
-    create: () => false, // created server-side via /api/firings (overrideAccess)
+    create: () => false, // created server-side only
     update: isAdminOrEditor,
     delete: isAdmin,
   },
   hooks: {
     beforeChange: [setFiringCompletedAt],
-    afterChange: [sendFiringInvoice],
   },
   fields: [
     { name: 'name', type: 'text', required: true },
@@ -27,47 +33,48 @@ export const FiringRequests: CollectionConfig = {
     { name: 'email', type: 'email', required: true },
     { name: 'phone', type: 'text' },
     { name: 'description', type: 'textarea', required: true },
-    { name: 'heightIn', type: 'number', admin: { description: 'Height in inches' } },
-    { name: 'widthIn', type: 'number', admin: { description: 'Width in inches' } },
-    { name: 'depthIn', type: 'number', admin: { description: 'Depth in inches' } },
-    { name: 'quantity', type: 'number', defaultValue: 1, min: 1 },
-    { name: 'photo', type: 'upload', relationTo: 'media' },
     { name: 'notes', type: 'textarea', admin: { description: 'Customer notes' } },
+    { name: 'halfShelves', type: 'number', required: true, min: 1, max: 8, admin: { description: 'Number of half-shelves reserved (11″×22″×6″ each).' } },
     {
-      name: 'status', type: 'select', required: true, defaultValue: 'submitted',
-      options: [
-        { label: 'Submitted', value: 'submitted' },
-        { label: 'Approved (send invoice)', value: 'approved' },
-        { label: 'Invoiced', value: 'invoiced' },
-        { label: 'Invoice failed', value: 'invoice_failed' },
-        { label: 'Paid', value: 'paid' },
-        { label: 'Completed', value: 'completed' },
-        { label: 'Cancelled', value: 'cancelled' },
-      ],
-    },
-    {
-      name: 'quotedPriceCents',
+      name: 'amountCents',
       type: 'number',
-      min: 0,
-      label: 'Quoted price',
+      required: true,
+      label: 'Amount',
       admin: {
-        description: 'Price in dollars, set by staff (e.g. 45 for $45.00). Set this, then status → Approved to send the invoice.',
         components: {
           Field: '/admin/PriceField#PriceField',
           Cell: '/admin/PriceCell#PriceCell',
         },
       },
     },
-    { name: 'adminNotes', type: 'textarea' },
-    { name: 'squareCustomerId', type: 'text', admin: { readOnly: true } },
-    { name: 'squareInvoiceId', type: 'text', index: true, admin: { readOnly: true } },
-    { name: 'squareInvoiceUrl', type: 'text', admin: { readOnly: true } },
-    { name: 'invoicedAt', type: 'date', admin: { readOnly: true } },
+    {
+      name: 'discountCents', type: 'number', label: 'Discount',
+      admin: {
+        description: 'Coupon discount applied. Original price = amount + discount.',
+        components: { Field: '/admin/PriceField#PriceField', Cell: '/admin/PriceCell#PriceCell' },
+      },
+    },
+    { name: 'coupon', type: 'relationship', relationTo: 'coupons', hasMany: false },
+    { name: 'squarePaymentId', type: 'text', index: true },
+    { name: 'stonewareConfirmed', type: 'checkbox', required: true, validate: validateStonewareConfirmed, admin: { description: 'Customer confirmed all pieces are stoneware (cone 10 safe).' } },
+    {
+      name: 'photos', type: 'upload', relationTo: 'media', hasMany: true, validate: validatePhotos,
+      admin: { description: 'Up to 5 photos of the work being fired.' },
+    },
+    {
+      name: 'status', type: 'select', defaultValue: 'pending',
+      options: [
+        { label: 'Pending', value: 'pending' },
+        { label: 'Paid', value: 'paid' },
+        { label: 'Completed', value: 'completed' },
+        { label: 'Cancelled', value: 'cancelled' },
+        { label: 'Refunded', value: 'refunded' },
+      ],
+    },
     { name: 'paidAt', type: 'date', admin: { readOnly: true } },
     {
       name: 'completedAt', type: 'date',
-      admin: { readOnly: true, description: 'Set when marked Completed. The attached photo is auto-deleted 2 weeks after this.' },
+      admin: { readOnly: true, description: 'Set when marked Completed. Attached photos are auto-deleted 2 weeks after this.' },
     },
-    { name: 'lastInvoiceError', type: 'text', admin: { readOnly: true } },
   ],
 }

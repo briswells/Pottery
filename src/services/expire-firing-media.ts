@@ -9,11 +9,14 @@ export interface ExpireFiringMediaResult {
 }
 
 /**
- * Delete the uploaded photo on any firing request that has been "completed" for
- * more than two weeks. The photo is detached from the request first so a deleted
+ * Delete the uploaded photos on any firing request that has been "completed" for
+ * more than two weeks. Photos are detached from the request first so a deleted
  * media row never leaves a dangling reference. Each firing photo is dedicated to
  * its request (uploaded via /api/firings), so deleting it is safe. Idempotent:
- * once the photo is gone the request no longer matches.
+ * once the photos are gone the request no longer matches.
+ *
+ * NOTE: minimally adapted (Task 2) to the new `photos` array shape — Task 3 does
+ * the real rework + tests for this service.
  */
 export async function expireFiringRequestMedia(payload: Payload): Promise<ExpireFiringMediaResult> {
   const cutoff = new Date(Date.now() - FIRING_MEDIA_TTL_MS).toISOString()
@@ -24,7 +27,7 @@ export async function expireFiringRequestMedia(payload: Payload): Promise<Expire
       and: [
         { status: { equals: 'completed' } },
         { completedAt: { less_than_equal: cutoff } },
-        { photo: { exists: true } },
+        { photos: { exists: true } },
       ],
     },
     depth: 0,
@@ -36,17 +39,21 @@ export async function expireFiringRequestMedia(payload: Payload): Promise<Expire
   let failed = 0
 
   for (const r of docs) {
-    const photoId = typeof r.photo === 'object' && r.photo ? r.photo.id : r.photo
-    if (!photoId) continue
+    const photoIds = (r.photos ?? [])
+      .map((p) => (typeof p === 'object' && p ? p.id : p))
+      .filter((id): id is number => id != null)
+    if (photoIds.length === 0) continue
     try {
       await payload.update({
         collection: 'firing-requests',
         id: r.id,
-        data: { photo: null },
+        data: { photos: [] },
         overrideAccess: true,
         context: { fromFiringHook: true },
       })
-      await payload.delete({ collection: 'media', id: photoId, overrideAccess: true })
+      for (const photoId of photoIds) {
+        await payload.delete({ collection: 'media', id: photoId, overrideAccess: true })
+      }
       deleted++
     } catch (e) {
       failed++

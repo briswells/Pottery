@@ -570,39 +570,34 @@ export interface FiringRequest {
   phone?: string | null;
   description: string;
   /**
-   * Height in inches
-   */
-  heightIn?: number | null;
-  /**
-   * Width in inches
-   */
-  widthIn?: number | null;
-  /**
-   * Depth in inches
-   */
-  depthIn?: number | null;
-  quantity?: number | null;
-  photo?: (number | null) | Media;
-  /**
    * Customer notes
    */
   notes?: string | null;
-  status: 'submitted' | 'approved' | 'invoiced' | 'invoice_failed' | 'paid' | 'completed' | 'cancelled';
   /**
-   * Price in dollars, set by staff (e.g. 45 for $45.00). Set this, then status → Approved to send the invoice.
+   * Number of half-shelves reserved (11″×22″×6″ each).
    */
-  quotedPriceCents?: number | null;
-  adminNotes?: string | null;
-  squareCustomerId?: string | null;
-  squareInvoiceId?: string | null;
-  squareInvoiceUrl?: string | null;
-  invoicedAt?: string | null;
+  halfShelves: number;
+  amountCents: number;
+  /**
+   * Coupon discount applied. Original price = amount + discount.
+   */
+  discountCents?: number | null;
+  coupon?: (number | null) | Coupon;
+  squarePaymentId?: string | null;
+  /**
+   * Customer confirmed all pieces are stoneware (cone 10 safe).
+   */
+  stonewareConfirmed: boolean;
+  /**
+   * Up to 5 photos of the work being fired.
+   */
+  photos?: (number | Media)[] | null;
+  status?: ('pending' | 'paid' | 'completed' | 'cancelled' | 'refunded') | null;
   paidAt?: string | null;
   /**
-   * Set when marked Completed. The attached photo is auto-deleted 2 weeks after this.
+   * Set when marked Completed. Attached photos are auto-deleted 2 weeks after this.
    */
   completedAt?: string | null;
-  lastInvoiceError?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -942,22 +937,17 @@ export interface FiringRequestsSelect<T extends boolean = true> {
   email?: T;
   phone?: T;
   description?: T;
-  heightIn?: T;
-  widthIn?: T;
-  depthIn?: T;
-  quantity?: T;
-  photo?: T;
   notes?: T;
+  halfShelves?: T;
+  amountCents?: T;
+  discountCents?: T;
+  coupon?: T;
+  squarePaymentId?: T;
+  stonewareConfirmed?: T;
+  photos?: T;
   status?: T;
-  quotedPriceCents?: T;
-  adminNotes?: T;
-  squareCustomerId?: T;
-  squareInvoiceId?: T;
-  squareInvoiceUrl?: T;
-  invoicedAt?: T;
   paidAt?: T;
   completedAt?: T;
-  lastInvoiceError?: T;
   updatedAt?: T;
   createdAt?: T;
 }
