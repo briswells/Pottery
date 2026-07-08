@@ -8,6 +8,7 @@ import * as migration_20260616_224012_add_firing_completed_at from './20260616_2
 import * as migration_20260618_190331_add_shelves from './20260618_190331_add_shelves';
 import * as migration_20260619_192701_add_shelf_sort_key from './20260619_192701_add_shelf_sort_key';
 import * as migration_20260707_184022_add_coupons from './20260707_184022_add_coupons';
+import * as migration_20260708_214254_paid_firings from './20260708_214254_paid_firings';
 
 export const migrations = [
   {
@@ -59,5 +60,10 @@ export const migrations = [
     up: migration_20260707_184022_add_coupons.up,
     down: migration_20260707_184022_add_coupons.down,
     name: '20260707_184022_add_coupons',
+  },
+  {
+    up: migration_20260708_214254_paid_firings.up,
+    down: migration_20260708_214254_paid_firings.down,
+    name: '20260708_214254_paid_firings'
   },
 ];
