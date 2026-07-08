@@ -61,8 +61,7 @@ export default async function FiringsPage() {
       </p>
 
       <p style={{ marginTop: 8 }}>
-        Next firing: <strong>{nextDateLabel}</strong> — we fire the last Friday of every month, and
-        more often when needed.
+        Next firing: <strong>{nextDateLabel}</strong> — we fire the last Friday of every month.
       </p>
 
       <h2 style={{ fontSize: 20, marginTop: 28, marginBottom: 4 }}>Request a firing</h2>
