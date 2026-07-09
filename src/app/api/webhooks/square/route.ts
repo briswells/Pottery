@@ -141,14 +141,14 @@ export async function POST(req: Request) {
         await payload.update({ collection: 'people', id: member.id, overrideAccess: true, context: { fromSquareWebhook: true }, data: {
           status: 'past_due', lastPaymentStatus: 'FAILED',
         } })
-        // Notify staff + member; no automatic lockout (per design decision).
+        // Notify staff only — Square already emails the member about overdue
+        // invoices, so a second member-facing email would be duplicative.
+        // No automatic lockout (per design decision).
         const notifyTo = await getNotifyEmail(payload)
         if (notifyTo) {
           await sendEmail({ to: notifyTo, subject: `Membership payment failed: ${member.name}`,
             html: `<p>${member.name} (${member.email}) has a failed/overdue membership payment. Square will retry; follow up as needed.</p>` })
         }
-        await sendEmail({ to: member.email, subject: 'Your Portside Pottery payment needs attention',
-          html: `<p>Hi ${member.name}, we couldn't process your latest membership payment. Please update your card or contact the studio. Your access is unchanged for now.</p>` })
       }
     }
   } else if (event.type === 'subscription.created') {
