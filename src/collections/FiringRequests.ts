@@ -2,6 +2,7 @@ import type { CollectionConfig, CheckboxFieldValidation, UploadFieldManyValidati
 import { isAdmin } from '../access/isAdmin'
 import { isAdminOrEditor } from '../access/isAdminOrEditor'
 import { setFiringCompletedAt } from '../hooks/setFiringCompletedAt'
+import { sendFiringCompletedEmail } from '../hooks/sendFiringCompletedEmail'
 
 const validateStonewareConfirmed: CheckboxFieldValidation = (value) =>
   value === true || 'You must confirm your pieces are stoneware.'
@@ -26,6 +27,7 @@ export const FiringRequests: CollectionConfig = {
   },
   hooks: {
     beforeChange: [setFiringCompletedAt],
+    afterChange: [sendFiringCompletedEmail],
   },
   fields: [
     { name: 'name', type: 'text', required: true },
@@ -63,18 +65,23 @@ export const FiringRequests: CollectionConfig = {
     },
     {
       name: 'status', type: 'select', defaultValue: 'pending',
+      admin: {
+        position: 'sidebar',
+        description: 'Workflow: Paid → Dropped off → Completed. Marking Completed emails the customer that their pieces are ready for pickup.',
+      },
       options: [
         { label: 'Pending', value: 'pending' },
         { label: 'Paid', value: 'paid' },
+        { label: 'Dropped off', value: 'dropped_off' },
         { label: 'Completed', value: 'completed' },
         { label: 'Cancelled', value: 'cancelled' },
         { label: 'Refunded', value: 'refunded' },
       ],
     },
-    { name: 'paidAt', type: 'date', admin: { readOnly: true } },
+    { name: 'paidAt', type: 'date', admin: { readOnly: true, position: 'sidebar' } },
     {
       name: 'completedAt', type: 'date',
-      admin: { readOnly: true, description: 'Set when marked Completed. Attached photos are auto-deleted 2 weeks after this.' },
+      admin: { readOnly: true, position: 'sidebar', description: 'Set when marked Completed. Attached photos are auto-deleted 2 weeks after this.' },
     },
   ],
 }

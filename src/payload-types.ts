@@ -592,7 +592,10 @@ export interface FiringRequest {
    * Up to 5 photos of the work being fired.
    */
   photos?: (number | Media)[] | null;
-  status?: ('pending' | 'paid' | 'completed' | 'cancelled' | 'refunded') | null;
+  /**
+   * Workflow: Paid → Dropped off → Completed. Marking Completed emails the customer that their pieces are ready for pickup.
+   */
+  status?: ('pending' | 'paid' | 'dropped_off' | 'completed' | 'cancelled' | 'refunded') | null;
   paidAt?: string | null;
   /**
    * Set when marked Completed. Attached photos are auto-deleted 2 weeks after this.
