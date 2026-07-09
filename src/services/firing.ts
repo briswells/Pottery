@@ -3,6 +3,7 @@ import type { ChargeInput, ChargeResult } from '../lib/payments'
 import type { EmailInput } from '../lib/email'
 import { usd } from '../lib/format'
 import { getNotifyEmail } from '../lib/notify-email'
+import { getStudioInfo } from '../lib/studio-info'
 import { upsertPersonByEmail } from './people'
 import { validateCoupon } from './coupons'
 import { FIRING_HALF_SHELF_CENTS, MAX_HALF_SHELVES, MAX_FIRING_PHOTOS } from '../lib/firing-pricing'
@@ -142,10 +143,12 @@ export async function createPaidFiring(deps: FiringDeps, input: FiringInput) {
   // The request is already paid and recorded at this point. A failed
   // confirmation/notify email must NOT fail the request — swallow+log errors.
   try {
+    const studio = await getStudioInfo(payload)
+    const dropOffLine = `<p>Please drop your pieces off at ${studio.studioName}${studio.addressHtml ? ` (${studio.addressHtml})` : ''} during normal business hours${studio.hoursHtml ? ':' : '.'}</p>${studio.hoursHtml}`
     await deps.sendEmail({
       to: input.customerEmail,
       subject: `We've received your firing request`,
-      html: `<p>Thanks, ${input.customerName}! We've received your firing request for <strong>${input.halfShelves} ${unit}</strong> (${sizeLine}).</p><p>We'll fire your pieces at the next monthly firing.</p><p>${amountLine}</p>`,
+      html: `<p>Thanks, ${input.customerName}! We've received your firing request for <strong>${input.halfShelves} ${unit}</strong> (${sizeLine}).</p>${dropOffLine}<p>We fire the last Friday of every month — we'll email you when your pieces are ready for pickup.</p><p>${amountLine}</p>`,
     })
   } catch (e) {
     console.error(`Firing request ${pending.id} confirmation email failed:`, e)

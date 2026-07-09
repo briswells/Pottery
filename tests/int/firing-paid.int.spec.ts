@@ -69,6 +69,7 @@ describe('createPaidFiring', () => {
     expect(html).toContain('$50.00')
     expect(html).toContain('2 half shelves')
     expect(html).toContain('(11″×22″×6″ each)')
+    expect(html).toContain('Please drop your pieces off at')
   })
 
   it('30% coupon: discounts the charge and mentions the code in the email', async () => {

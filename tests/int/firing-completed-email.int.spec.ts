@@ -35,6 +35,7 @@ describe('sendFiringCompletedEmail', () => {
       overrideAccess: true,
       data: {
         studioName: 'Portside Pottery',
+        addressLine: '2121 St Francis Ln, Vancouver, WA',
         hours: [
           { days: 'Mon–Fri', time: '10am–3:30pm' },
           { days: 'Sat', time: '11am–7pm' },
@@ -54,6 +55,7 @@ describe('sendFiringCompletedEmail', () => {
     expect(arg.html).toContain('normal business hours')
     expect(arg.html).toContain('Mon–Fri: 10am–3:30pm')
     expect(arg.html).toContain('Sat: 11am–7pm')
+    expect(arg.html).toContain('2121 St Francis Ln, Vancouver, WA')
     // a later unrelated save while completed does NOT re-email
     await p.update({ collection: 'firing-requests', id: fr.id, overrideAccess: true, data: { notes: 'picked up' } })
     expect(send).toHaveBeenCalledTimes(1)
