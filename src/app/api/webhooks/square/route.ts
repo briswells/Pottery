@@ -4,6 +4,7 @@ import { WebhooksHelper } from 'square'
 import { syncSquarePlans } from '../../../../services/sync-square-plans'
 import { squareMembershipGateway, type MembershipGateway } from '../../../../lib/membership-gateway'
 import { ensureMemberFromSubscription, mapSubscriptionStatus, isInvoicePastDue, type SquareSubscriptionInput } from '../../../../services/square-member-sync'
+import { reconcileOneInvoiceMember, MEMBERSHIP_TITLE } from '../../../../services/reconcile-invoice-members'
 
 export async function handleCatalogVersionUpdated(payload: Awaited<ReturnType<typeof getPayload>>) {
   await syncSquarePlans({ payload, gateway: squareMembershipGateway })
@@ -38,6 +39,24 @@ export async function ensureMemberForSubscriptionId(deps: AutoCreateDeps, subscr
   const sub = await deps.gateway.getSubscription(subscriptionId)
   if (!sub) return null
   return ensureMemberFromSubscription(deps, sub)
+}
+
+/**
+ * invoice.payment_made / invoice.updated: reconcile an invoice-billed (non-subscription)
+ * membership invoice into the customer's Person. A subscription-backed invoice is owned
+ * entirely by the subscription path above, so this only acts when there's no subscription id.
+ */
+export async function handleMembershipInvoiceEvent(deps: AutoCreateDeps, rawInvoice: any): Promise<void> {
+  const subscriptionId = rawInvoice?.subscription_id ?? rawInvoice?.subscriptionId
+  if (subscriptionId) return
+  if (!MEMBERSHIP_TITLE.test(rawInvoice?.title ?? '')) return
+  const customerId = rawInvoice?.primary_recipient?.customer_id ?? rawInvoice?.primaryRecipient?.customerId
+  if (!customerId) return
+  try {
+    await reconcileOneInvoiceMember(deps, customerId)
+  } catch (e) {
+    console.error('handleMembershipInvoiceEvent failed:', e)
+  }
 }
 
 export async function POST(req: Request) {
@@ -99,6 +118,7 @@ export async function POST(req: Request) {
     // Square delivers webhook JSON in snake_case (we parse the raw body, not via
     // the SDK), so read subscription_id; fall back to camelCase just in case.
     const subscriptionId = invoice?.subscription_id ?? invoice?.subscriptionId
+    if (!subscriptionId) await handleMembershipInvoiceEvent(deps, invoice)
     let member = await findMemberBySubscription(subscriptionId)
     if (!member && subscriptionId) {
       try {
@@ -119,6 +139,7 @@ export async function POST(req: Request) {
     }
   } else if (event.type === 'invoice.updated') {
     const invoice = event.data?.object?.invoice
+    if (!(invoice?.subscription_id ?? invoice?.subscriptionId)) await handleMembershipInvoiceEvent(deps, invoice)
     const status: string | undefined = invoice?.status // UNPAID | PAYMENT_PENDING | CANCELED | ...
     const dueDate = invoice?.payment_requests?.[0]?.due_date ?? invoice?.payment_requests?.[0]?.dueDate
     const graceDays = Number(process.env.MEMBERSHIP_GRACE_DAYS ?? '3')
