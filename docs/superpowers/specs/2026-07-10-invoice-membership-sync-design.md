@@ -36,6 +36,9 @@ billing system and the ledger.
 - **No emails from this flow at all** — not to members (Square handles their
   dunning) and not to staff. Overdue visibility is in-platform only: the member
   shows as `past_due` in the admin People list.
+- **In scope:** the existing subscription past-due staff email (webhook
+  `invoice.updated` branch) is REMOVED too — overdue is platform-only
+  everywhere. The status flip to `past_due` stays.
 
 ## Non-goals (YAGNI)
 
