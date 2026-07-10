@@ -33,8 +33,9 @@ billing system and the ledger.
   paginated) only. The sync never creates/updates anything in Square.
 - Production credentials do NOT go on any droplet as part of this feature's
   development; deployment happens with the Phase 2 flip, on explicit user go.
-- No emails to members from this flow, ever — Square handles member dunning.
-  Staff notification on new past-due only (existing copy/pattern).
+- **No emails from this flow at all** — not to members (Square handles their
+  dunning) and not to staff. Overdue visibility is in-platform only: the member
+  shows as `past_due` in the admin People list.
 
 ## Non-goals (YAGNI)
 
@@ -77,9 +78,8 @@ billing system and the ledger.
    `squareCustomerId`, `status`, `joinedDate` (if empty). Skip + log a warning
    for invoices with no customer_id/email. Context flag `fromSquareWebhook: true`
    on writes so subscription-era People hooks stay inert.
-6. On a transition into `past_due` (previous status ≠ past_due), send the staff
-   notification via `getNotifyEmail` (existing "Membership payment failed" copy).
-   Status flips themselves are idempotent — only write on change.
+6. Status flips are idempotent — only write on change. No emails are sent on
+   any transition (overdue is surfaced purely by the `past_due` status in admin).
 7. Return `{ processed, active, pastDue, cancelled, skipped, failed }` for logs.
 
 ### Scheduling
@@ -111,7 +111,8 @@ billing system and the ledger.
 - Person creation: fields, invoiced plan assigned, joinedDate from earliest
   invoice, no plan overwrite for a person already on a different plan,
   subscription members (squareSubscriptionId set) skipped.
-- Staff email exactly once per past-due transition; none on repeat runs.
+- No email of any kind is sent by the sync (mock sendEmail, assert uncalled
+  across all transitions including into past_due).
 - Editing an invoice member in admin triggers no Square subscription calls
   (mock the Square client, assert uncalled).
 - Non-membership invoices ignored; missing-customer invoices skipped + counted.
