@@ -71,3 +71,27 @@ export async function ensureFreePlan(payload: Payload): Promise<void> {
     data: { name: 'Free', kind: 'free', active: true },
   })
 }
+
+export const INVOICED_PLAN_NAME = 'Membership (invoiced)'
+
+/**
+ * Ensure a platform "Membership (invoiced)" plan exists for members billed via
+ * manually-sent Square invoices rather than a Square subscription. Idempotent —
+ * find-or-create by name, returns the plan id either way.
+ */
+export async function ensureInvoicedPlan(payload: Payload): Promise<number> {
+  const { docs } = await payload.find({
+    collection: 'membership-plans',
+    where: { name: { equals: INVOICED_PLAN_NAME }, kind: { equals: 'free' } },
+    limit: 1,
+    overrideAccess: true,
+  })
+  if (docs[0]) return docs[0].id
+  const created = await payload.create({
+    collection: 'membership-plans',
+    overrideAccess: true,
+    context: { fromPlanSync: true },
+    data: { name: INVOICED_PLAN_NAME, kind: 'free', active: true },
+  })
+  return created.id
+}

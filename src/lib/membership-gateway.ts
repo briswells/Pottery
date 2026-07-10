@@ -19,6 +19,19 @@ export interface MembershipGateway {
   getCustomer(customerId: string): Promise<{
     id: string; email?: string; givenName?: string; familyName?: string; phone?: string
   } | null>
+  /** Read-only. Paginates internally. customerId narrows to one customer (used by the webhook branch). */
+  listInvoices(args?: { customerId?: string }): Promise<MemberInvoice[]>
+}
+
+export interface MemberInvoice {
+  customerId?: string
+  email?: string
+  givenName?: string
+  familyName?: string
+  title?: string
+  status?: string // SCHEDULED | UNPAID | PAID | CANCELED | REFUNDED | ...
+  dueDate?: string // payment_requests[0].due_date
+  createdAt?: string
 }
 
 // NOTE: the customer → card → subscription sequence has no rollback. A failure
@@ -135,5 +148,39 @@ export const squareMembershipGateway: MembershipGateway = {
         cadence: phase?.cadence as string | undefined,
       }
     })
+  },
+
+  async listInvoices({ customerId } = {}) {
+    const client = getSquareClient()
+    const invoices: MemberInvoice[] = []
+    let cursor: string | undefined
+
+    do {
+      const res = await client.invoices.search({
+        cursor,
+        query: {
+          filter: {
+            locationIds: [SQUARE_LOCATION_ID()],
+            ...(customerId ? { customerIds: [customerId] } : {}),
+          },
+        },
+      })
+      for (const inv of res.invoices ?? []) {
+        const recipient = inv.primaryRecipient
+        invoices.push({
+          customerId: recipient?.customerId ?? undefined,
+          email: recipient?.emailAddress ?? undefined,
+          givenName: recipient?.givenName ?? undefined,
+          familyName: recipient?.familyName ?? undefined,
+          title: inv.title ?? undefined,
+          status: inv.status ?? undefined,
+          dueDate: inv.paymentRequests?.[0]?.dueDate ?? undefined,
+          createdAt: inv.createdAt ?? undefined,
+        })
+      }
+      cursor = res.cursor ?? undefined
+    } while (cursor)
+
+    return invoices
   },
 }

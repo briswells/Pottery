@@ -12,6 +12,7 @@ function fakeGateway(overrides: Partial<MembershipGateway> = {}) {
     listPlanVariations: vi.fn(async () => []),
     getSubscription: vi.fn(async () => null),
     getCustomer: vi.fn(async () => null),
+    listInvoices: vi.fn(async () => []),
     ...overrides,
   }
 }
