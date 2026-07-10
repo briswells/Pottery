@@ -160,7 +160,7 @@ export async function POST(req: Request) {
         await payload.update({ collection: 'people', id: member.id, overrideAccess: true, context: { fromSquareWebhook: true }, data: {
           status: 'past_due', lastPaymentStatus: 'FAILED',
         } })
-        // Overdue is surfaced in-platform only (the past_due status below) — no
+        // Overdue is surfaced in-platform only (the past_due status above) — no
         // emails: Square already handles member dunning, and staff see it in admin.
       }
     }
