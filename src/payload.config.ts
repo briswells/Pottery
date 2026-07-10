@@ -27,8 +27,9 @@ import { SiteSettings } from './globals/SiteSettings'
 import { HomePage } from './globals/HomePage'
 import { MembershipPage } from './globals/MembershipPage'
 import { FiringsPage } from './globals/FiringsPage'
-import { syncSquarePlans, ensureFreePlan } from './services/sync-square-plans'
+import { syncSquarePlans, ensureFreePlan, ensureInvoicedPlan } from './services/sync-square-plans'
 import { reconcileSquareMembers } from './services/reconcile-square-members'
+import { reconcileInvoiceMembers } from './services/reconcile-invoice-members'
 import { expireFiringRequestMedia } from './services/expire-firing-media'
 import { squareMembershipGateway } from './lib/membership-gateway'
 import { resendEmailAdapter, parseFromAddress } from './lib/payload-email-adapter'
@@ -94,6 +95,13 @@ export default buildConfig({
       payload.logger.error(`Startup plan sync failed: ${e instanceof Error ? e.message : e}`)
     }
 
+    // Ensure the invoiced membership plan exists. Self-healing on boot.
+    try {
+      await ensureInvoicedPlan(payload)
+    } catch (e) {
+      payload.logger.error(`Ensuring invoiced plan failed: ${e instanceof Error ? e.message : e}`)
+    }
+
     // Reconcile members from Square. This runs on every boot (initial sync +
     // recovery for anything missed while the app was down) and on a timer (so
     // missed webhooks are caught even without a restart). It is intentionally
@@ -110,13 +118,27 @@ export default buildConfig({
           payload.logger.error(`Square member reconcile failed: ${e instanceof Error ? e.message : e}`),
         )
 
+    // Reconcile invoice members after subscription members — so a subscription
+    // member's Person row exists before invoice grouping runs (skip rule depends on it).
+    const reconcileInvoiced = () =>
+      reconcileInvoiceMembers({ payload, gateway: squareMembershipGateway })
+        .then((r) =>
+          payload.logger.info(
+            `Invoice member reconcile: ${r.processed} processed (${r.active} active, ${r.pastDue} past due, ${r.cancelled} cancelled), ${r.skipped} skipped, ${r.failed} failed.`,
+          ),
+        )
+        .catch((e) => payload.logger.error(`Invoice member reconcile failed: ${e instanceof Error ? e.message : e}`))
+
     // Initial sync now (plans were just synced above, so skip the redundant pass).
-    void reconcileMembers(false)
+    // Subscriptions first, then invoice members — so a subscription member's
+    // Person row exists before invoice grouping runs (skip rule depends on it).
+    // Still non-blocking as a whole.
+    void reconcileMembers(false).then(() => reconcileInvoiced())
 
     // Periodic safety net. Default 6h; set SQUARE_MEMBER_SYNC_INTERVAL_MINUTES=0 to disable.
     const intervalMinutes = Number(process.env.SQUARE_MEMBER_SYNC_INTERVAL_MINUTES ?? 360)
     if (Number.isFinite(intervalMinutes) && intervalMinutes > 0) {
-      const timer = setInterval(() => void reconcileMembers(true), intervalMinutes * 60_000)
+      const timer = setInterval(() => void reconcileMembers(true).then(() => reconcileInvoiced()), intervalMinutes * 60_000)
       // Don't let the timer keep short-lived CLI processes (migrate/seed) alive.
       timer.unref?.()
     }
