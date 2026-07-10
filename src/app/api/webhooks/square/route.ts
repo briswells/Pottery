@@ -1,8 +1,6 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { WebhooksHelper } from 'square'
-import { sendEmail } from '../../../../lib/email'
-import { getNotifyEmail } from '../../../../lib/notify-email'
 import { syncSquarePlans } from '../../../../services/sync-square-plans'
 import { squareMembershipGateway, type MembershipGateway } from '../../../../lib/membership-gateway'
 import { ensureMemberFromSubscription, mapSubscriptionStatus, isInvoicePastDue, type SquareSubscriptionInput } from '../../../../services/square-member-sync'
@@ -141,14 +139,8 @@ export async function POST(req: Request) {
         await payload.update({ collection: 'people', id: member.id, overrideAccess: true, context: { fromSquareWebhook: true }, data: {
           status: 'past_due', lastPaymentStatus: 'FAILED',
         } })
-        // Notify staff only — Square already emails the member about overdue
-        // invoices, so a second member-facing email would be duplicative.
-        // No automatic lockout (per design decision).
-        const notifyTo = await getNotifyEmail(payload)
-        if (notifyTo) {
-          await sendEmail({ to: notifyTo, subject: `Membership payment failed: ${member.name}`,
-            html: `<p>${member.name} (${member.email}) has a failed/overdue membership payment. Square will retry; follow up as needed.</p>` })
-        }
+        // Overdue is surfaced in-platform only (the past_due status below) — no
+        // emails: Square already handles member dunning, and staff see it in admin.
       }
     }
   } else if (event.type === 'subscription.created') {
