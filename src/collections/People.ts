@@ -16,7 +16,10 @@ export const People: CollectionConfig = {
   admin: {
     group: 'People',
     useAsTitle: 'name',
-    defaultColumns: ['name', 'plan', 'status', 'shelf', 'subscriptionStatus'],
+    // subscriptionStatus is intentionally not a list column: it's a raw Square
+    // subscription field that reads "No Subscription Status" for invoice-billed
+    // members; the `status` column is the real membership state.
+    defaultColumns: ['name', 'email', 'plan', 'status', 'shelf'],
   },
   access: {
     read: isAdminOrEditor,
