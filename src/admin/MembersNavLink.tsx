@@ -4,8 +4,11 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from '@payloadcms/ui'
 
-// Members are People who have a membership plan assigned.
-const MEMBERS_HREF = '/admin/collections/people?where[plan][exists]=true'
+// Members are People with a membership plan whose membership is current
+// (active or past due). Cancelled people keep their plan for history but
+// belong in the full People list, not here.
+const MEMBERS_HREF =
+  '/admin/collections/people?where[plan][exists]=true&where[status][in][0]=active&where[status][in][1]=past_due'
 
 /**
  * Renders a "Members" shortcut nested directly under the People link inside the
