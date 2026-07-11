@@ -62,12 +62,7 @@ export function Header({
       <div className="pp-header">
         <Link href="/" className="pp-logo" aria-label={`${studioName} — home`}>
           {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt={studioName}
-              style={{ height: 60, width: 'auto' }}
-              loading="eager"
-            />
+            <img src={logoUrl} alt={studioName} loading="eager" />
           ) : (
             studioName
           )}
