@@ -33,6 +33,10 @@ export const Newsletters: CollectionConfig = {
     ],
   },
   fields: [
+    {
+      name: 'sendPanel', type: 'ui',
+      admin: { position: 'sidebar', components: { Field: '/admin/NewsletterSend#default' } },
+    },
     { name: 'subject', type: 'text', required: true, admin: { description: 'The email subject line.' } },
     {
       name: 'body', type: 'richText', required: true,
