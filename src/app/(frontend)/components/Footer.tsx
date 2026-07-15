@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { NewsletterSignup } from './NewsletterSignup'
 
 type Hours = { days?: string | null; time?: string | null }
 type Socials = { platform?: string | null; url?: string | null }[]
@@ -42,6 +43,8 @@ export function Footer({
           <p className="pp-footer-tagline">
             Where clay meets community — wheel throwing, hand-building, and 24/7 studio access for makers of every level.
           </p>
+          {/* eslint-disable-next-line react-hooks/purity */}
+          <NewsletterSignup startedAt={Date.now()} />
         </div>
 
         {/* (b) Explore links */}
