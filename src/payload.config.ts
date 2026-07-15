@@ -35,6 +35,7 @@ import { expireFiringRequestMedia } from './services/expire-firing-media'
 import { completePastInstances } from './services/complete-past-instances'
 import { squareMembershipGateway } from './lib/membership-gateway'
 import { resendEmailAdapter, parseFromAddress } from './lib/payload-email-adapter'
+import { newsletterSubscriberEndpoints } from './endpoints/newsletter-subscribers'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -52,7 +53,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
     components: {
-      beforeNavLinks: ['/admin/MembersNavLink#default', '/admin/MyClassesNavLink#default'],
+      beforeNavLinks: ['/admin/MembersNavLink#default', '/admin/MyClassesNavLink#default', '/admin/NewsletterNavLink#default'],
       views: {
         myClasses: {
           Component: '/admin/views/MyClasses#default',
@@ -62,6 +63,11 @@ export default buildConfig({
         myClassRoster: {
           Component: '/admin/views/MyClassRoster#default',
           path: '/my-classes/:id',
+        },
+        newsletterSubscribers: {
+          Component: '/admin/views/Subscribers#default',
+          path: '/newsletter-subscribers',
+          exact: true,
         },
       },
     },
@@ -166,6 +172,7 @@ export default buildConfig({
   },
   collections: [Users, People, MembershipPlans, Media, Classes, ClassInstances, Bookings, Payments, FiringRequests, ShelfTags, Shelves, Coupons, Newsletters],
   globals: [SiteSettings, HomePage, MembershipPage, FiringsPage],
+  endpoints: [...newsletterSubscriberEndpoints],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
