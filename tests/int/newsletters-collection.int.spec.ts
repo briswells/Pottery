@@ -3,7 +3,7 @@ import { getTestPayload } from './helpers'
 
 const BODY = {
   root: {
-    type: 'root', format: '', indent: 0, version: 1, direction: 'ltr' as const,
+    type: 'root', format: '' as const, indent: 0, version: 1, direction: 'ltr' as const,
     children: [{
       type: 'paragraph', version: 1, format: '', indent: 0, direction: 'ltr' as const, textFormat: 0,
       children: [{ type: 'text', text: 'Hello potters!', version: 1, detail: 0, format: 0, mode: 'normal', style: '' }],
