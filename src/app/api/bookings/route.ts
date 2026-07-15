@@ -3,6 +3,7 @@ import config from '@payload-config'
 import { createPaidBooking } from '../../../services/booking'
 import { chargeCard } from '../../../lib/payments'
 import { sendEmail } from '../../../lib/email'
+import { kitEnabled, createKitSubscriber } from '../../../lib/kit'
 
 export async function POST(req: Request) {
   let body: any
@@ -23,6 +24,15 @@ export async function POST(req: Request) {
       { payload, charge: chargeCard, sendEmail },
       { classInstanceId, sourceId, couponCode, customerName, customerEmail, customerPhone },
     )
+    // Newsletter opt-in is best-effort: the booking is already paid, so a Kit
+    // failure is logged and swallowed — it must never turn a success into an error.
+    if (body?.subscribe === true && kitEnabled()) {
+      try {
+        await createKitSubscriber({ email: customerEmail, firstName: customerName })
+      } catch (err) {
+        payload.logger.error(`Booking newsletter opt-in failed for ${customerEmail}: ${err instanceof Error ? err.message : err}`)
+      }
+    }
     return Response.json({ ok: true, bookingId: booking.id })
   } catch (e: any) {
     const full = /this class is full/i.test(e?.message ?? '')

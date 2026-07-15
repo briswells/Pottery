@@ -53,6 +53,7 @@ export function BookingForm({
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [form, setForm] = useState({ customerName: '', customerEmail: '', customerPhone: '' })
+  const [subscribe, setSubscribe] = useState(false)
   const [couponInput, setCouponInput] = useState('')
   const [applied, setApplied] = useState<{
     code: string
@@ -124,6 +125,7 @@ export function BookingForm({
             customerName: f.customerName,
             customerEmail: f.customerEmail,
             customerPhone: f.customerPhone,
+            subscribe,
           }),
         })
         const data = await res.json()
@@ -137,7 +139,7 @@ export function BookingForm({
         busyRef.current = false
       }
     },
-    [classInstanceId, slug, router],
+    [classInstanceId, slug, router, subscribe],
   )
 
   // Effect A: load the SDK and create the payments instance (no card yet).
@@ -252,6 +254,10 @@ export function BookingForm({
           value={form.customerPhone}
           onChange={(e) => setForm({ ...form, customerPhone: e.target.value })}
         />
+        <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14 }}>
+          <input type="checkbox" checked={subscribe} onChange={(e) => setSubscribe(e.target.checked)} />
+          Email me studio news &amp; new classes
+        </label>
       </div>
 
       {!hasIdentity ? (
