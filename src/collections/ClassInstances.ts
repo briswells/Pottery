@@ -2,6 +2,7 @@ import type { CollectionConfig, Access, Where } from 'payload'
 import { isAdminOrEditor } from '../access/isAdminOrEditor'
 import { DAYS_OF_WEEK } from '../lib/studio'
 import { applyClassDefaults } from '../hooks/applyClassDefaults'
+import { blockInstanceDeleteWithBookings } from '../hooks/blockInstanceDeleteWithBookings'
 
 const timeValidate = (val: unknown) =>
   (typeof val === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(val)) ||
@@ -25,6 +26,10 @@ export const ClassInstances: CollectionConfig = {
     useAsTitle: 'label',
     group: 'Studio',
     defaultColumns: ['label', 'instructor', 'startDate', 'endDate', 'status'],
+    // Completed (past) instances are hidden from the admin list to keep it
+    // focused on what's upcoming. Their rosters stay reachable via Bookings
+    // and the instructors' My Classes view.
+    baseListFilter: () => ({ status: { not_equals: 'completed' } }),
   },
   access: {
     read: readAccess,
@@ -32,7 +37,7 @@ export const ClassInstances: CollectionConfig = {
     update: isAdminOrEditor,
     delete: isAdminOrEditor,
   },
-  hooks: { beforeValidate: [applyClassDefaults] },
+  hooks: { beforeValidate: [applyClassDefaults], beforeDelete: [blockInstanceDeleteWithBookings] },
   fields: [
     { name: 'class', type: 'relationship', relationTo: 'classes', required: true },
     {

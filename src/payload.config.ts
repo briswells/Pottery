@@ -31,6 +31,7 @@ import { syncSquarePlans, ensureFreePlan, ensureInvoicedPlan } from './services/
 import { reconcileSquareMembers } from './services/reconcile-square-members'
 import { reconcileInvoiceMembers } from './services/reconcile-invoice-members'
 import { expireFiringRequestMedia } from './services/expire-firing-media'
+import { completePastInstances } from './services/complete-past-instances'
 import { squareMembershipGateway } from './lib/membership-gateway'
 import { resendEmailAdapter, parseFromAddress } from './lib/payload-email-adapter'
 
@@ -86,6 +87,19 @@ export default buildConfig({
     void expireMedia()
     const firingTimer = setInterval(() => void expireMedia(), 24 * 60 * 60 * 1000)
     firingTimer.unref?.()
+
+    // Mark published class instances completed once their last session day has
+    // passed — keeps the admin list and public pages truthful without manual
+    // status flips. Runs on boot and daily; independent of Square.
+    const completeInstances = () =>
+      completePastInstances(payload)
+        .then((n) => {
+          if (n) payload.logger.info(`Class instances auto-completed: ${n}.`)
+        })
+        .catch((e) => payload.logger.error(`Completing past instances failed: ${e instanceof Error ? e.message : e}`))
+    void completeInstances()
+    const completeTimer = setInterval(() => void completeInstances(), 24 * 60 * 60 * 1000)
+    completeTimer.unref?.()
 
     // Keep the Square plans fresh on boot. Needs Square creds; never breaks boot.
     if (!process.env.SQUARE_ACCESS_TOKEN) return
