@@ -49,7 +49,9 @@ export const ClassInstances: CollectionConfig = {
       admin: { description: 'Auto-filled from the class — edit to tell concurrent runs apart, e.g. add “ — Tuesday Nights”.' },
     },
     { name: 'instructor', type: 'relationship', relationTo: 'users', required: true },
-    { name: 'startDate', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly' }, description: 'First (or only) meeting date' } },
+    // displayFormat keeps the admin list from tacking a meaningless "12:00 AM"
+    // onto these date-only fields — the session time lives in startTime/endTime.
+    { name: 'startDate', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'MMM d, yyyy' }, description: 'First (or only) meeting date' } },
     { name: 'startTime', type: 'text', required: true, validate: timeValidate, admin: { description: '24-hour HH:MM, e.g. 18:00' } },
     { name: 'endTime', type: 'text', required: true, validate: timeValidate, admin: { description: '24-hour HH:MM, e.g. 20:00' } },
     {
@@ -63,14 +65,14 @@ export const ClassInstances: CollectionConfig = {
     {
       name: 'endDate', type: 'date',
       admin: {
-        date: { pickerAppearance: 'dayOnly' },
+        date: { pickerAppearance: 'dayOnly', displayFormat: 'MMM d, yyyy' },
         description: 'Last meeting date. Leave blank for a single-day class, or set "Number of classes" instead and this fills in automatically.',
       },
     },
     {
       name: 'skipDates', type: 'array',
       labels: { singular: 'Skip date', plural: 'Skip dates' },
-      fields: [{ name: 'date', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly' } } }],
+      fields: [{ name: 'date', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'MMM d, yyyy' } } }],
       admin: { description: 'Dates to exclude (e.g. holidays).' },
     },
     { name: 'capacity', type: 'number', min: 1, admin: { description: 'Defaults from the class if left blank.' } },
