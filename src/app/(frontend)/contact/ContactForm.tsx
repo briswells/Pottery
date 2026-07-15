@@ -2,7 +2,7 @@
 import { useState } from 'react'
 
 export function ContactForm({ startedAt }: { startedAt: number }) {
-  const [form, setForm] = useState({ name: '', email: '', message: '', website: '' })
+  const [form, setForm] = useState({ name: '', email: '', message: '', website: '', subscribe: false })
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -56,6 +56,14 @@ export function ContactForm({ startedAt }: { startedAt: number }) {
         value={form.message}
         onChange={(e) => setForm({ ...form, message: e.target.value })}
       />
+      <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14 }}>
+        <input
+          type="checkbox"
+          checked={form.subscribe}
+          onChange={(e) => setForm({ ...form, subscribe: e.target.checked })}
+        />
+        Email me studio news &amp; new classes
+      </label>
       {/* Honeypot: hidden off-screen, excluded from tab order; bots fill it, people can't. */}
       <input
         type="text"

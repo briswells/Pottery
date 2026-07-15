@@ -5,6 +5,8 @@ import { getNotifyEmail } from '../lib/notify-email'
 export interface ContactDeps {
   payload: Payload
   sendEmail: (input: EmailInput) => Promise<void>
+  /** Optional newsletter opt-in — best-effort, never fails the message. */
+  subscribe?: (input: { email: string; name: string }) => Promise<unknown>
 }
 
 export interface ContactInput {
@@ -15,6 +17,8 @@ export interface ContactInput {
   website?: string
   /** Client render timestamp (ms). Submits < MIN_FILL_MS later are bots. */
   startedAt?: number
+  /** Newsletter opt-in checkbox state. */
+  subscribe?: boolean
 }
 
 export type ContactResult = { ok: true } | { ok: false; status: 400 | 500; error: string }
@@ -61,6 +65,13 @@ export async function submitContactMessage(deps: ContactDeps, input: ContactInpu
       subject: `New message from ${name} — website contact form`,
       html: `<p><strong>${escapeHtml(name)}</strong> (${escapeHtml(email)}) wrote:</p><p>${escapeHtml(message).replaceAll('\n', '<br/>')}</p>`,
     })
+    if (input.subscribe && deps.subscribe) {
+      try {
+        await deps.subscribe({ email, name })
+      } catch (err) {
+        console.error('Contact newsletter opt-in failed:', err)
+      }
+    }
     return { ok: true }
   } catch (e) {
     console.error('Contact form send failed:', e)

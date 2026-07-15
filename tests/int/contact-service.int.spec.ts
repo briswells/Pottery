@@ -86,4 +86,28 @@ describe('submitContactMessage', () => {
     expect(res).toEqual({ ok: true })
     expect(d.sendEmail).not.toHaveBeenCalled()
   })
+
+  it('opts the sender into the newsletter when subscribe is checked', async () => {
+    const payload = await getTestPayload()
+    const subscribe = vi.fn(async () => ({}))
+    const d = { ...deps(), subscribe }
+    const res = await submitContactMessage({ payload, ...d }, { ...VALID, subscribe: true })
+    expect(res).toEqual({ ok: true })
+    expect(subscribe).toHaveBeenCalledWith({ email: 'jo@example.com', name: 'Jo Potter' })
+  })
+
+  it('does not subscribe when the box is unchecked', async () => {
+    const payload = await getTestPayload()
+    const subscribe = vi.fn(async () => ({}))
+    const res = await submitContactMessage({ payload, ...deps(), subscribe }, VALID)
+    expect(res).toEqual({ ok: true })
+    expect(subscribe).not.toHaveBeenCalled()
+  })
+
+  it('still succeeds when the newsletter opt-in fails', async () => {
+    const payload = await getTestPayload()
+    const subscribe = vi.fn(async () => { throw new Error('kit down') })
+    const res = await submitContactMessage({ payload, ...deps(), subscribe }, { ...VALID, subscribe: true })
+    expect(res).toEqual({ ok: true })
+  })
 })
