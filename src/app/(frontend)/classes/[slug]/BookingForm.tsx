@@ -76,6 +76,11 @@ export function BookingForm({
     appliedRef.current = applied
   }, [applied])
 
+  const subscribeRef = useRef(subscribe)
+  useEffect(() => {
+    subscribeRef.current = subscribe
+  }, [subscribe])
+
   async function applyCoupon() {
     setCouponMsg(null)
     const code = couponInput.trim()
@@ -125,7 +130,7 @@ export function BookingForm({
             customerName: f.customerName,
             customerEmail: f.customerEmail,
             customerPhone: f.customerPhone,
-            subscribe,
+            subscribe: subscribeRef.current,
           }),
         })
         const data = await res.json()
@@ -139,7 +144,7 @@ export function BookingForm({
         busyRef.current = false
       }
     },
-    [classInstanceId, slug, router, subscribe],
+    [classInstanceId, slug, router],
   )
 
   // Effect A: load the SDK and create the payments instance (no card yet).
