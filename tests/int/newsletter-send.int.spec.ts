@@ -80,6 +80,34 @@ describe('sendNewsletter', () => {
     const res = await sendNewsletter(deps, { id: doc.id })
     expect(res).toEqual({ ok: true, recipientCount: null })
   })
+
+  it('a concurrent double-send only creates one broadcast (in-process lock)', async () => {
+    const payload = await getTestPayload()
+    const doc = await makeDraft('Double click')
+
+    // Deferred pattern: createBroadcast blocks until we release it, so both
+    // sendNewsletter calls are guaranteed to be in flight simultaneously.
+    let release: () => void
+    const gate = new Promise<void>((resolve) => { release = resolve })
+    const createBroadcast = vi.fn(async () => {
+      await gate
+      return { id: 901 }
+    })
+    const deps = { payload, ...kitDeps({ broadcast: createBroadcast }) }
+
+    const p1 = sendNewsletter(deps, { id: doc.id })
+    const p2 = sendNewsletter(deps, { id: doc.id })
+    release!()
+    const [r1, r2] = await Promise.all([p1, p2])
+
+    expect(createBroadcast).toHaveBeenCalledTimes(1)
+    const results = [r1, r2]
+    const okResults = results.filter((r) => r.ok)
+    const conflictResults = results.filter((r) => !r.ok)
+    expect(okResults).toHaveLength(1)
+    expect(conflictResults).toHaveLength(1)
+    expect(conflictResults[0]).toMatchObject({ ok: false, status: 409 })
+  })
 })
 
 describe('sendNewsletterTest', () => {

@@ -61,6 +61,14 @@ export type SendNewsletterResult =
   | { ok: true; recipientCount: number | null }
   | { ok: false; status: 404 | 409 | 500; error: string }
 
+// Guards against a TOCTOU double-send: two near-simultaneous send calls
+// (double-click, retry) can both pass the 409 status/kitBroadcastId check
+// before either write lands, each creating a Kit broadcast and mailing the
+// whole list twice. The app deploys as a single Node container, so an
+// in-process lock (keyed by newsletter id) fully closes the window — no
+// cross-process coordination (Redis, DB row lock) is needed.
+const sendsInFlight = new Set<string>()
+
 /** Load the doc (depth 2 so richText upload nodes are populated) and render
  *  it in the branded shell with site-settings branding. */
 async function renderForSend(payload: Payload, id: string | number): Promise<{ doc: Newsletter; html: string } | null> {
@@ -86,45 +94,54 @@ export async function sendNewsletter(
   args: { id: string | number; now?: Date },
 ): Promise<SendNewsletterResult> {
   const now = args.now ?? new Date()
-  const rendered = await renderForSend(deps.payload, args.id)
-  if (!rendered) return { ok: false, status: 404, error: 'Newsletter not found.' }
-  const { doc, html } = rendered
-  if (doc.status === 'sent' || doc.kitBroadcastId) {
-    return { ok: false, status: 409, error: 'This newsletter has already been sent.' }
+  const key = String(args.id)
+  if (sendsInFlight.has(key)) {
+    return { ok: false, status: 409, error: 'This newsletter is already being sent.' }
   }
-
-  // Count is informational (confirm dialog / history) — never blocks a send.
-  let recipientCount: number | null = null
+  sendsInFlight.add(key)
   try {
-    recipientCount = await deps.countSubscribers()
-  } catch {
-    recipientCount = null
-  }
+    const rendered = await renderForSend(deps.payload, args.id)
+    if (!rendered) return { ok: false, status: 404, error: 'Newsletter not found.' }
+    const { doc, html } = rendered
+    if (doc.status === 'sent' || doc.kitBroadcastId) {
+      return { ok: false, status: 409, error: 'This newsletter has already been sent.' }
+    }
 
-  let broadcastId: number
-  try {
-    const b = await deps.createBroadcast({ subject: doc.subject, contentHtml: html, sendAt: now })
-    broadcastId = b.id
-  } catch (e) {
-    deps.payload.logger.error(`Newsletter ${doc.id} broadcast failed: ${e instanceof Error ? e.message : e}`)
-    return { ok: false, status: 500, error: 'Kit rejected the broadcast — nothing was sent. Try again in a minute.' }
-  }
+    // Count is informational (confirm dialog / history) — never blocks a send.
+    let recipientCount: number | null = null
+    try {
+      recipientCount = await deps.countSubscribers()
+    } catch {
+      recipientCount = null
+    }
 
-  try {
-    await deps.payload.update({
-      collection: 'newsletters',
-      id: doc.id,
-      overrideAccess: true,
-      data: { status: 'sent', sentAt: now.toISOString(), kitBroadcastId: String(broadcastId), recipientCount },
-    })
-  } catch (e) {
-    // The broadcast IS out; losing the stamp must not report failure (a retry
-    // would double-send). Log loudly for manual repair instead.
-    deps.payload.logger.error(
-      `CRITICAL: newsletter ${doc.id} sent as Kit broadcast ${broadcastId} but stamping failed — set status=sent manually. ${e instanceof Error ? e.message : e}`,
-    )
+    let broadcastId: number
+    try {
+      const b = await deps.createBroadcast({ subject: doc.subject, contentHtml: html, sendAt: now })
+      broadcastId = b.id
+    } catch (e) {
+      deps.payload.logger.error(`Newsletter ${doc.id} broadcast failed: ${e instanceof Error ? e.message : e}`)
+      return { ok: false, status: 500, error: 'Kit rejected the broadcast — nothing was sent. Try again in a minute.' }
+    }
+
+    try {
+      await deps.payload.update({
+        collection: 'newsletters',
+        id: doc.id,
+        overrideAccess: true,
+        data: { status: 'sent', sentAt: now.toISOString(), kitBroadcastId: String(broadcastId), recipientCount },
+      })
+    } catch (e) {
+      // The broadcast IS out; losing the stamp must not report failure (a retry
+      // would double-send). Log loudly for manual repair instead.
+      deps.payload.logger.error(
+        `CRITICAL: newsletter ${doc.id} sent as Kit broadcast ${broadcastId} but stamping failed — set status=sent manually. ${e instanceof Error ? e.message : e}`,
+      )
+    }
+    return { ok: true, recipientCount }
+  } finally {
+    sendsInFlight.delete(key)
   }
-  return { ok: true, recipientCount }
 }
 
 /** Email the rendered newsletter to one address (the logged-in admin) for proofing. */
