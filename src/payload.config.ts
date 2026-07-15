@@ -1,5 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
-import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { lexicalEditor, FixedToolbarFeature } from '@payloadcms/richtext-lexical'
 import { s3Storage } from '@payloadcms/storage-s3'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -173,7 +173,12 @@ export default buildConfig({
   collections: [Users, People, MembershipPlans, Media, Classes, ClassInstances, Bookings, Payments, FiringRequests, ShelfTags, Shelves, Coupons, Newsletters],
   globals: [SiteSettings, HomePage, MembershipPage, FiringsPage],
   endpoints: [...newsletterSubscriberEndpoints],
-  editor: lexicalEditor(),
+  // Persistent formatting toolbar (bold/lists/links/images) on top of the
+  // default floating toolbar and slash commands — friendlier for non-technical
+  // staff writing newsletters.
+  editor: lexicalEditor({
+    features: ({ defaultFeatures }) => [...defaultFeatures, FixedToolbarFeature()],
+  }),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
