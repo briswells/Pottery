@@ -38,6 +38,20 @@ function toLocal(iso: string): { date: string; time: string } {
   return { date: `${get('year')}-${get('month')}-${get('day')}`, time: `${get('hour')}:${get('minute')}` }
 }
 
+/**
+ * UTC instant of studio-local midnight for a YYYY-MM-DD day. This is the
+ * convention the admin date picker uses, so dates render correctly both in
+ * the admin UI (browser-local) and on the public site (UTC parts).
+ */
+function studioMidnightIso(ymd: string): string {
+  for (const off of ['-07:00', '-08:00']) {
+    const d = new Date(`${ymd}T00:00:00${off}`)
+    const back = toLocal(d.toISOString())
+    if (back.date === ymd && back.time === '00:00') return d.toISOString()
+  }
+  throw new Error(`Could not resolve studio midnight for ${ymd}`)
+}
+
 /** ISO-8601 duration like PT2H / PT1H30M -> minutes. */
 function durationMinutes(d: string): number {
   const m = /^PT(?:(\d+)H)?(?:(\d+)M)?$/.exec(d)
@@ -155,7 +169,7 @@ async function run() {
     const svc = byId.get(Number(idStr))
     if (!svc) throw new Error(`Service ${idStr} missing from JSON`)
     const { date, time } = toLocal(svc.start_time)
-    const startDate = `${date}T00:00:00.000Z`
+    const startDate = studioMidnightIso(date)
     const existing = await payload.find({
       collection: 'class-instances',
       where: { and: [{ label: { equals: meta.label } }, { startDate: { equals: startDate } }] },
