@@ -10,6 +10,7 @@ import * as migration_20260619_192701_add_shelf_sort_key from './20260619_192701
 import * as migration_20260707_184022_add_coupons from './20260707_184022_add_coupons';
 import * as migration_20260708_214254_paid_firings from './20260708_214254_paid_firings';
 import * as migration_20260709_152629_firing_dropped_off from './20260709_152629_firing_dropped_off';
+import * as migration_20260715_221422_newsletters from './20260715_221422_newsletters';
 
 export const migrations = [
   {
@@ -70,6 +71,11 @@ export const migrations = [
   {
     up: migration_20260709_152629_firing_dropped_off.up,
     down: migration_20260709_152629_firing_dropped_off.down,
-    name: '20260709_152629_firing_dropped_off'
+    name: '20260709_152629_firing_dropped_off',
+  },
+  {
+    up: migration_20260715_221422_newsletters.up,
+    down: migration_20260715_221422_newsletters.down,
+    name: '20260715_221422_newsletters'
   },
 ];
