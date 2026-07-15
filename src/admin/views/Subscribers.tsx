@@ -40,7 +40,8 @@ export default async function Subscribers({ initPageResult, params, searchParams
     let page: KitSubscriberPage | null = null
     try {
       page = await listKitSubscribers({ after, before, emailSearch: q })
-    } catch {
+    } catch (e) {
+      payload.logger.error(`Subscribers view Kit list failed: ${e instanceof Error ? e.message : e}`)
       content = <p style={{ color: 'var(--theme-error-500)' }}>Couldn&apos;t reach Kit — try again in a minute.</p>
     }
     if (page) {
