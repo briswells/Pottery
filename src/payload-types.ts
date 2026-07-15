@@ -80,6 +80,7 @@ export interface Config {
     'shelf-tags': ShelfTag;
     shelves: Shelf;
     coupons: Coupon;
+    newsletters: Newsletter;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -103,6 +104,7 @@ export interface Config {
     'shelf-tags': ShelfTagsSelect<false> | ShelfTagsSelect<true>;
     shelves: ShelvesSelect<false> | ShelvesSelect<true>;
     coupons: CouponsSelect<false> | CouponsSelect<true>;
+    newsletters: NewslettersSelect<false> | NewslettersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -605,6 +607,43 @@ export interface FiringRequest {
   createdAt: string;
 }
 /**
+ * Compose a newsletter, proof it with “Send test to me”, then send it to the mailing list.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "newsletters".
+ */
+export interface Newsletter {
+  id: number;
+  /**
+   * The email subject line.
+   */
+  subject: string;
+  /**
+   * Headings, text, links, lists, and images all render inside the studio email template.
+   */
+  body: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  status?: ('draft' | 'sent') | null;
+  sentAt?: string | null;
+  kitBroadcastId?: string | null;
+  recipientCount?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -675,6 +714,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'coupons';
         value: number | Coupon;
+      } | null)
+    | ({
+        relationTo: 'newsletters';
+        value: number | Newsletter;
       } | null);
   globalSlug?: string | null;
   user:
@@ -990,6 +1033,20 @@ export interface CouponsSelect<T extends boolean = true> {
   expiresAt?: T;
   maxRedemptions?: T;
   onePerCustomer?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "newsletters_select".
+ */
+export interface NewslettersSelect<T extends boolean = true> {
+  subject?: T;
+  body?: T;
+  status?: T;
+  sentAt?: T;
+  kitBroadcastId?: T;
+  recipientCount?: T;
   updatedAt?: T;
   createdAt?: T;
 }
