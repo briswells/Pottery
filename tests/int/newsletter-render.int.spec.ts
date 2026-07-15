@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { renderNewsletterHtml } from '../../src/lib/newsletter-render'
+import { renderNewsletterHtml, absolutizeEmailUrls } from '../../src/lib/newsletter-render'
 import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
 
 function text(t: string) {
@@ -29,11 +29,18 @@ describe('renderNewsletterHtml', () => {
     expect(html).toContain('<!doctype html>')
   })
 
-  it('rewrites relative src/href to absolute site URLs', () => {
+  it('absolutizes the shell footer link with no double slash', () => {
+    // This only pins the shell's own home link, not lexical content rewriting
+    // (single-slash vs. protocol-relative and srcset handling are covered
+    // directly by the absolutizeEmailUrls unit tests below).
     const html = renderNewsletterHtml({ body: BODY, baseUrl: 'https://example.com/', studioName: 'P' })
-    // The shell footer links home with an absolute URL and no double slash.
     expect(html).toContain('href="https://example.com"')
     expect(html).not.toContain('https://example.com//')
+  })
+
+  it('contains no unsubscribe footer of its own (Kit appends its own on send)', () => {
+    const html = renderNewsletterHtml({ body: BODY, baseUrl: 'https://example.com', studioName: 'Portside Pottery' })
+    expect(html.toLowerCase()).not.toContain('unsubscribe')
   })
 
   it('uses the logo when given (absolutized) and falls back to the studio name', () => {
@@ -46,5 +53,47 @@ describe('renderNewsletterHtml', () => {
   it('escapes the studio name', () => {
     const html = renderNewsletterHtml({ body: BODY, baseUrl: 'https://example.com', studioName: '<script>x</script>' })
     expect(html).not.toContain('<script>x</script>')
+  })
+})
+
+describe('absolutizeEmailUrls', () => {
+  const origin = 'https://example.com'
+
+  it('rewrites a plain src attribute', () => {
+    const html = absolutizeEmailUrls('<img src="/api/media/file/photo.jpg">', origin)
+    expect(html).toBe('<img src="https://example.com/api/media/file/photo.jpg">')
+  })
+
+  it('rewrites a plain href attribute', () => {
+    const html = absolutizeEmailUrls('<a href="/classes/wheel-throwing">link</a>', origin)
+    expect(html).toBe('<a href="https://example.com/classes/wheel-throwing">link</a>')
+  })
+
+  it('rewrites every relative entry inside a srcset attribute, preserving descriptors', () => {
+    const html = absolutizeEmailUrls(
+      '<source srcset="/api/media/file/photo-500.jpg 500w, /api/media/file/photo-1200.jpg 1200w">',
+      origin,
+    )
+    expect(html).toBe(
+      '<source srcset="https://example.com/api/media/file/photo-500.jpg 500w, https://example.com/api/media/file/photo-1200.jpg 1200w">',
+    )
+  })
+
+  it('leaves protocol-relative URLs untouched', () => {
+    const html = absolutizeEmailUrls('<a href="//cdn.example.com/x.jpg">link</a>', origin)
+    expect(html).toBe('<a href="//cdn.example.com/x.jpg">link</a>')
+  })
+
+  it('leaves already-absolute URLs (including in srcset) untouched', () => {
+    const src = absolutizeEmailUrls('<img src="https://cdn.example.com/photo.jpg">', origin)
+    expect(src).toBe('<img src="https://cdn.example.com/photo.jpg">')
+
+    const srcset = absolutizeEmailUrls(
+      '<source srcset="https://cdn.example.com/photo-500.jpg 500w, https://cdn.example.com/photo-1200.jpg 1200w">',
+      origin,
+    )
+    expect(srcset).toBe(
+      '<source srcset="https://cdn.example.com/photo-500.jpg 500w, https://cdn.example.com/photo-1200.jpg 1200w">',
+    )
   })
 })

@@ -19,6 +19,51 @@ function escapeHtml(s: string): string {
 }
 
 /**
+ * Rewrite site-relative URLs emitted by the Lexical → HTML converter (media
+ * uploads, internal links) into absolute URLs, since email clients don't
+ * resolve relative URLs against any page origin.
+ *
+ * Handles two shapes:
+ *  - `src="/..."` and `href="/..."` attribute values.
+ *  - `srcset="/a.jpg 500w, /b.jpg 1200w"` — Payload's lexical upload
+ *    converter emits `<picture><source srcset="...">` when the referenced
+ *    upload's collection has image sizes configured (this project's Media
+ *    collection does), so srcset needs its own rewriting or those images
+ *    break in clients that honor it (e.g. Apple/iOS Mail).
+ *
+ * Protocol-relative URLs (`//host/path`) and already-absolute URLs are left
+ * untouched — only a single leading `/` counts as site-relative.
+ *
+ * This runs on trusted converter output, not arbitrary HTML, so plain
+ * regexes are fine here; no need for a full HTML parser.
+ */
+export function absolutizeEmailUrls(html: string, origin: string): string {
+  const base = origin.replace(/\/+$/, '')
+
+  // src="/..." and href="/..." — negative lookahead excludes "//..." (protocol-relative).
+  let out = html.replace(/\b(src|href)="\/(?!\/)/g, `$1="${base}/`)
+
+  // srcset="/a.jpg 500w, /b.jpg 1200w, https://already/abs.jpg 2x" — rewrite
+  // only the comma-separated entries that are site-relative; leave the rest.
+  out = out.replace(/\bsrcset="([^"]*)"/g, (_match, value: string) => {
+    const rewritten = value
+      .split(',')
+      .map((entry) => {
+        const trimmed = entry.trim()
+        if (!trimmed) return trimmed
+        const spaceIdx = trimmed.indexOf(' ')
+        const url = spaceIdx === -1 ? trimmed : trimmed.slice(0, spaceIdx)
+        const descriptor = spaceIdx === -1 ? '' : trimmed.slice(spaceIdx)
+        return url.startsWith('/') && !url.startsWith('//') ? `${base}${url}${descriptor}` : trimmed
+      })
+      .join(', ')
+    return `srcset="${rewritten}"`
+  })
+
+  return out
+}
+
+/**
  * Render a newsletter body (Lexical state, uploads populated via depth) to a
  * complete email HTML document: converted rich text inside one fixed
  * Portside-branded, table-based shell. Email clients don't load external CSS,
@@ -28,7 +73,7 @@ export function renderNewsletterHtml({ body, baseUrl, studioName, logoUrl }: New
   const origin = baseUrl.replace(/\/+$/, '')
   let content = convertLexicalToHTML({ data: body })
   // Media uploads and internal links come out site-relative; email needs absolute.
-  content = content.replaceAll('src="/', `src="${origin}/`).replaceAll('href="/', `href="${origin}/`)
+  content = absolutizeEmailUrls(content, origin)
 
   const logo = logoUrl ? (logoUrl.startsWith('/') ? `${origin}${logoUrl}` : logoUrl) : null
   const name = escapeHtml(studioName)
