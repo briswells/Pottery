@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 import { isAdminOrEditor } from '../access/isAdminOrEditor'
+import { newsletterEndpoints } from '../endpoints/newsletters'
 
 /**
  * Studio newsletters composed in the admin and sent to the Kit mailing list
@@ -21,6 +22,7 @@ export const Newsletters: CollectionConfig = {
     update: isAdminOrEditor,
     delete: isAdminOrEditor,
   },
+  endpoints: newsletterEndpoints,
   hooks: {
     beforeChange: [
       ({ originalDoc }) => {
