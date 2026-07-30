@@ -34,7 +34,7 @@ export default async function FiringsPage() {
 
       <div className="pp-firings-grid">
         {/* Left: the story — what this is and how it goes */}
-        <div>
+        <div className="pp-firings-main">
           {page.intro && (
             <p style={{ color: 'var(--pp-muted)', lineHeight: 1.7, fontSize: 17 }}>{page.intro}</p>
           )}
@@ -53,34 +53,37 @@ export default async function FiringsPage() {
           {page.pricingNote && <p style={{ marginTop: 10, fontWeight: 600 }}>{page.pricingNote}</p>}
         </div>
 
-        {/* Right: the photo with the "kiln ticket" — the three facts that decide a request */}
-        <div>
-          {imageUrl && (
-            <img
-              className="pp-firings-photo"
-              src={imageUrl}
-              alt={mediaAlt(page.image) || page.headline}
-            />
-          )}
-          <div className={`pp-firing-ticket${imageUrl ? ' pp-firing-ticket--overlap' : ''}`}>
-            <div className="pp-kicker">Next firing</div>
-            <div className="pp-firing-ticket-date">{nextDateLabel}</div>
-            <hr className="pp-firing-ticket-rule" />
-            <p className="pp-firing-ticket-fact">
-              <strong>{shelfPriceLabel}</strong> per half shelf (11″ × 22″ × 6″) · up to {MAX_HALF_SHELVES} per
-              request
-            </p>
-            <p className="pp-firing-ticket-fact pp-firing-ticket-warn">
-              <strong>Stoneware only.</strong> We fire to Cone 10 — no earthenware, no low-fire clay, and no
-              porcelain (even high-fire porcelain).
-            </p>
+        {/* Right: the photo with the "kiln ticket" — the three facts that decide a request.
+            Sticky so the date/price/rules stay in view while filling out the form. */}
+        <aside className="pp-firings-aside">
+          <div className="pp-firings-aside-sticky">
+            {imageUrl && (
+              <img
+                className="pp-firings-photo"
+                src={imageUrl}
+                alt={mediaAlt(page.image) || page.headline}
+              />
+            )}
+            <div className="pp-firing-ticket">
+              <div className="pp-kicker">Next firing</div>
+              <div className="pp-firing-ticket-date">{nextDateLabel}</div>
+              <hr className="pp-firing-ticket-rule" />
+              <p className="pp-firing-ticket-fact">
+                <strong>{shelfPriceLabel}</strong> per half shelf (11″ × 22″ × 6″) · up to {MAX_HALF_SHELVES} per
+                request
+              </p>
+              <p className="pp-firing-ticket-fact pp-firing-ticket-warn">
+                <strong>Stoneware only.</strong> We fire to Cone 10 — no earthenware, no low-fire clay, and no
+                porcelain (even high-fire porcelain).
+              </p>
+            </div>
           </div>
-        </div>
-      </div>
+        </aside>
 
-      <div className="pp-firings-form-section">
-        <h2 style={{ fontSize: 22, marginBottom: 4 }}>Request a firing</h2>
-        <FiringRequestForm />
+        <div className="pp-firings-form-section">
+          <h2 style={{ fontSize: 22, marginBottom: 4 }}>Request a firing</h2>
+          <FiringRequestForm />
+        </div>
       </div>
     </div>
   )

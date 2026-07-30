@@ -638,16 +638,26 @@ a { color: var(--pp-terracotta); }
 }
 
 /* ─── FIRINGS PAGE ───────────────────────────────────────────── */
+/* Story + form stack in the left column; the photo/ticket aside spans both
+   rows on the right so neither column dangles. Mobile stacks main → aside →
+   form, keeping the facts above the form. */
 .pp-firings-grid {
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
-  gap: 48px;
+  grid-template-areas:
+    'main aside'
+    'form aside';
+  gap: 36px 48px;
   align-items: start;
   margin-top: 12px;
 }
 /* Grid items refuse to shrink below content width by default — cap them so
    the photo/ticket column can never spill outside the container. */
-.pp-firings-grid > div { min-width: 0; }
+.pp-firings-grid > * { min-width: 0; }
+.pp-firings-main { grid-area: main; }
+.pp-firings-aside { grid-area: aside; align-self: stretch; }
+.pp-firings-aside-sticky { position: sticky; top: 24px; }
+.pp-firings-form-section { grid-area: form; max-width: 620px; }
 /* Numbered how-it-works: a real sequence, so the numerals carry weight —
    Fraunces terracotta figures instead of browser list numbers. */
 .pp-firings-steps {
@@ -697,7 +707,8 @@ a { color: var(--pp-terracotta); }
   box-shadow: 0 4px 16px rgba(46, 42, 38, 0.07);
   padding: 18px 20px;
 }
-.pp-firing-ticket--overlap { margin-top: 14px; }
+.pp-firings-photo + .pp-firing-ticket,
+.pp-firings-aside-sticky img + .pp-firing-ticket { margin-top: 14px; }
 .pp-firing-ticket-date {
   font-family: var(--font-fraunces), Georgia, serif;
   font-size: 22px;
@@ -717,8 +728,6 @@ a { color: var(--pp-terracotta); }
   padding: 10px 12px;
   margin-bottom: 0;
 }
-.pp-firings-form-section { max-width: 620px; margin-top: 48px; }
-
 /* ─── MULTI-COLUMN FOOTER ────────────────────────────────────── */
 .pp-footer {
   background: var(--pp-charcoal);
@@ -852,7 +861,12 @@ a { color: var(--pp-terracotta); }
     gap: 36px 32px;
   }
   .pp-footer-brand { grid-column: 1 / -1; }
-  .pp-firings-grid { grid-template-columns: 1fr; gap: 32px; }
+  .pp-firings-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas: 'main' 'aside' 'form';
+    gap: 32px;
+  }
+  .pp-firings-aside-sticky { position: static; }
 }
 @media (max-width: 700px) {
   .pp-row { grid-template-columns: 1fr; gap: 28px; }
