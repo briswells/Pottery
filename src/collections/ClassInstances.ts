@@ -3,6 +3,7 @@ import { isAdminOrEditor } from '../access/isAdminOrEditor'
 import { DAYS_OF_WEEK } from '../lib/studio'
 import { applyClassDefaults } from '../hooks/applyClassDefaults'
 import { blockInstanceDeleteWithBookings } from '../hooks/blockInstanceDeleteWithBookings'
+import { classSeriesEndpoints } from '../endpoints/class-series'
 
 const timeValidate = (val: unknown) =>
   (typeof val === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(val)) ||
@@ -38,6 +39,7 @@ export const ClassInstances: CollectionConfig = {
     delete: isAdminOrEditor,
   },
   hooks: { beforeValidate: [applyClassDefaults], beforeDelete: [blockInstanceDeleteWithBookings] },
+  endpoints: classSeriesEndpoints,
   fields: [
     { name: 'class', type: 'relationship', relationTo: 'classes', required: true },
     {
