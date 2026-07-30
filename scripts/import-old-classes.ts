@@ -2,6 +2,7 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import path from 'path'
 import { readFileSync } from 'fs'
+import { studioMidnightIso, toStudioLocal } from '../src/lib/studio'
 
 /**
  * One-off import of the class catalog scraped from the old GoDaddy site
@@ -24,34 +25,6 @@ type OlaService = {
   duration: string
   cost: string
 }
-
-const TZ = 'America/Los_Angeles'
-
-/** UTC instant -> { date: 'YYYY-MM-DD', time: 'HH:MM' } in studio-local time. */
-function toLocal(iso: string): { date: string; time: string } {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: TZ,
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hour12: false,
-  }).formatToParts(new Date(iso))
-  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? ''
-  return { date: `${get('year')}-${get('month')}-${get('day')}`, time: `${get('hour')}:${get('minute')}` }
-}
-
-/**
- * UTC instant of studio-local midnight for a YYYY-MM-DD day. This is the
- * convention the admin date picker uses, so dates render correctly both in
- * the admin UI (browser-local) and on the public site (UTC parts).
- */
-function studioMidnightIso(ymd: string): string {
-  for (const off of ['-07:00', '-08:00']) {
-    const d = new Date(`${ymd}T00:00:00${off}`)
-    const back = toLocal(d.toISOString())
-    if (back.date === ymd && back.time === '00:00') return d.toISOString()
-  }
-  throw new Error(`Could not resolve studio midnight for ${ymd}`)
-}
-
 /** ISO-8601 duration like PT2H / PT1H30M -> minutes. */
 function durationMinutes(d: string): number {
   const m = /^PT(?:(\d+)H)?(?:(\d+)M)?$/.exec(d)
@@ -168,7 +141,7 @@ async function run() {
   for (const [idStr, meta] of Object.entries(INSTANCES)) {
     const svc = byId.get(Number(idStr))
     if (!svc) throw new Error(`Service ${idStr} missing from JSON`)
-    const { date, time } = toLocal(svc.start_time)
+    const { date, time } = toStudioLocal(svc.start_time)
     const startDate = studioMidnightIso(date)
     const existing = await payload.find({
       collection: 'class-instances',
