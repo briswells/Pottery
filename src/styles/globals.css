@@ -645,6 +645,9 @@ a { color: var(--pp-terracotta); }
   align-items: start;
   margin-top: 12px;
 }
+/* Grid items refuse to shrink below content width by default — cap them so
+   the photo/ticket column can never spill outside the container. */
+.pp-firings-grid > div { min-width: 0; }
 /* Numbered how-it-works: a real sequence, so the numerals carry weight —
    Fraunces terracotta figures instead of browser list numbers. */
 .pp-firings-steps {
@@ -685,19 +688,19 @@ a { color: var(--pp-terracotta); }
   object-fit: cover;
   border-radius: 8px;
 }
-/* The kiln ticket: the three facts that decide a request. Overlaps the photo's
-   bottom edge so image + card read as one composed object. */
+/* The kiln ticket: the three facts that decide a request, in one quiet card
+   directly under the photo. */
 .pp-firing-ticket {
   background: #fff;
+  border: 1px solid rgba(46, 42, 38, 0.08);
   border-radius: 8px;
-  box-shadow: 0 10px 30px rgba(46, 42, 38, 0.12);
-  padding: 20px 22px;
-  position: relative;
+  box-shadow: 0 4px 16px rgba(46, 42, 38, 0.07);
+  padding: 18px 20px;
 }
-.pp-firing-ticket--overlap { margin: -44px 18px 0; }
+.pp-firing-ticket--overlap { margin-top: 14px; }
 .pp-firing-ticket-date {
   font-family: var(--font-fraunces), Georgia, serif;
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1.2;
   margin-top: 4px;
 }
@@ -850,7 +853,6 @@ a { color: var(--pp-terracotta); }
   }
   .pp-footer-brand { grid-column: 1 / -1; }
   .pp-firings-grid { grid-template-columns: 1fr; gap: 32px; }
-  .pp-firing-ticket--overlap { margin: -36px 14px 0; }
 }
 @media (max-width: 700px) {
   .pp-row { grid-template-columns: 1fr; gap: 28px; }
