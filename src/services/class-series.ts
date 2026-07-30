@@ -37,14 +37,29 @@ export type SeriesCreateResult =
   | { ok: true; created: number; skipped: { date: string; reason: string }[] }
   | { ok: false; status: 400 | 404; error: string }
 
-/** True when a non-cancelled instance of this class already starts that day. */
-async function hasConflict(payload: Payload, classId: number, startDateIso: string): Promise<boolean> {
+/** Next calendar day after `ymd` ("YYYY-MM-DD"), via plain UTC date-counter arithmetic. */
+function nextYmd(ymd: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd)
+  if (!m) throw new Error(`Invalid date "${ymd}" — use YYYY-MM-DD.`)
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + 1))
+  return d.toISOString().slice(0, 10)
+}
+
+/**
+ * True when a non-cancelled instance of this class already starts on that studio
+ * calendar day. Matches by a half-open [studio midnight, next studio midnight) range
+ * rather than exact instant equality, so instances stored at any other same-day
+ * timestamp (legacy write paths, bare-date seeds, a hardcoded offset) still count
+ * as a conflict.
+ */
+async function hasConflict(payload: Payload, classId: number, date: string): Promise<boolean> {
   const { totalDocs } = await payload.count({
     collection: 'class-instances',
     where: {
       and: [
         { class: { equals: classId } },
-        { startDate: { equals: startDateIso } },
+        { startDate: { greater_than_equal: studioMidnightIso(date) } },
+        { startDate: { less_than: studioMidnightIso(nextYmd(date)) } },
         { status: { not_equals: 'cancelled' } },
       ],
     },
@@ -66,7 +81,7 @@ export async function previewSeries(payload: Payload, input: SeriesPreviewInput)
 
   const out: { date: string; conflict: boolean }[] = []
   for (const date of dates) {
-    out.push({ date, conflict: await hasConflict(payload, input.classId, studioMidnightIso(date)) })
+    out.push({ date, conflict: await hasConflict(payload, input.classId, date) })
   }
   return { ok: true, classTitle: cls.title, dates: out }
 }
@@ -91,11 +106,10 @@ export async function createSeries(payload: Payload, input: SeriesCreateInput): 
   let created = 0
   const skipped: { date: string; reason: string }[] = []
   for (const date of [...input.dates].sort()) {
-    const startDate = studioMidnightIso(date)
     try {
       // Re-check conflicts at create time so double-submits and stale previews
       // stay idempotent per (class, date).
-      if (await hasConflict(payload, input.classId, startDate)) {
+      if (await hasConflict(payload, input.classId, date)) {
         skipped.push({ date, reason: 'already scheduled' })
         continue
       }
@@ -106,7 +120,7 @@ export async function createSeries(payload: Payload, input: SeriesCreateInput): 
           class: input.classId,
           instructor: input.instructorId,
           ...(input.label ? { label: input.label } : {}),
-          startDate,
+          startDate: studioMidnightIso(date),
           startTime: input.startTime,
           endTime: input.endTime,
           // Explicit single session: stops applyClassDefaults from inheriting a

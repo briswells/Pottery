@@ -91,6 +91,21 @@ describe('createSeries', () => {
     expect(res).toMatchObject({ ok: true, created: 1, skipped: [] })
   })
 
+  it('flags a conflict for an instance stored at a non-convention same-day instant', async () => {
+    // 10:00 UTC = 3am Pacific on 2027-05-11 — not the studio-midnight convention
+    // instant, but still the same studio calendar day.
+    await payload.create({
+      collection: 'class-instances', overrideAccess: true,
+      data: { class: classId, instructor: instructorId, startDate: '2027-05-11T10:00:00.000Z', startTime: '18:00', endTime: '20:00', numberOfClasses: 1, status: 'published' },
+    })
+    const res = await createSeries(payload, {
+      classId, instructorId, dates: ['2027-05-11'], startTime: '18:00', endTime: '20:00',
+    })
+    expect(res).toMatchObject({ ok: true, created: 0 })
+    if (!res.ok) return
+    expect(res.skipped).toEqual([{ date: '2027-05-11', reason: 'already scheduled' }])
+  })
+
   it('validates inputs', async () => {
     expect(await createSeries(payload, { classId, instructorId, dates: [], startTime: '18:00', endTime: '20:00' }))
       .toMatchObject({ ok: false, status: 400 })
