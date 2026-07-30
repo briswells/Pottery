@@ -37,7 +37,12 @@ export const Newsletters: CollectionConfig = {
       name: 'sendPanel', type: 'ui',
       admin: { position: 'sidebar', components: { Field: '/admin/NewsletterSend#default' } },
     },
-    { name: 'subject', type: 'text', required: true, admin: { description: 'The email subject line.' } },
+    {
+      name: 'subject', type: 'text', required: true, admin: { description: 'The email subject line.' },
+      // Duplicating a sent newsletter is the normal way to reuse one — retitle
+      // the copy so it's obvious which doc is the fresh draft.
+      hooks: { beforeDuplicate: [({ value }) => `Copy of ${value ?? ''}`] },
+    },
     {
       name: 'body', type: 'richText', required: true,
       admin: { description: 'Headings, text, links, lists, and images all render inside the studio email template.' },
@@ -49,9 +54,12 @@ export const Newsletters: CollectionConfig = {
         { label: 'Sent', value: 'sent' },
       ],
       admin: { position: 'sidebar', readOnly: true },
+      // A duplicate of a sent newsletter must be born a fresh, editable draft —
+      // without these resets the copy inherits 'sent' and is locked on arrival.
+      hooks: { beforeDuplicate: [() => 'draft'] },
     },
-    { name: 'sentAt', type: 'date', admin: { position: 'sidebar', readOnly: true, date: { displayFormat: 'MMM d, yyyy h:mm a' } } },
-    { name: 'kitBroadcastId', type: 'text', admin: { position: 'sidebar', readOnly: true } },
-    { name: 'recipientCount', type: 'number', admin: { position: 'sidebar', readOnly: true } },
+    { name: 'sentAt', type: 'date', admin: { position: 'sidebar', readOnly: true, date: { displayFormat: 'MMM d, yyyy h:mm a' } }, hooks: { beforeDuplicate: [() => null] } },
+    { name: 'kitBroadcastId', type: 'text', admin: { position: 'sidebar', readOnly: true }, hooks: { beforeDuplicate: [() => null] } },
+    { name: 'recipientCount', type: 'number', admin: { position: 'sidebar', readOnly: true }, hooks: { beforeDuplicate: [() => null] } },
   ],
 }

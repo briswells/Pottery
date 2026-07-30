@@ -43,4 +43,31 @@ describe('newsletters collection', () => {
       payload.update({ collection: 'newsletters', id: doc.id, overrideAccess: true, data: { subject: 'Changed' } }),
     ).rejects.toThrow(/already been sent/i)
   })
+
+  it('duplicating a sent newsletter yields a fresh, editable draft', async () => {
+    const payload = await getTestPayload()
+    const doc = await payload.create({
+      collection: 'newsletters', overrideAccess: true,
+      data: { subject: 'August news', body: BODY },
+    })
+    await payload.update({
+      collection: 'newsletters', id: doc.id, overrideAccess: true,
+      data: { status: 'sent', sentAt: new Date().toISOString(), kitBroadcastId: '456', recipientCount: 9 },
+    })
+
+    const copy = await payload.duplicate({ collection: 'newsletters', id: doc.id, overrideAccess: true })
+    expect(copy.id).not.toBe(doc.id)
+    expect(copy.subject).toBe('Copy of August news')
+    expect(copy.status).toBe('draft')
+    expect(copy.sentAt ?? null).toBeNull()
+    expect(copy.kitBroadcastId ?? null).toBeNull()
+    expect(copy.recipientCount ?? null).toBeNull()
+
+    // The copy is editable (the original stays locked).
+    const edited = await payload.update({
+      collection: 'newsletters', id: copy.id, overrideAccess: true,
+      data: { subject: 'September news' },
+    })
+    expect(edited.subject).toBe('September news')
+  })
 })
