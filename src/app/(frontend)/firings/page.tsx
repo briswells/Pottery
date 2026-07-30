@@ -25,56 +25,63 @@ export default async function FiringsPage() {
   })
   // Whole-dollar prices read cleaner without cents ("$25", not "$25.00").
   const shelfPriceLabel = `$${(FIRING_HALF_SHELF_CENTS / 100).toFixed(2).replace(/\.00$/, '')}`
+  const imageUrl = mediaUrl(page.image)
 
   return (
-    <div style={{ padding: '40px 0', maxWidth: 680 }}>
-      <h1>{page.headline}</h1>
-      {page.intro && <p style={{ color: 'var(--pp-muted)', lineHeight: 1.7, maxWidth: 560 }}>{page.intro}</p>}
+    <div style={{ padding: '40px 0 56px' }}>
+      <div className="pp-kicker">Cone 10 · last Friday of every month</div>
+      <h1 style={{ marginTop: 8 }}>{page.headline}</h1>
 
-      {mediaUrl(page.image) && (
-        <img
-          src={mediaUrl(page.image)!}
-          alt={mediaAlt(page.image) || page.headline}
-          style={{ width: '100%', borderRadius: 8, marginTop: 8, display: 'block' }}
-        />
-      )}
+      <div className="pp-firings-grid">
+        {/* Left: the story — what this is and how it goes */}
+        <div>
+          {page.intro && (
+            <p style={{ color: 'var(--pp-muted)', lineHeight: 1.7, fontSize: 17 }}>{page.intro}</p>
+          )}
 
-      {page.steps && page.steps.length > 0 && (
-        <>
-          <h2 style={{ fontSize: 20, marginBottom: 12 }}>How it works</h2>
-          <ol style={{ lineHeight: 1.7, paddingLeft: 20 }}>
-            {page.steps.map((s, i) => (
-              <li key={i}>{s.step}</li>
-            ))}
-          </ol>
-        </>
-      )}
+          {page.steps && page.steps.length > 0 && (
+            <>
+              <h2 style={{ fontSize: 20, margin: '26px 0 6px' }}>How it works</h2>
+              <ol className="pp-firings-steps">
+                {page.steps.map((s, i) => (
+                  <li key={i}>{s.step}</li>
+                ))}
+              </ol>
+            </>
+          )}
 
-      {page.pricingNote && <p style={{ marginTop: 16, fontWeight: 600 }}>{page.pricingNote}</p>}
+          {page.pricingNote && <p style={{ marginTop: 10, fontWeight: 600 }}>{page.pricingNote}</p>}
+        </div>
 
-      <div
-        style={{
-          marginTop: 20,
-          padding: '14px 16px',
-          background: 'var(--pp-cream)',
-          borderLeft: '4px solid var(--pp-terracotta)',
-          borderRadius: 4,
-        }}
-      >
-        <strong>Stoneware only.</strong> We fire to Cone 10 — no earthenware, no low-fire clay, and
-        no porcelain (even high-fire porcelain).
+        {/* Right: the photo with the "kiln ticket" — the three facts that decide a request */}
+        <div>
+          {imageUrl && (
+            <img
+              className="pp-firings-photo"
+              src={imageUrl}
+              alt={mediaAlt(page.image) || page.headline}
+            />
+          )}
+          <div className={`pp-firing-ticket${imageUrl ? ' pp-firing-ticket--overlap' : ''}`}>
+            <div className="pp-kicker">Next firing</div>
+            <div className="pp-firing-ticket-date">{nextDateLabel}</div>
+            <hr className="pp-firing-ticket-rule" />
+            <p className="pp-firing-ticket-fact">
+              <strong>{shelfPriceLabel}</strong> per half shelf (11″ × 22″ × 6″) · up to {MAX_HALF_SHELVES} per
+              request
+            </p>
+            <p className="pp-firing-ticket-fact pp-firing-ticket-warn">
+              <strong>Stoneware only.</strong> We fire to Cone 10 — no earthenware, no low-fire clay, and no
+              porcelain (even high-fire porcelain).
+            </p>
+          </div>
+        </div>
       </div>
 
-      <p style={{ marginTop: 16 }}>
-        Half shelf (11″ × 22″ × 6″) — {shelfPriceLabel} each, up to {MAX_HALF_SHELVES} per request.
-      </p>
-
-      <p style={{ marginTop: 8 }}>
-        Next firing: <strong>{nextDateLabel}</strong> — we fire the last Friday of every month.
-      </p>
-
-      <h2 style={{ fontSize: 20, marginTop: 28, marginBottom: 4 }}>Request a firing</h2>
-      <FiringRequestForm />
+      <div className="pp-firings-form-section">
+        <h2 style={{ fontSize: 22, marginBottom: 4 }}>Request a firing</h2>
+        <FiringRequestForm />
+      </div>
     </div>
   )
 }

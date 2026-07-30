@@ -637,6 +637,85 @@ a { color: var(--pp-terracotta); }
   margin: 0 0 20px;
 }
 
+/* ─── FIRINGS PAGE ───────────────────────────────────────────── */
+.pp-firings-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 48px;
+  align-items: start;
+  margin-top: 12px;
+}
+/* Numbered how-it-works: a real sequence, so the numerals carry weight —
+   Fraunces terracotta figures instead of browser list numbers. */
+.pp-firings-steps {
+  list-style: none;
+  counter-reset: firing-step;
+  margin: 12px 0 0;
+  padding: 0;
+}
+.pp-firings-steps li {
+  counter-increment: firing-step;
+  position: relative;
+  padding: 2px 0 18px 46px;
+  line-height: 1.65;
+}
+.pp-firings-steps li::before {
+  content: counter(firing-step);
+  position: absolute;
+  left: 0;
+  top: -4px;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--pp-terracotta);
+}
+/* Thin guide line connecting the steps, stopping at the last one. */
+.pp-firings-steps li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 30px;
+  bottom: 2px;
+  width: 1px;
+  background: rgba(168, 80, 47, 0.25);
+}
+.pp-firings-photo {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+}
+/* The kiln ticket: the three facts that decide a request. Overlaps the photo's
+   bottom edge so image + card read as one composed object. */
+.pp-firing-ticket {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(46, 42, 38, 0.12);
+  padding: 20px 22px;
+  position: relative;
+}
+.pp-firing-ticket--overlap { margin: -44px 18px 0; }
+.pp-firing-ticket-date {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 24px;
+  line-height: 1.2;
+  margin-top: 4px;
+}
+.pp-firing-ticket-rule {
+  border: 0;
+  border-top: 1px solid rgba(46, 42, 38, 0.12);
+  margin: 14px 0;
+}
+.pp-firing-ticket-fact { margin: 0 0 10px; font-size: 14.5px; line-height: 1.6; }
+.pp-firing-ticket-warn {
+  background: var(--pp-cream);
+  border-left: 3px solid var(--pp-terracotta);
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin-bottom: 0;
+}
+.pp-firings-form-section { max-width: 620px; margin-top: 48px; }
+
 /* ─── MULTI-COLUMN FOOTER ────────────────────────────────────── */
 .pp-footer {
   background: var(--pp-charcoal);
@@ -770,6 +849,8 @@ a { color: var(--pp-terracotta); }
     gap: 36px 32px;
   }
   .pp-footer-brand { grid-column: 1 / -1; }
+  .pp-firings-grid { grid-template-columns: 1fr; gap: 32px; }
+  .pp-firing-ticket--overlap { margin: -36px 14px 0; }
 }
 @media (max-width: 700px) {
   .pp-row { grid-template-columns: 1fr; gap: 28px; }
