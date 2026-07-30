@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import type { Payload } from 'payload'
 import { getTestPayload } from './helpers'
 import { previewSeries, createSeries } from '../../src/services/class-series'
@@ -23,6 +23,22 @@ beforeAll(async () => {
     data: { title: `Wheel Basics ${unique}`, defaultPriceCents: 5500, defaultCapacity: 8, defaultNumberOfClasses: 4 },
   })
   classId = cls.id as number
+})
+
+afterAll(async () => {
+  // Clean up so this file's fixtures don't pollute the rest of the int suite
+  // (a class with leftover child instances fails other files' deletes/assertions).
+  try {
+    await payload.delete({
+      collection: 'class-instances',
+      where: { class: { equals: classId } },
+      overrideAccess: true,
+    })
+    await payload.delete({ collection: 'classes', id: classId, overrideAccess: true })
+    await payload.delete({ collection: 'users', id: instructorId, overrideAccess: true })
+  } catch (e) {
+    payload.logger.error(`class-series test cleanup failed: ${e instanceof Error ? e.message : e}`)
+  }
 })
 
 const RULE: RecurrenceRule = { kind: 'ordinalWeekday', weekday: 'TU', ordinals: [1, 3] }
