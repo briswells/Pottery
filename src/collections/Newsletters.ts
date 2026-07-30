@@ -12,7 +12,7 @@ export const Newsletters: CollectionConfig = {
   slug: 'newsletters',
   admin: {
     useAsTitle: 'subject',
-    group: 'Studio',
+    group: 'Communications',
     defaultColumns: ['subject', 'status', 'sentAt', 'recipientCount'],
     description: 'Compose a newsletter, proof it with “Send test to me”, then send it to the mailing list.',
   },
