@@ -1,15 +1,8 @@
-import type { Endpoint, PayloadRequest } from 'payload'
+import type { Endpoint } from 'payload'
 import { countKitSubscribers, createKitBroadcast, kitEnabled } from '../lib/kit'
 import { sendEmail } from '../lib/email'
 import { sendNewsletter, sendNewsletterTest } from '../services/newsletter'
-
-/** Staff = admin or editor from the users collection (matches isAdminOrEditor). */
-function isStaff(req: PayloadRequest): boolean {
-  const user = req.user
-  return Boolean(
-    user && user.collection === 'users' && user.roles?.some((r: string) => r === 'admin' || r === 'editor'),
-  )
-}
+import { isStaffRequest } from '../lib/staff-request'
 
 /**
  * Custom REST endpoints mounted under /api/newsletters by Payload, so req.user
@@ -20,7 +13,7 @@ export const newsletterEndpoints: Endpoint[] = [
     path: '/subscriber-count',
     method: 'get',
     handler: async (req) => {
-      if (!isStaff(req)) return Response.json({ error: 'Forbidden' }, { status: 403 })
+      if (!isStaffRequest(req)) return Response.json({ error: 'Forbidden' }, { status: 403 })
       if (!kitEnabled()) return Response.json({ error: 'Kit is not configured (KIT_API_KEY).' }, { status: 503 })
       try {
         return Response.json({ total: await countKitSubscribers() })
@@ -33,7 +26,7 @@ export const newsletterEndpoints: Endpoint[] = [
     path: '/:id/send',
     method: 'post',
     handler: async (req) => {
-      if (!isStaff(req)) return Response.json({ error: 'Forbidden' }, { status: 403 })
+      if (!isStaffRequest(req)) return Response.json({ error: 'Forbidden' }, { status: 403 })
       if (!kitEnabled()) return Response.json({ error: 'Kit is not configured (KIT_API_KEY).' }, { status: 503 })
       const result = await sendNewsletter(
         { payload: req.payload, countSubscribers: countKitSubscribers, createBroadcast: createKitBroadcast },
@@ -47,7 +40,7 @@ export const newsletterEndpoints: Endpoint[] = [
     path: '/:id/test',
     method: 'post',
     handler: async (req) => {
-      if (!isStaff(req) || !req.user?.email) return Response.json({ error: 'Forbidden' }, { status: 403 })
+      if (!isStaffRequest(req) || !req.user?.email) return Response.json({ error: 'Forbidden' }, { status: 403 })
       const result = await sendNewsletterTest(
         { payload: req.payload, sendEmail },
         { id: String(req.routeParams?.id ?? ''), to: req.user.email },

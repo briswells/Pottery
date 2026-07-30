@@ -1,12 +1,6 @@
-import type { Endpoint, PayloadRequest } from 'payload'
+import type { Endpoint } from 'payload'
 import { createKitSubscriber, kitEnabled, unsubscribeKitSubscriber } from '../lib/kit'
-
-function isStaff(req: PayloadRequest): boolean {
-  const user = req.user
-  return Boolean(
-    user && user.collection === 'users' && user.roles?.some((r: string) => r === 'admin' || r === 'editor'),
-  )
-}
+import { isStaffRequest } from '../lib/staff-request'
 
 /** Root-level endpoints (mounted at /api/…) for managing Kit subscribers from
  *  the admin Subscribers view. Staff-only; Kit remains the source of truth. */
@@ -15,7 +9,7 @@ export const newsletterSubscriberEndpoints: Endpoint[] = [
     path: '/newsletter-subscribers',
     method: 'post',
     handler: async (req) => {
-      if (!isStaff(req)) return Response.json({ error: 'Forbidden' }, { status: 403 })
+      if (!isStaffRequest(req)) return Response.json({ error: 'Forbidden' }, { status: 403 })
       if (!kitEnabled()) return Response.json({ error: 'Kit is not configured (KIT_API_KEY).' }, { status: 503 })
       const body = req.json ? await req.json().catch(() => null) : null
       const email = String(body?.email ?? '').trim()
@@ -38,7 +32,7 @@ export const newsletterSubscriberEndpoints: Endpoint[] = [
     path: '/newsletter-subscribers/unsubscribe',
     method: 'post',
     handler: async (req) => {
-      if (!isStaff(req)) return Response.json({ error: 'Forbidden' }, { status: 403 })
+      if (!isStaffRequest(req)) return Response.json({ error: 'Forbidden' }, { status: 403 })
       if (!kitEnabled()) return Response.json({ error: 'Kit is not configured (KIT_API_KEY).' }, { status: 503 })
       const body = req.json ? await req.json().catch(() => null) : null
       const id = Number(body?.id)
