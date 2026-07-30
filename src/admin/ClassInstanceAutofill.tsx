@@ -14,10 +14,14 @@ export const ClassInstanceAutofill: React.FC = () => {
   const { value: classValue } = useField<ClassValue>({ path: 'class' })
   const { value: title, setValue: setTitle } = useField<string | null | undefined>({ path: 'label' })
   const { value: count, setValue: setCount } = useField<number | null | undefined>({ path: 'numberOfClasses' })
+  const { value: price, setValue: setPrice } = useField<number | null | undefined>({ path: 'priceCents' })
+  const { value: capacity, setValue: setCapacity } = useField<number | null | undefined>({ path: 'capacity' })
 
   const appliedFor = useRef<string | number | null>(null)
   const lastAutoTitle = useRef<string | null>(null)
   const lastAutoCount = useRef<number | null>(null)
+  const lastAutoPrice = useRef<number | null>(null)
+  const lastAutoCapacity = useRef<number | null>(null)
 
   const classId = classValue && typeof classValue === 'object' ? classValue.id : classValue
 
@@ -40,6 +44,17 @@ export const ClassInstanceAutofill: React.FC = () => {
         if (cls.defaultNumberOfClasses != null && (count == null || count === lastAutoCount.current)) {
           setCount(cls.defaultNumberOfClasses)
           lastAutoCount.current = cls.defaultNumberOfClasses
+        }
+        // Price and capacity were previously filled invisibly by the server on
+        // save; showing them here lets admins see (and override) what a class
+        // will cost and hold before publishing.
+        if (cls.defaultPriceCents != null && (price == null || price === lastAutoPrice.current)) {
+          setPrice(cls.defaultPriceCents)
+          lastAutoPrice.current = cls.defaultPriceCents
+        }
+        if (cls.defaultCapacity != null && (capacity == null || capacity === lastAutoCapacity.current)) {
+          setCapacity(cls.defaultCapacity)
+          lastAutoCapacity.current = cls.defaultCapacity
         }
       } catch {
         /* leave fields as-is on any fetch error */

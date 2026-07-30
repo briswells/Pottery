@@ -39,6 +39,9 @@ function prettyDate(ymd: string): string {
 
 export function ScheduleSeriesForm() {
   const [classes, setClasses] = useState<Option[]>([])
+  const [classDefaults, setClassDefaults] = useState<
+    Record<string, { priceCents?: number | null; capacity?: number | null }>
+  >({})
   const [instructors, setInstructors] = useState<Option[]>([])
   const [classId, setClassId] = useState('')
   const [instructorId, setInstructorId] = useState('')
@@ -70,7 +73,12 @@ export function ScheduleSeriesForm() {
         ])
         if (clsRes.ok) {
           const data = await clsRes.json()
-          setClasses(data.docs.map((c: { id: number; title: string }) => ({ id: c.id, label: c.title })))
+          const docs: { id: number; title: string; defaultPriceCents?: number | null; defaultCapacity?: number | null }[] =
+            data.docs
+          setClasses(docs.map((c) => ({ id: c.id, label: c.title })))
+          setClassDefaults(
+            Object.fromEntries(docs.map((c) => [String(c.id), { priceCents: c.defaultPriceCents, capacity: c.defaultCapacity }])),
+          )
         }
         if (usersRes.ok) {
           const data = await usersRes.json()
@@ -171,7 +179,19 @@ export function ScheduleSeriesForm() {
       <div style={rowStyle}>
         <label style={labelStyle}>
           Class
-          <select style={inputStyle} value={classId} onChange={(e) => setClassId(e.target.value)}>
+          <select
+            style={inputStyle}
+            value={classId}
+            onChange={(e) => {
+              const id = e.target.value
+              setClassId(id)
+              // Show the picked class's price/capacity so what gets published is
+              // visible up front — both stay editable.
+              const d = classDefaults[id]
+              setCapacity(d?.capacity != null ? String(d.capacity) : '')
+              setPrice(d?.priceCents != null ? String(d.priceCents / 100) : '')
+            }}
+          >
             <option value="">Choose…</option>
             {classes.map((c) => (
               <option key={c.id} value={c.id}>{c.label}</option>
@@ -203,12 +223,12 @@ export function ScheduleSeriesForm() {
           <input style={inputStyle} value={endTime} onChange={(e) => setEndTime(e.target.value)} placeholder="20:00" />
         </label>
         <label style={labelStyle}>
-          Capacity (optional)
-          <input style={{ ...inputStyle, width: 90 }} type="number" min={1} value={capacity} onChange={(e) => setCapacity(e.target.value)} placeholder="default" />
+          Capacity
+          <input style={{ ...inputStyle, width: 90 }} type="number" min={1} value={capacity} onChange={(e) => setCapacity(e.target.value)} placeholder="from class" />
         </label>
         <label style={labelStyle}>
-          Price $ (optional)
-          <input style={{ ...inputStyle, width: 90 }} type="number" min={0} step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="default" />
+          Price $
+          <input style={{ ...inputStyle, width: 90 }} type="number" min={0} step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="from class" />
         </label>
       </div>
 
