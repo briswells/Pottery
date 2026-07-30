@@ -69,6 +69,7 @@ export default buildConfig({
           path: '/newsletter-subscribers',
           exact: true,
         },
+        scheduleSeries: { Component: '/admin/views/ScheduleSeries#default', path: '/schedule-series', exact: true },
       },
     },
   },

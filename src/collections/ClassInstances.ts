@@ -31,6 +31,7 @@ export const ClassInstances: CollectionConfig = {
     // focused on what's upcoming. Their rosters stay reachable via Bookings
     // and the instructors' My Classes view.
     baseListFilter: () => ({ status: { not_equals: 'completed' } }),
+    components: { beforeListTable: ['/admin/ScheduleSeriesButton#default'] },
   },
   access: {
     read: readAccess,

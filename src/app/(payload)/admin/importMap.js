@@ -1,6 +1,7 @@
 import { PriceCell as PriceCell_57d84a47eaf96e985f4972caf0fec83c } from '../../../admin/PriceCell'
 import { PriceField as PriceField_72771f0a201d8559f61235df937c801f } from '../../../admin/PriceField'
 import { ClassInstanceAutofill as ClassInstanceAutofill_b13cbfd49157f97f30d6b40dd1f0e704 } from '../../../admin/ClassInstanceAutofill'
+import { default as default_d622555d98e502fd609240e93e380e21 } from '../../../admin/ScheduleSeriesButton'
 import { default as default_80a93894162e76a36f4630e085654aa6 } from '../../../admin/NewsletterSend'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -33,6 +34,7 @@ import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc056
 import { default as default_cf537fe5b5184f117c20993b2cf0e347 } from '../../../admin/views/MyClasses'
 import { default as default_d115c6c8ac0c7d6e6b2012866f1b7660 } from '../../../admin/views/MyClassRoster'
 import { default as default_a7e3d5c545cf4dde35aba19368779b3a } from '../../../admin/views/Subscribers'
+import { default as default_b1ecbf15616d28f9526bdca4c3b4bc93 } from '../../../admin/views/ScheduleSeries'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -40,6 +42,7 @@ export const importMap = {
   "/admin/PriceCell#PriceCell": PriceCell_57d84a47eaf96e985f4972caf0fec83c,
   "/admin/PriceField#PriceField": PriceField_72771f0a201d8559f61235df937c801f,
   "/admin/ClassInstanceAutofill#ClassInstanceAutofill": ClassInstanceAutofill_b13cbfd49157f97f30d6b40dd1f0e704,
+  "/admin/ScheduleSeriesButton#default": default_d622555d98e502fd609240e93e380e21,
   "/admin/NewsletterSend#default": default_80a93894162e76a36f4630e085654aa6,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -72,5 +75,6 @@ export const importMap = {
   "/admin/views/MyClasses#default": default_cf537fe5b5184f117c20993b2cf0e347,
   "/admin/views/MyClassRoster#default": default_d115c6c8ac0c7d6e6b2012866f1b7660,
   "/admin/views/Subscribers#default": default_a7e3d5c545cf4dde35aba19368779b3a,
+  "/admin/views/ScheduleSeries#default": default_b1ecbf15616d28f9526bdca4c3b4bc93,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }
