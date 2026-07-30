@@ -10,6 +10,10 @@ export const FiringsPage: GlobalConfig = {
     { name: 'headline', type: 'text', required: true, defaultValue: 'Custom Cone 10 Firings' },
     { name: 'intro', type: 'textarea', defaultValue: "Bring us your work and we’ll fire it to Cone 10. Tell us about your piece below and we’ll quote a price based on its size." },
     {
+      name: 'image', type: 'upload', relationTo: 'media',
+      admin: { description: 'Shown under the intro — e.g. a photo of the kiln or fired work.' },
+    },
+    {
       name: 'steps', type: 'array', labels: { singular: 'Step', plural: 'Steps' },
       fields: [{ name: 'step', type: 'text', required: true }],
       defaultValue: [

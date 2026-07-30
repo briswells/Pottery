@@ -1,6 +1,7 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { FiringRequestForm } from './FiringRequestForm'
+import { mediaUrl, mediaAlt } from '../../../lib/media'
 import { nextFiringDate } from '../../../lib/firing-date'
 import { MAX_HALF_SHELVES, FIRING_HALF_SHELF_CENTS } from '../../../lib/firing-pricing'
 
@@ -29,6 +30,14 @@ export default async function FiringsPage() {
     <div style={{ padding: '40px 0', maxWidth: 680 }}>
       <h1>{page.headline}</h1>
       {page.intro && <p style={{ color: 'var(--pp-muted)', lineHeight: 1.7, maxWidth: 560 }}>{page.intro}</p>}
+
+      {mediaUrl(page.image) && (
+        <img
+          src={mediaUrl(page.image)!}
+          alt={mediaAlt(page.image) || page.headline}
+          style={{ width: '100%', borderRadius: 8, marginTop: 8, display: 'block' }}
+        />
+      )}
 
       {page.steps && page.steps.length > 0 && (
         <>

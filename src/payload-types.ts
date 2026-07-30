@@ -1176,6 +1176,10 @@ export interface FiringsPage {
   id: number;
   headline: string;
   intro?: string | null;
+  /**
+   * Shown under the intro — e.g. a photo of the kiln or fired work.
+   */
+  image?: (number | null) | Media;
   steps?:
     | {
         step: string;
@@ -1265,6 +1269,7 @@ export interface MembershipPageSelect<T extends boolean = true> {
 export interface FiringsPageSelect<T extends boolean = true> {
   headline?: T;
   intro?: T;
+  image?: T;
   steps?:
     | T
     | {

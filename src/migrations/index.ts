@@ -11,6 +11,7 @@ import * as migration_20260707_184022_add_coupons from './20260707_184022_add_co
 import * as migration_20260708_214254_paid_firings from './20260708_214254_paid_firings';
 import * as migration_20260709_152629_firing_dropped_off from './20260709_152629_firing_dropped_off';
 import * as migration_20260715_221422_newsletters from './20260715_221422_newsletters';
+import * as migration_20260730_004506_firings_page_image from './20260730_004506_firings_page_image';
 
 export const migrations = [
   {
@@ -76,6 +77,11 @@ export const migrations = [
   {
     up: migration_20260715_221422_newsletters.up,
     down: migration_20260715_221422_newsletters.down,
-    name: '20260715_221422_newsletters'
+    name: '20260715_221422_newsletters',
+  },
+  {
+    up: migration_20260730_004506_firings_page_image.up,
+    down: migration_20260730_004506_firings_page_image.down,
+    name: '20260730_004506_firings_page_image'
   },
 ];
