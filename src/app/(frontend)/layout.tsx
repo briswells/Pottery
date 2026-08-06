@@ -53,6 +53,7 @@ export default async function FrontendLayout({ children }: { children: React.Rea
           email={resolveNotifyEmail(settings.email)}
           hours={settings.hours}
           socials={settings.socials}
+          newsletterInNav={settings.newsletterInNav ?? false}
         />
         <main className="pp-container">{children}</main>
         <Footer

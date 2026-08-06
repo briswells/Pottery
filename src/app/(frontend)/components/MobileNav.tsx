@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-export function MobileNav() {
+export function MobileNav({ newsletterInNav }: { newsletterInNav?: boolean }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -34,7 +34,11 @@ export function MobileNav() {
         aria-label="Mobile navigation"
       >
         <Link href="/" onClick={() => setOpen(false)}>Home</Link>
-        <Link href="/classes" onClick={() => setOpen(false)}>Classes</Link>
+        {newsletterInNav ? (
+          <Link href="/newsletter" onClick={() => setOpen(false)}>Newsletter</Link>
+        ) : (
+          <Link href="/classes" onClick={() => setOpen(false)}>Classes</Link>
+        )}
         <Link href="/membership" onClick={() => setOpen(false)}>Membership</Link>
         <Link href="/firings" onClick={() => setOpen(false)}>Firings</Link>
         <Link href="/gallery" onClick={() => setOpen(false)}>Gallery</Link>

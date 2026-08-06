@@ -10,6 +10,7 @@ export function Header({
   email,
   hours,
   socials,
+  newsletterInNav,
 }: {
   studioName: string
   logoUrl: string | null
@@ -17,6 +18,7 @@ export function Header({
   email?: string | null
   hours?: { days?: string | null; time?: string | null }[] | null
   socials?: Socials | null
+  newsletterInNav?: boolean
 }) {
   // Short hours summary for utility bar — take first entry or default
   const h = hours?.[0] ?? null
@@ -71,7 +73,11 @@ export function Header({
         {/* Desktop nav */}
         <nav className="pp-nav" aria-label="Main navigation">
           <Link href="/">Home</Link>
-          <Link href="/classes">Classes</Link>
+          {newsletterInNav ? (
+            <Link href="/newsletter">Newsletter</Link>
+          ) : (
+            <Link href="/classes">Classes</Link>
+          )}
           <Link href="/membership">Membership</Link>
           <Link href="/firings">Firings</Link>
           <Link href="/gallery">Gallery</Link>
@@ -82,7 +88,7 @@ export function Header({
         </nav>
 
         {/* Mobile nav (client component for toggle) */}
-        <MobileNav />
+        <MobileNav newsletterInNav={newsletterInNav} />
       </div>
     </div>
   )
