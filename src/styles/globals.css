@@ -728,6 +728,16 @@ a { color: var(--pp-terracotta); }
   padding: 10px 12px;
   margin-bottom: 0;
 }
+
+/* ─── PROSE (rendered newsletter body) ───────────────────────── */
+.pp-prose { margin-top: 24px; font-size: 16.5px; line-height: 1.7; color: var(--pp-charcoal); }
+.pp-prose h2, .pp-prose h3 { margin: 28px 0 8px; }
+.pp-prose p { margin: 0 0 14px; }
+.pp-prose ul, .pp-prose ol { margin: 0 0 14px; padding-left: 22px; }
+.pp-prose li { margin-bottom: 6px; }
+.pp-prose img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
+.pp-prose a { color: var(--pp-terracotta); }
+
 /* ─── MULTI-COLUMN FOOTER ────────────────────────────────────── */
 .pp-footer {
   background: var(--pp-charcoal);
