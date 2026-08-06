@@ -73,11 +73,8 @@ export function Header({
         {/* Desktop nav */}
         <nav className="pp-nav" aria-label="Main navigation">
           <Link href="/">Home</Link>
-          {newsletterInNav ? (
-            <Link href="/newsletter">Newsletter</Link>
-          ) : (
-            <Link href="/classes">Classes</Link>
-          )}
+          {/* Classes has no nav link — the "Book a class" CTA covers it. */}
+          {newsletterInNav && <Link href="/newsletter">Newsletter</Link>}
           <Link href="/membership">Membership</Link>
           <Link href="/firings">Firings</Link>
           <Link href="/gallery">Gallery</Link>
