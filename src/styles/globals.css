@@ -735,7 +735,9 @@ a { color: var(--pp-terracotta); }
 .pp-prose p { margin: 0 0 14px; }
 .pp-prose ul, .pp-prose ol { margin: 0 0 14px; padding-left: 22px; }
 .pp-prose li { margin-bottom: 6px; }
-.pp-prose img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
+/* height:auto beats the fixed height attribute the rich-text converter puts
+   on images — without it, capping the width stretches the picture. */
+.pp-prose img { max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; }
 .pp-prose a { color: var(--pp-terracotta); }
 
 /* ─── MULTI-COLUMN FOOTER ────────────────────────────────────── */

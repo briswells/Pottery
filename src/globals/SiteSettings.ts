@@ -28,7 +28,7 @@ export const SiteSettings: GlobalConfig = {
       name: 'newsletterInNav', type: 'checkbox', defaultValue: false,
       admin: {
         position: 'sidebar',
-        description: 'Show “Newsletter” in the site menu. (Classes has no menu link — the “Book a class” button covers it.)',
+        description: 'Show “Newsletter” in the site menu.',
       },
     },
   ],
