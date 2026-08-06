@@ -12,6 +12,7 @@ import * as migration_20260708_214254_paid_firings from './20260708_214254_paid_
 import * as migration_20260709_152629_firing_dropped_off from './20260709_152629_firing_dropped_off';
 import * as migration_20260715_221422_newsletters from './20260715_221422_newsletters';
 import * as migration_20260730_004506_firings_page_image from './20260730_004506_firings_page_image';
+import * as migration_20260806_163747_newsletter_in_nav from './20260806_163747_newsletter_in_nav';
 
 export const migrations = [
   {
@@ -82,6 +83,11 @@ export const migrations = [
   {
     up: migration_20260730_004506_firings_page_image.up,
     down: migration_20260730_004506_firings_page_image.down,
-    name: '20260730_004506_firings_page_image'
+    name: '20260730_004506_firings_page_image',
+  },
+  {
+    up: migration_20260806_163747_newsletter_in_nav.up,
+    down: migration_20260806_163747_newsletter_in_nav.down,
+    name: '20260806_163747_newsletter_in_nav'
   },
 ];

@@ -1119,6 +1119,10 @@ export interface SiteSetting {
    * Browser tab icon for the public site. Use a square image — a .png, .svg, or .ico works best.
    */
   favicon?: (number | null) | Media;
+  /**
+   * Show “Newsletter” in the site menu instead of the “Classes” link. The “Book a class” button is unaffected.
+   */
+  newsletterInNav?: boolean | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1215,6 +1219,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
       };
   logo?: T;
   favicon?: T;
+  newsletterInNav?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

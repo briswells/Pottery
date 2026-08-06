@@ -144,6 +144,21 @@ export async function sendNewsletter(
   }
 }
 
+/** The most recently sent newsletter, or null. Server-side only: this
+ *  deliberately bypasses the collection's admin-only read access, and can
+ *  expose nothing beyond already-sent issues. */
+export async function getLatestSentNewsletter(payload: Payload): Promise<Newsletter | null> {
+  const { docs } = await payload.find({
+    collection: 'newsletters',
+    where: { status: { equals: 'sent' } },
+    sort: '-sentAt',
+    limit: 1,
+    depth: 2, // populate upload nodes inside the rich-text body for rendering
+    overrideAccess: true,
+  })
+  return (docs[0] as Newsletter | undefined) ?? null
+}
+
 /** Email the rendered newsletter to one address (the logged-in admin) for proofing. */
 export async function sendNewsletterTest(
   deps: { payload: Payload; sendEmail: (input: EmailInput) => Promise<void> },
