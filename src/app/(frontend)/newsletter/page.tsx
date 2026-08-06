@@ -42,6 +42,8 @@ export default async function NewsletterPage() {
 
       <h2 style={{ fontSize: 20, marginTop: 40, marginBottom: 4 }}>Get the next one in your inbox</h2>
       <div style={{ maxWidth: 420 }}>
+        {/* Server clock, captured fresh per request (page is force-dynamic). */}
+        {/* eslint-disable-next-line react-hooks/purity */}
         <NewsletterSignup startedAt={Date.now()} />
       </div>
     </div>
