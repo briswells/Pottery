@@ -4,6 +4,11 @@ import { getTestPayload } from './helpers'
 describe('Instructor access scoping', () => {
   afterAll(async () => {
     const payload = await getTestPayload()
+    // Bookings first: the delete-guard hook silently skips booked instances
+    // (payload.delete collects per-doc errors), and a surviving instance then
+    // aborts the classes wipe with an FK violation. File order is timing-cache
+    // dependent, so leftovers from booking suites can land here in any run.
+    await payload.delete({ collection: 'bookings', where: {} })
     await payload.delete({ collection: 'class-instances', where: {} })
     await payload.delete({ collection: 'classes', where: {} })
   })
