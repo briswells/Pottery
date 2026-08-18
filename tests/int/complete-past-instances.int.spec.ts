@@ -5,34 +5,41 @@ import { completePastInstances } from '../../src/services/complete-past-instance
 // A fixed "now": noon Pacific on 2026-07-15.
 const NOW = new Date('2026-07-15T19:00:00.000Z')
 
+// Track fixtures for cleanup
+const fixtures = {
+  bookings: new Set<number>(),
+  instances: new Set<number>(),
+  classes: new Set<number>(),
+  users: new Set<number>(),
+}
+
 async function makeClass(payload: any) {
-  return payload.create({ collection: 'classes', data: {
+  const cls = await payload.create({ collection: 'classes', data: {
     title: `Past Class ${Date.now()}-${Math.random()}`,
     defaultPriceCents: 5000, defaultCapacity: 8,
   } })
+  fixtures.classes.add(cls.id)
+  return cls
 }
 
 async function makeInstructor(payload: any) {
-  return payload.create({ collection: 'users', data: {
+  const user = await payload.create({ collection: 'users', data: {
     name: 'Past Teacher', email: `past-${Date.now()}-${Math.random()}@test.local`,
     password: 'test12345', roles: ['instructor'],
   } })
+  fixtures.users.add(user.id)
+  return user
 }
 
 async function makeInstance(payload: any, cls: any, user: any, data: Record<string, unknown>) {
-  return payload.create({ collection: 'class-instances', data: {
+  const inst = await payload.create({ collection: 'class-instances', data: {
     class: cls.id, instructor: user.id, startTime: '12:30', endTime: '14:30', ...data,
   } })
+  fixtures.instances.add(inst.id)
+  return inst
 }
 
 describe('completePastInstances', () => {
-  afterAll(async () => {
-    const payload = await getTestPayload()
-    await payload.delete({ collection: 'bookings', where: {} })
-    await payload.delete({ collection: 'class-instances', where: {} })
-    await payload.delete({ collection: 'classes', where: {} })
-  })
-
   it('completes past published instances and leaves future/draft/cancelled alone', async () => {
     const payload = await getTestPayload()
     const cls = await makeClass(payload)
@@ -76,10 +83,11 @@ describe('class instance deletion guard', () => {
     const cls = await makeClass(payload)
     const user = await makeInstructor(payload)
     const inst = await makeInstance(payload, cls, user, { startDate: '2026-07-11', status: 'published' })
-    await payload.create({ collection: 'bookings', data: {
+    const booking = await payload.create({ collection: 'bookings', data: {
       classInstance: inst.id, customerName: 'Madison Stone', customerEmail: 'madison@test.local',
       status: 'paid', amountCents: 9500,
     } })
+    fixtures.bookings.add(booking.id)
 
     const err = await payload
       .delete({ collection: 'class-instances', id: inst.id })
@@ -103,4 +111,30 @@ describe('class instance deletion guard', () => {
       .then(() => null, (e: Error) => e)
     expect(gone).toBeInstanceOf(Error)
   })
+})
+
+// Clean up so this file's fixtures don't pollute the rest of the int suite
+afterAll(async () => {
+  const payload = await getTestPayload()
+  try {
+    // Delete in FK-safe order: bookings → instances → classes → users
+    for (const id of fixtures.bookings) {
+      await payload.delete({ collection: 'bookings', id, overrideAccess: true })
+    }
+    for (const id of fixtures.instances) {
+      try {
+        await payload.delete({ collection: 'class-instances', id, overrideAccess: true })
+      } catch (e) {
+        // Instance might have been deleted by a test
+      }
+    }
+    for (const id of fixtures.classes) {
+      await payload.delete({ collection: 'classes', id, overrideAccess: true })
+    }
+    for (const id of fixtures.users) {
+      await payload.delete({ collection: 'users', id, overrideAccess: true })
+    }
+  } catch (e) {
+    payload.logger.error(`complete-past-instances test cleanup failed: ${e instanceof Error ? e.message : e}`)
+  }
 })
