@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { WalletButtons } from './WalletButtons'
+import { computeTotals } from '../../../../lib/tax'
 
 declare global {
   interface Window {
@@ -40,11 +41,13 @@ export function BookingForm({
   slug,
   priceCents,
   priceLabel,
+  taxRatePercent,
 }: {
   classInstanceId: string | number
   slug: string
   priceCents: number
   priceLabel: string
+  taxRatePercent: number
 }) {
   const router = useRouter()
   const cardRef = useRef<any>(null)
@@ -62,9 +65,14 @@ export function BookingForm({
   } | null>(null)
   const [couponMsg, setCouponMsg] = useState<string | null>(null)
 
-  const effectiveCents = applied ? applied.finalCents : priceCents
+  const totals = computeTotals({
+    subtotalCents: priceCents,
+    discountCents: applied?.discountCents ?? 0,
+    taxRatePercent,
+  })
+  const effectiveCents = totals.totalCents
   const effectiveLabel = `$${(effectiveCents / 100).toFixed(2)}`
-  const isFree = applied !== null && applied.finalCents === 0
+  const isFree = applied !== null && totals.totalCents === 0
 
   const formRef = useRef(form)
   useEffect(() => {
@@ -285,10 +293,25 @@ export function BookingForm({
               Apply
             </button>
           </div>
-          {applied && (
-            <p style={{ marginTop: 6, fontSize: 13 }}>
-              {applied.code} applied: <s>{priceLabel}</s> <strong>{effectiveLabel}</strong>
-            </p>
+          {(applied || totals.taxCents > 0) && (
+            <div style={{ marginTop: 10, fontSize: 14, display: 'grid', gap: 3, maxWidth: 260 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Subtotal</span><span>{priceLabel}</span>
+              </div>
+              {applied && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Coupon {applied.code}</span><span>−${(applied.discountCents / 100).toFixed(2)}</span>
+                </div>
+              )}
+              {totals.taxCents > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Sales tax ({taxRatePercent}%)</span><span>${(totals.taxCents / 100).toFixed(2)}</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, borderTop: '1px solid rgba(46,42,38,.15)', paddingTop: 3 }}>
+                <span>Total</span><span>{effectiveLabel}</span>
+              </div>
+            </div>
           )}
           {couponMsg && <p style={{ marginTop: 6, fontSize: 13, color: '#b3261e' }}>{couponMsg}</p>}
 

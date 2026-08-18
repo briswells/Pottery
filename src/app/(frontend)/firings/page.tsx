@@ -4,6 +4,7 @@ import { FiringRequestForm } from './FiringRequestForm'
 import { mediaUrl, mediaAlt } from '../../../lib/media'
 import { nextFiringDate } from '../../../lib/firing-date'
 import { MAX_HALF_SHELVES, FIRING_HALF_SHELF_CENTS } from '../../../lib/firing-pricing'
+import { getSalesTaxPercent } from '../../../lib/tax'
 
 export const metadata = {
   title: 'Firings',
@@ -15,6 +16,7 @@ export const dynamic = 'force-dynamic'
 export default async function FiringsPage() {
   const payload = await getPayload({ config: await config })
   const page = await payload.findGlobal({ slug: 'firings-page' })
+  const taxRatePercent = await getSalesTaxPercent(payload)
 
   const nextDate = nextFiringDate()
   const nextDateLabel = nextDate.toLocaleDateString('en-US', {
@@ -82,7 +84,7 @@ export default async function FiringsPage() {
 
         <div className="pp-firings-form-section">
           <h2 style={{ fontSize: 22, marginBottom: 4 }}>Request a firing</h2>
-          <FiringRequestForm />
+          <FiringRequestForm taxRatePercent={taxRatePercent} />
         </div>
       </div>
     </div>

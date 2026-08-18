@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { usd } from '../../../../../../lib/format'
 import { seatsRemaining } from '../../../../../../lib/occupancy'
 import { scheduleSummary } from '../../../../../../lib/schedule'
+import { getSalesTaxPercent } from '../../../../../../lib/tax'
 import { BookingForm } from '../../BookingForm'
 import type { Metadata } from 'next'
 
@@ -35,6 +36,7 @@ export default async function SignupPage({ params }: { params: Promise<{ slug: s
   if (!inst || inst.status !== 'published' || !cls || cls.slug !== slug) notFound()
 
   const remaining = await seatsRemaining(payload, inst.id)
+  const taxRatePercent = await getSalesTaxPercent(payload)
 
   return (
     <div style={{ padding: '40px 0', maxWidth: 720 }}>
@@ -42,7 +44,13 @@ export default async function SignupPage({ params }: { params: Promise<{ slug: s
       <div style={{ color: 'var(--pp-muted)' }}>{scheduleSummary(inst)}</div>
       <p style={{ fontSize: 22, fontWeight: 600 }}>{usd(inst.priceCents ?? 0)}</p>
       {remaining > 0 ? (
-        <BookingForm classInstanceId={inst.id} slug={slug} priceCents={inst.priceCents ?? 0} priceLabel={usd(inst.priceCents ?? 0)} />
+        <BookingForm
+          classInstanceId={inst.id}
+          slug={slug}
+          priceCents={inst.priceCents ?? 0}
+          priceLabel={usd(inst.priceCents ?? 0)}
+          taxRatePercent={taxRatePercent}
+        />
       ) : (
         <p style={{ fontWeight: 600 }}>This session is full.</p>
       )}
