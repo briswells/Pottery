@@ -170,8 +170,9 @@ describe('createPaidBooking', () => {
       // $50.00 instance, no coupon → tax $4.45, charge $54.45
       const inst = await makeInstance(payload, 5, 'published', 5000)
       const charge = vi.fn(async () => ({ paymentId: 'sq-tax-1', status: 'COMPLETED' }))
+      const sendEmail = vi.fn(async () => {})
       const booking = await createPaidBooking(
-        { payload, charge, sendEmail: vi.fn(async () => {}) },
+        { payload, charge, sendEmail },
         { classInstanceId: inst.id, sourceId: 'tok', customerName: 'Tax Test', customerEmail: 'tax-test@example.com' },
       )
       expect(charge).toHaveBeenCalledWith(expect.objectContaining({ amountCents: 5445 }))
@@ -180,6 +181,52 @@ describe('createPaidBooking', () => {
       const pay = await payload.find({ collection: 'payments', where: { booking: { equals: booking.id } }, overrideAccess: true, limit: 1 })
       expect(pay.docs[0]?.taxCents).toBe(445)
       expect(pay.docs[0]?.amountCents).toBe(5445)
+      // Confirmation email must call out the tax and the final charged total.
+      const emailArg: any = (sendEmail as any).mock.calls[0][0]
+      expect(emailArg.html).toContain('sales tax')
+      expect(emailArg.html).toContain('$54.45')
+    } finally {
+      await payload.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 0 }, overrideAccess: true })
+    }
+  })
+
+  it('succeeds when expectedTotalCents matches the server-computed total (8.9%)', async () => {
+    const payload = await getTestPayload()
+    await payload.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 8.9 }, overrideAccess: true })
+    try {
+      // $50.00 instance → total $54.45; the client displayed and posts the same total.
+      const inst = await makeInstance(payload, 5, 'published', 5000)
+      const charge = vi.fn(async () => ({ paymentId: 'sq-tax-expected', status: 'COMPLETED' }))
+      const booking = await createPaidBooking(
+        { payload, charge, sendEmail: vi.fn(async () => {}) },
+        {
+          classInstanceId: inst.id, sourceId: 'tok', customerName: 'Expected Total', customerEmail: 'tax-expected@example.com',
+          expectedTotalCents: 5445,
+        },
+      )
+      expect(charge).toHaveBeenCalledWith(expect.objectContaining({ amountCents: 5445 }))
+      expect(booking.amountCents).toBe(5445)
+    } finally {
+      await payload.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 0 }, overrideAccess: true })
+    }
+  })
+
+  it('refuses a stale expectedTotalCents and never charges the card (8.9%)', async () => {
+    const payload = await getTestPayload()
+    await payload.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 8.9 }, overrideAccess: true })
+    try {
+      // $50.00 instance → server total is $54.45, but the stale tab still shows
+      // the pre-tax $50.00 total — the charge must be refused, not silently taken.
+      const inst = await makeInstance(payload, 5, 'published', 5000)
+      const charge = vi.fn(async () => ({ paymentId: 'sq-tax-stale', status: 'COMPLETED' }))
+      await expect(createPaidBooking(
+        { payload, charge, sendEmail: vi.fn(async () => {}) },
+        {
+          classInstanceId: inst.id, sourceId: 'tok', customerName: 'Stale Total', customerEmail: 'tax-stale@example.com',
+          expectedTotalCents: 5000,
+        },
+      )).rejects.toThrow(/please refresh/i)
+      expect(charge).not.toHaveBeenCalled()
     } finally {
       await payload.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 0 }, overrideAccess: true })
     }

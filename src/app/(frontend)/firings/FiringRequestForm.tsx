@@ -183,6 +183,15 @@ export function FiringRequestForm({ taxRatePercent }: { taxRatePercent: number }
       if (sourceId) fd.append('sourceId', sourceId)
       if (appliedRef.current) fd.append('couponCode', appliedRef.current.code)
       for (const file of photosRef.current) fd.append('photos', file)
+      // Recompute fresh from the same inputs the render path uses (not a
+      // captured value) so this can never drift from what's on screen —
+      // the server rejects the charge if this doesn't match its own total.
+      const expectedTotals = computeTotals({
+        subtotalCents: FIRING_HALF_SHELF_CENTS * halfShelvesRef.current,
+        discountCents: appliedRef.current?.discountCents ?? 0,
+        taxRatePercent,
+      })
+      fd.append('expectedTotalCents', String(expectedTotals.totalCents))
 
       const res = await fetch('/api/firings', { method: 'POST', body: fd })
       const data = await res.json()
@@ -194,7 +203,7 @@ export function FiringRequestForm({ taxRatePercent }: { taxRatePercent: number }
       setBusy(false)
       busyRef.current = false
     }
-  }, [])
+  }, [taxRatePercent])
 
   // Effect A: load the SDK and create the payments instance (no card yet).
   useEffect(() => {
@@ -433,7 +442,7 @@ export function FiringRequestForm({ taxRatePercent }: { taxRatePercent: number }
               Apply
             </button>
           </div>
-          {(applied || totals.taxCents > 0) && (
+          {halfShelves > 0 && (
             <div style={{ marginTop: 10, fontSize: 14, display: 'grid', gap: 3, maxWidth: 260 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span>{halfShelves} × ${(FIRING_HALF_SHELF_CENTS / 100).toFixed(2)}</span><span>{priceLabel}</span>

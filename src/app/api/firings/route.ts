@@ -37,6 +37,10 @@ export async function POST(req: Request) {
   const stonewareConfirmed = String(form.get('stonewareConfirmed') ?? '') === 'true'
   const couponCode = String(form.get('couponCode') ?? '').trim() || undefined
   const sourceId = String(form.get('sourceId') ?? '').trim() || undefined
+  // Optional guard against a stale tab charging a total it never displayed
+  // (e.g. an admin rate edit between page load and submit). Ignored if absent
+  // or malformed for backward compat with older clients.
+  const expectedTotalCents = num(form.get('expectedTotalCents'))
 
   const files = form.getAll('photos').filter((f): f is File => typeof f !== 'string' && f.size > 0)
   if (files.length < 1 || files.length > MAX_FIRING_PHOTOS) {
@@ -87,6 +91,7 @@ export async function POST(req: Request) {
         description,
         notes,
         stonewareConfirmed,
+        expectedTotalCents,
       },
     )
     return Response.json({ ok: true, requestId: firing.id })

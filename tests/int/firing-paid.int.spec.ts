@@ -257,6 +257,24 @@ describe('createPaidFiring', () => {
       await p.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 0 }, overrideAccess: true })
     }
   })
+
+  it('refuses a stale expectedTotalCents and never charges the card (8.9%)', async () => {
+    const p = await getTestPayload()
+    await p.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 8.9 }, overrideAccess: true })
+    try {
+      // 2 half shelves → server total is $54.45, but the stale tab still shows
+      // the pre-tax $50.00 total — the charge must be refused, not silently taken.
+      const photo = await mkPhoto(p)
+      const d = deps()
+      await expect(createPaidFiring({ payload: p, ...d }, baseInput({
+        photoIds: [photo.id], sourceId: 'cnon:x', customerEmail: 'fp-tax-stale@fptest.local',
+        expectedTotalCents: 5000,
+      }))).rejects.toThrow(/please refresh/i)
+      expect(d.charge).not.toHaveBeenCalled()
+    } finally {
+      await p.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 0 }, overrideAccess: true })
+    }
+  })
 })
 
 afterAll(async () => {

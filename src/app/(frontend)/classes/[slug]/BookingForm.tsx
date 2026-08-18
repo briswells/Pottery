@@ -128,6 +128,14 @@ export function BookingForm({
       setMsg(null)
       try {
         const f = formRef.current
+        // Recompute fresh from the same inputs the render path uses (not a
+        // captured value) so this can never drift from what's on screen —
+        // the server rejects the charge if this doesn't match its own total.
+        const expectedTotals = computeTotals({
+          subtotalCents: priceCents,
+          discountCents: appliedRef.current?.discountCents ?? 0,
+          taxRatePercent,
+        })
         const res = await fetch('/api/bookings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -139,6 +147,7 @@ export function BookingForm({
             customerEmail: f.customerEmail,
             customerPhone: f.customerPhone,
             subscribe: subscribeRef.current,
+            expectedTotalCents: expectedTotals.totalCents,
           }),
         })
         const data = await res.json()
@@ -152,7 +161,7 @@ export function BookingForm({
         busyRef.current = false
       }
     },
-    [classInstanceId, slug, router],
+    [classInstanceId, slug, router, priceCents, taxRatePercent],
   )
 
   // Effect A: load the SDK and create the payments instance (no card yet).

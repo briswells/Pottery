@@ -33,7 +33,11 @@ export const Payments: CollectionConfig = {
     },
     {
       name: 'taxCents', type: 'number', label: 'Tax', defaultValue: 0,
-      admin: { readOnly: true, description: 'Sales tax collected, in cents.' },
+      admin: {
+        readOnly: true,
+        description: 'Sales tax collected.',
+        components: { Field: '/admin/PriceField#PriceField', Cell: '/admin/PriceCell#PriceCell' },
+      },
     },
     { name: 'squareId', type: 'text', index: true, admin: { description: 'Square payment or invoice id (empty for $0 coupon bookings).' } },
     { name: 'status', type: 'text', required: true, admin: { description: 'Mirrors the raw Square payment/invoice status (e.g. COMPLETED).' } },

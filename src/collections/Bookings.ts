@@ -43,7 +43,11 @@ export const Bookings: CollectionConfig = {
     },
     {
       name: 'taxCents', type: 'number', label: 'Tax', defaultValue: 0,
-      admin: { readOnly: true, description: 'Sales tax collected, in cents.' },
+      admin: {
+        readOnly: true,
+        description: 'Sales tax collected.',
+        components: { Field: '/admin/PriceField#PriceField', Cell: '/admin/PriceCell#PriceCell' },
+      },
     },
     { name: 'coupon', type: 'relationship', relationTo: 'coupons', hasMany: false },
     { name: 'squarePaymentId', type: 'text', index: true },

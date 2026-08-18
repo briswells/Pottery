@@ -17,12 +17,17 @@ export async function POST(req: Request) {
   if (!classInstanceId || !customerName || !customerEmail) {
     return Response.json({ error: 'Missing required fields' }, { status: 400 })
   }
+  // Optional guard against a stale tab charging a total it never displayed
+  // (e.g. an admin rate edit between page load and submit). Ignored if absent
+  // or malformed for backward compat with older clients.
+  const expectedTotalCentsRaw = Number(body?.expectedTotalCents)
+  const expectedTotalCents = Number.isFinite(expectedTotalCentsRaw) ? expectedTotalCentsRaw : undefined
 
   const payload = await getPayload({ config: await config })
   try {
     const booking = await createPaidBooking(
       { payload, charge: chargeCard, sendEmail },
-      { classInstanceId, sourceId, couponCode, customerName, customerEmail, customerPhone },
+      { classInstanceId, sourceId, couponCode, customerName, customerEmail, customerPhone, expectedTotalCents },
     )
     // Newsletter opt-in is best-effort: the booking is already paid, so a Kit
     // failure is logged and swallowed — it must never turn a success into an error.

@@ -484,7 +484,7 @@ export interface Booking {
    */
   discountCents?: number | null;
   /**
-   * Sales tax collected, in cents.
+   * Sales tax collected.
    */
   taxCents?: number | null;
   coupon?: (number | null) | Coupon;
@@ -550,7 +550,7 @@ export interface Payment {
   firingRequest?: (number | null) | FiringRequest;
   amountCents: number;
   /**
-   * Sales tax collected, in cents.
+   * Sales tax collected.
    */
   taxCents?: number | null;
   /**
@@ -593,7 +593,7 @@ export interface FiringRequest {
    */
   discountCents?: number | null;
   /**
-   * Sales tax collected, in cents.
+   * Sales tax collected.
    */
   taxCents?: number | null;
   coupon?: (number | null) | Coupon;

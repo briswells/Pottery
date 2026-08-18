@@ -23,6 +23,11 @@ export interface BookingInput {
   customerName: string
   customerEmail: string
   customerPhone?: string
+  /** Total the client displayed when the customer submitted, in cents. When
+   * present and it disagrees with the server's own total, the charge is
+   * refused — a stale tab (open across a deploy or a rate edit) must never
+   * charge a total the customer never saw. */
+  expectedTotalCents?: number
 }
 
 export async function createPaidBooking(deps: BookingDeps, input: BookingInput) {
@@ -61,6 +66,14 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
     taxRatePercent: await getSalesTaxPercent(payload),
   })
   if (totals.totalCents > 0 && !input.sourceId) throw new Error('Payment information is required')
+
+  if (
+    typeof input.expectedTotalCents === 'number' &&
+    Number.isFinite(input.expectedTotalCents) &&
+    input.expectedTotalCents !== totals.totalCents
+  ) {
+    throw new Error('The price has been updated since you loaded this page — please refresh and try again.')
+  }
 
   // Reserve a seat by creating a pending booking, then re-check occupancy.
   const remaining = await seatsRemaining(payload, inst.id)
