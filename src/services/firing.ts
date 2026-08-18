@@ -7,6 +7,7 @@ import { getStudioInfo } from '../lib/studio-info'
 import { upsertPersonByEmail } from './people'
 import { validateCoupon } from './coupons'
 import { FIRING_HALF_SHELF_CENTS, MAX_HALF_SHELVES, MAX_FIRING_PHOTOS } from '../lib/firing-pricing'
+import { computeTotals, getSalesTaxPercent } from '../lib/tax'
 
 export interface FiringDeps {
   payload: Payload
@@ -49,7 +50,6 @@ export async function createPaidFiring(deps: FiringDeps, input: FiringInput) {
   // firing request created below carries the coupon, so it holds a redemption slot.
   let couponId: number | null = null
   let discountCents = 0
-  let finalCents = priceCents
   if (input.couponCode) {
     const check = await validateCoupon({ payload }, {
       code: input.couponCode, priceCents, customerEmail: input.customerEmail, target: { kind: 'firing' },
@@ -57,9 +57,16 @@ export async function createPaidFiring(deps: FiringDeps, input: FiringInput) {
     if (!check.ok) throw new Error(check.reason)
     couponId = check.coupon.id as number
     discountCents = check.discountCents
-    finalCents = check.finalCents
   }
-  if (finalCents > 0 && !input.sourceId) throw new Error('Payment information is required')
+
+  // Tax is applied AFTER the coupon (WA: seller discounts reduce the taxable
+  // price). totalCents is what the card is charged.
+  const totals = computeTotals({
+    subtotalCents: priceCents,
+    discountCents,
+    taxRatePercent: await getSalesTaxPercent(payload),
+  })
+  if (totals.totalCents > 0 && !input.sourceId) throw new Error('Payment information is required')
 
   const pending = await payload.create({
     collection: 'firing-requests',
@@ -68,16 +75,16 @@ export async function createPaidFiring(deps: FiringDeps, input: FiringInput) {
       name: input.customerName, email: input.customerEmail, phone: input.customerPhone,
       description: input.description, notes: input.notes,
       halfShelves: input.halfShelves, photos: input.photoIds, stonewareConfirmed: input.stonewareConfirmed,
-      amountCents: finalCents, status: 'pending',
+      amountCents: totals.totalCents, taxCents: totals.taxCents, status: 'pending',
       ...(couponId != null ? { coupon: couponId, discountCents } : {}),
     },
   })
 
   let charge: ChargeResult | null = null
-  if (finalCents > 0) {
+  if (totals.totalCents > 0) {
     try {
       charge = await deps.charge({
-        sourceId: input.sourceId!, amountCents: finalCents,
+        sourceId: input.sourceId!, amountCents: totals.totalCents,
         referenceId: `firing-${pending.id}`, note: `Firing: ${input.halfShelves} half shelf(s)`,
       })
     } catch (e) {
@@ -107,7 +114,7 @@ export async function createPaidFiring(deps: FiringDeps, input: FiringInput) {
     await payload.create({
       collection: 'payments', overrideAccess: true,
       data: {
-        type: 'firing', firingRequest: pending.id, amountCents: finalCents,
+        type: 'firing', firingRequest: pending.id, amountCents: totals.totalCents, taxCents: totals.taxCents,
         ...(charge ? { squareId: charge.paymentId } : {}),
         status: charge?.status ?? 'COMPLETED', paidAt: new Date().toISOString(),
       },
@@ -133,12 +140,15 @@ export async function createPaidFiring(deps: FiringDeps, input: FiringInput) {
 
   const unit = input.halfShelves === 1 ? 'half shelf' : 'half shelves'
   const sizeLine = input.halfShelves === 1 ? SIZE_COPY : `${SIZE_COPY} each`
+  const code = input.couponCode?.trim().toUpperCase()
   const amountLine =
-    couponId != null && finalCents === 0
-      ? `Free with code ${input.couponCode!.trim().toUpperCase()}.`
-      : discountCents > 0
-        ? `Amount paid: ${usd(finalCents)} (${input.couponCode!.trim().toUpperCase()} applied).`
-        : `Amount paid: ${usd(finalCents)}.`
+    couponId != null && totals.totalCents === 0
+      ? `Free with code ${code}.`
+      : totals.taxCents > 0
+        ? `Amount paid: ${usd(totals.totalCents)} (${usd(totals.taxableCents)}${discountCents > 0 ? ` after ${code}` : ''} + ${usd(totals.taxCents)} sales tax).`
+        : discountCents > 0
+          ? `Amount paid: ${usd(totals.totalCents)} (${code} applied).`
+          : `Amount paid: ${usd(totals.totalCents)}.`
 
   // The request is already paid and recorded at this point. A failed
   // confirmation/notify email must NOT fail the request — swallow+log errors.

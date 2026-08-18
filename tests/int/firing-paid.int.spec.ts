@@ -3,7 +3,7 @@
 // Payload's upload validation), so a real file upload always fails there.
 // Force node for this file, which actually creates media with file data.
 // @vitest-environment node
-import { describe, it, expect, vi, afterAll } from 'vitest'
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
 import { getTestPayload } from './helpers'
 import { createPaidFiring } from '../../src/services/firing'
 import { createPaidBooking } from '../../src/services/booking'
@@ -50,6 +50,13 @@ function baseInput(overrides: Record<string, unknown> = {}) {
 }
 
 describe('createPaidFiring', () => {
+  // Pin the checkout tax rate to 0 so this file's legacy (pre-tax) amount
+  // assertions stay valid regardless of the Site Settings default.
+  beforeAll(async () => {
+    const payload = await getTestPayload()
+    await payload.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 0 }, overrideAccess: true })
+  })
+
   it('paid, no coupon: charges the half-shelf total and records a firing payment', async () => {
     const p = await getTestPayload()
     const photo = await mkPhoto(p)
@@ -227,6 +234,27 @@ describe('createPaidFiring', () => {
       expect(pays.docs[0].squareId).toBe('pay_fp')
     } finally {
       spy.mockRestore()
+    }
+  })
+
+  it('taxes the half-shelf subtotal (8.9%): 2 half shelves = $50.00, charge $54.45', async () => {
+    const p = await getTestPayload()
+    await p.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 8.9 }, overrideAccess: true })
+    try {
+      const photo = await mkPhoto(p)
+      const d = deps()
+      const fr = await createPaidFiring({ payload: p, ...d }, baseInput({
+        photoIds: [photo.id], sourceId: 'cnon:x', customerEmail: 'fp-tax@fptest.local',
+      }))
+      expect(d.charge).toHaveBeenCalledWith(expect.objectContaining({ amountCents: 5445 }))
+      expect(fr.amountCents).toBe(5445)
+      expect(fr.taxCents).toBe(445)
+
+      const pays = await p.find({ collection: 'payments', where: { firingRequest: { equals: fr.id } }, overrideAccess: true })
+      expect(pays.docs[0].taxCents).toBe(445)
+      expect(pays.docs[0].amountCents).toBe(5445)
+    } finally {
+      await p.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 0 }, overrideAccess: true })
     }
   })
 })

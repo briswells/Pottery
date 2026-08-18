@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterAll } from 'vitest'
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
 import { getTestPayload } from './helpers'
 import { createPaidBooking } from '../../src/services/booking'
 
@@ -24,6 +24,13 @@ async function mkCoupon(p: any, over: Record<string, unknown> = {}) {
 }
 
 describe('createPaidBooking with coupons', () => {
+  // Pin the checkout tax rate to 0 so this file's legacy (pre-tax) amount
+  // assertions stay valid regardless of the Site Settings default.
+  beforeAll(async () => {
+    const payload = await getTestPayload()
+    await payload.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 0 }, overrideAccess: true })
+  })
+
   it('charges the discounted amount and records coupon + discount', async () => {
     const p = await getTestPayload()
     const { inst } = await makeInstance(p)

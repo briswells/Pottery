@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterAll } from 'vitest'
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
 import { getTestPayload } from './helpers'
 import { createPaidBooking } from '../../src/services/booking'
 
@@ -10,20 +10,33 @@ function deps(overrides = {}) {
   }
 }
 
-async function makeInstance(payload: any, capacity: number, status = 'published') {
+async function makeInstance(payload: any, capacity: number, status = 'published', priceCents = 22000) {
   const cls = await payload.create({ collection: 'classes', data: {
-    title: `Svc ${Date.now()}-${Math.random()}`, defaultPriceCents: 22000, defaultCapacity: capacity,
+    title: `Svc ${Date.now()}-${Math.random()}`, defaultPriceCents: priceCents, defaultCapacity: capacity,
   } })
   const user = await payload.create({ collection: 'users', data: {
     name: 'Inst', email: `inst-${Date.now()}-${Math.random()}@test.local`, password: 'test12345', roles: ['instructor'],
   } })
   return payload.create({ collection: 'class-instances', data: {
     class: cls.id, instructor: user.id, startDate: '2026-07-07', endDate: '2026-08-11',
-    daysOfWeek: ['TU'], startTime: '18:00', endTime: '20:00', status, capacity,
+    daysOfWeek: ['TU'], startTime: '18:00', endTime: '20:00', status, capacity, priceCents,
+  } })
+}
+
+async function mkFixedCoupon(payload: any, amountOffCents: number) {
+  return payload.create({ collection: 'coupons', overrideAccess: true, data: {
+    code: `SVCTAX${Date.now()}${Math.floor(Math.random() * 1e4)}`, discountType: 'fixed', amountOffCents,
   } })
 }
 
 describe('createPaidBooking', () => {
+  // Pin the checkout tax rate to 0 so this file's legacy (pre-tax) amount
+  // assertions stay valid regardless of the Site Settings default.
+  beforeAll(async () => {
+    const payload = await getTestPayload()
+    await payload.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 0 }, overrideAccess: true })
+  })
+
   afterAll(async () => {
     const payload = await getTestPayload()
     await payload.delete({ collection: 'payments', where: {} })
@@ -148,5 +161,53 @@ describe('createPaidBooking', () => {
     expect(count.totalDocs).toBe(1)
     // Clean up membership-plan created in this test
     await payload.delete({ collection: 'membership-plans', id: plan.id, overrideAccess: true })
+  })
+
+  it('charges subtotal − coupon + tax, and records taxCents (8.9%)', async () => {
+    const payload = await getTestPayload()
+    await payload.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 8.9 }, overrideAccess: true })
+    try {
+      // $50.00 instance, no coupon → tax $4.45, charge $54.45
+      const inst = await makeInstance(payload, 5, 'published', 5000)
+      const charge = vi.fn(async () => ({ paymentId: 'sq-tax-1', status: 'COMPLETED' }))
+      const booking = await createPaidBooking(
+        { payload, charge, sendEmail: vi.fn(async () => {}) },
+        { classInstanceId: inst.id, sourceId: 'tok', customerName: 'Tax Test', customerEmail: 'tax-test@example.com' },
+      )
+      expect(charge).toHaveBeenCalledWith(expect.objectContaining({ amountCents: 5445 }))
+      expect(booking.amountCents).toBe(5445)
+      expect(booking.taxCents).toBe(445)
+      const pay = await payload.find({ collection: 'payments', where: { booking: { equals: booking.id } }, overrideAccess: true, limit: 1 })
+      expect(pay.docs[0]?.taxCents).toBe(445)
+      expect(pay.docs[0]?.amountCents).toBe(5445)
+    } finally {
+      await payload.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 0 }, overrideAccess: true })
+    }
+  })
+
+  it('taxes the post-coupon amount: $50 instance − $10 fixed coupon + tax (8.9%)', async () => {
+    const payload = await getTestPayload()
+    await payload.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 8.9 }, overrideAccess: true })
+    try {
+      // $50.00 instance, $10.00-off coupon → taxable $40.00, tax $3.56, charge $43.56
+      const inst = await makeInstance(payload, 5, 'published', 5000)
+      const coupon = await mkFixedCoupon(payload, 1000)
+      const charge = vi.fn(async () => ({ paymentId: 'sq-tax-2', status: 'COMPLETED' }))
+      const booking = await createPaidBooking(
+        { payload, charge, sendEmail: vi.fn(async () => {}) },
+        {
+          classInstanceId: inst.id, sourceId: 'tok', couponCode: coupon.code,
+          customerName: 'Tax Coupon Test', customerEmail: 'tax-coupon-test@example.com',
+        },
+      )
+      expect(charge).toHaveBeenCalledWith(expect.objectContaining({ amountCents: 4356 }))
+      expect(booking.discountCents).toBe(1000)
+      expect(booking.taxCents).toBe(356)
+      const pay = await payload.find({ collection: 'payments', where: { booking: { equals: booking.id } }, overrideAccess: true, limit: 1 })
+      expect(pay.docs[0]?.taxCents).toBe(356)
+      expect(pay.docs[0]?.amountCents).toBe(4356)
+    } finally {
+      await payload.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 0 }, overrideAccess: true })
+    }
   })
 })

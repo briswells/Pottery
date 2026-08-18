@@ -7,6 +7,7 @@ import { scheduleSummary } from '../lib/schedule'
 import { buildClassIcs } from '../lib/ics'
 import { upsertPersonByEmail } from './people'
 import { validateCoupon } from './coupons'
+import { computeTotals, getSalesTaxPercent } from '../lib/tax'
 
 export interface BookingDeps {
   payload: Payload
@@ -42,7 +43,6 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
   // booking created below carries the coupon, so it holds a redemption slot.
   let couponId: number | null = null
   let discountCents = 0
-  let finalCents = priceCents
   if (input.couponCode) {
     const classId = typeof cls === 'object' ? (cls.id as number) : (cls as number)
     const check = await validateCoupon({ payload }, {
@@ -51,9 +51,16 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
     if (!check.ok) throw new Error(check.reason)
     couponId = check.coupon.id as number
     discountCents = check.discountCents
-    finalCents = check.finalCents
   }
-  if (finalCents > 0 && !input.sourceId) throw new Error('Payment information is required')
+
+  // Tax is applied AFTER the coupon (WA: seller discounts reduce the taxable
+  // price). totalCents is what the card is charged.
+  const totals = computeTotals({
+    subtotalCents: priceCents,
+    discountCents,
+    taxRatePercent: await getSalesTaxPercent(payload),
+  })
+  if (totals.totalCents > 0 && !input.sourceId) throw new Error('Payment information is required')
 
   // Reserve a seat by creating a pending booking, then re-check occupancy.
   const remaining = await seatsRemaining(payload, inst.id)
@@ -64,7 +71,7 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
     overrideAccess: true,
     data: {
       classInstance: inst.id, customerName: input.customerName, customerEmail: input.customerEmail,
-      customerPhone: input.customerPhone, amountCents: finalCents, status: 'pending',
+      customerPhone: input.customerPhone, amountCents: totals.totalCents, taxCents: totals.taxCents, status: 'pending',
       ...(couponId != null ? { coupon: couponId, discountCents } : {}),
     },
   })
@@ -77,10 +84,10 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
   }
 
   let charge: ChargeResult | null = null
-  if (finalCents > 0) {
+  if (totals.totalCents > 0) {
     try {
       charge = await deps.charge({
-        sourceId: input.sourceId!, amountCents: finalCents,
+        sourceId: input.sourceId!, amountCents: totals.totalCents,
         referenceId: `booking-${pending.id}`, note: `Class: ${cls.title}`,
       })
     } catch (e) {
@@ -97,7 +104,7 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
   await payload.create({
     collection: 'payments', overrideAccess: true,
     data: {
-      type: 'booking', booking: pending.id, amountCents: finalCents,
+      type: 'booking', booking: pending.id, amountCents: totals.totalCents, taxCents: totals.taxCents,
       ...(charge ? { squareId: charge.paymentId } : {}),
       status: charge?.status ?? 'COMPLETED', paidAt: new Date().toISOString(),
     },
@@ -120,12 +127,15 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
   try {
     const summary = scheduleSummary(inst)
     const ics = buildClassIcs(inst, cls.title)
+    const code = input.couponCode?.trim().toUpperCase()
     const amountLine =
-      couponId != null && finalCents === 0
-        ? `Free with code ${input.couponCode!.trim().toUpperCase()}.`
-        : discountCents > 0
-          ? `Amount paid: ${usd(finalCents)} (${input.couponCode!.trim().toUpperCase()} applied).`
-          : `Amount paid: ${usd(finalCents)}.`
+      couponId != null && totals.totalCents === 0
+        ? `Free with code ${code}.`
+        : totals.taxCents > 0
+          ? `Amount paid: ${usd(totals.totalCents)} (${usd(totals.taxableCents)}${discountCents > 0 ? ` after ${code}` : ''} + ${usd(totals.taxCents)} sales tax).`
+          : discountCents > 0
+            ? `Amount paid: ${usd(totals.totalCents)} (${code} applied).`
+            : `Amount paid: ${usd(totals.totalCents)}.`
     await deps.sendEmail({
       to: input.customerEmail,
       subject: `You're booked: ${cls.title}`,
