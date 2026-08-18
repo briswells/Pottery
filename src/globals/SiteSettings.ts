@@ -31,5 +31,12 @@ export const SiteSettings: GlobalConfig = {
         description: 'Show “Newsletter” in the site menu.',
       },
     },
+    {
+      name: 'salesTaxPercent', type: 'number', defaultValue: 8.9, min: 0, max: 15,
+      admin: {
+        position: 'sidebar',
+        description: 'Sales tax % applied at checkout (classes and firings). Vancouver WA combined rate — update when the WA DOR rate changes.',
+      },
+    },
   ],
 }

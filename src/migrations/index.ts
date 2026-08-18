@@ -13,6 +13,7 @@ import * as migration_20260709_152629_firing_dropped_off from './20260709_152629
 import * as migration_20260715_221422_newsletters from './20260715_221422_newsletters';
 import * as migration_20260730_004506_firings_page_image from './20260730_004506_firings_page_image';
 import * as migration_20260806_163747_newsletter_in_nav from './20260806_163747_newsletter_in_nav';
+import * as migration_20260818_015441_sales_tax from './20260818_015441_sales_tax';
 
 export const migrations = [
   {
@@ -88,6 +89,11 @@ export const migrations = [
   {
     up: migration_20260806_163747_newsletter_in_nav.up,
     down: migration_20260806_163747_newsletter_in_nav.down,
-    name: '20260806_163747_newsletter_in_nav'
+    name: '20260806_163747_newsletter_in_nav',
+  },
+  {
+    up: migration_20260818_015441_sales_tax.up,
+    down: migration_20260818_015441_sales_tax.down,
+    name: '20260818_015441_sales_tax'
   },
 ];

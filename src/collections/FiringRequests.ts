@@ -56,6 +56,10 @@ export const FiringRequests: CollectionConfig = {
         components: { Field: '/admin/PriceField#PriceField', Cell: '/admin/PriceCell#PriceCell' },
       },
     },
+    {
+      name: 'taxCents', type: 'number', label: 'Tax', defaultValue: 0,
+      admin: { readOnly: true, description: 'Sales tax collected, in cents.' },
+    },
     { name: 'coupon', type: 'relationship', relationTo: 'coupons', hasMany: false },
     { name: 'squarePaymentId', type: 'text', index: true },
     { name: 'stonewareConfirmed', type: 'checkbox', required: true, validate: validateStonewareConfirmed, admin: { description: 'Customer confirmed all pieces are stoneware (cone 10 safe).' } },

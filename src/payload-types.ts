@@ -483,6 +483,10 @@ export interface Booking {
    * Coupon discount applied. Original price = amount + discount.
    */
   discountCents?: number | null;
+  /**
+   * Sales tax collected, in cents.
+   */
+  taxCents?: number | null;
   coupon?: (number | null) | Coupon;
   squarePaymentId?: string | null;
   updatedAt: string;
@@ -546,6 +550,10 @@ export interface Payment {
   firingRequest?: (number | null) | FiringRequest;
   amountCents: number;
   /**
+   * Sales tax collected, in cents.
+   */
+  taxCents?: number | null;
+  /**
    * Square payment or invoice id (empty for $0 coupon bookings).
    */
   squareId?: string | null;
@@ -584,6 +592,10 @@ export interface FiringRequest {
    * Coupon discount applied. Original price = amount + discount.
    */
   discountCents?: number | null;
+  /**
+   * Sales tax collected, in cents.
+   */
+  taxCents?: number | null;
   coupon?: (number | null) | Coupon;
   squarePaymentId?: string | null;
   /**
@@ -952,6 +964,7 @@ export interface BookingsSelect<T extends boolean = true> {
   status?: T;
   amountCents?: T;
   discountCents?: T;
+  taxCents?: T;
   coupon?: T;
   squarePaymentId?: T;
   updatedAt?: T;
@@ -967,6 +980,7 @@ export interface PaymentsSelect<T extends boolean = true> {
   booking?: T;
   firingRequest?: T;
   amountCents?: T;
+  taxCents?: T;
   squareId?: T;
   status?: T;
   paidAt?: T;
@@ -987,6 +1001,7 @@ export interface FiringRequestsSelect<T extends boolean = true> {
   halfShelves?: T;
   amountCents?: T;
   discountCents?: T;
+  taxCents?: T;
   coupon?: T;
   squarePaymentId?: T;
   stonewareConfirmed?: T;
@@ -1120,9 +1135,13 @@ export interface SiteSetting {
    */
   favicon?: (number | null) | Media;
   /**
-   * Show “Newsletter” in the site menu instead of the “Classes” link. The “Book a class” button is unaffected.
+   * Show “Newsletter” in the site menu.
    */
   newsletterInNav?: boolean | null;
+  /**
+   * Sales tax % applied at checkout (classes and firings). Vancouver WA combined rate — update when the WA DOR rate changes.
+   */
+  salesTaxPercent?: number | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1220,6 +1239,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   logo?: T;
   favicon?: T;
   newsletterInNav?: T;
+  salesTaxPercent?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
