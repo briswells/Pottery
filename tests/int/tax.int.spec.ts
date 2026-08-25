@@ -18,12 +18,14 @@ describe('computeTotals', () => {
   })
 
   it('rounds half-to-even using exact integer arithmetic at non-8.9% rates', () => {
-    // (5500 * 0.7) / 100 === 38.49999999999999 in float — a true half-cent case
-    // (38.5) that float division would misclassify as rounding down outright
-    // instead of taking the even-check branch. Exact integer math must still
-    // land on the even neighbor, 38.
-    expect(computeTotals({ subtotalCents: 5500, discountCents: 0, taxRatePercent: 0.7 }))
-      .toEqual({ taxableCents: 5500, taxCents: 38, totalCents: 5538 })
+    // (10500 * 0.7) / 100 === 73.49999999999999 in float — a true half-cent
+    // case (73.5, even neighbor 74) that float division renders as just
+    // under 73.5, so a float-based half-even check floors straight to 73
+    // instead of taking the even-check branch. This is a genuine divergence:
+    // the old Math-based roundHalfEven(x) returns 73 here; exact integer
+    // arithmetic correctly lands on the even neighbor, 74.
+    expect(computeTotals({ subtotalCents: 10500, discountCents: 0, taxRatePercent: 0.7 }))
+      .toEqual({ taxableCents: 10500, taxCents: 74, totalCents: 10574 })
   })
 
   it('rate 0 (or unset settings) reproduces pre-tax behavior exactly', () => {
