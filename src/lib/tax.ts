@@ -23,19 +23,27 @@ export interface Totals {
   totalCents: number
 }
 
-/** Round half-to-even, matching Square's order-tax rounding. */
-function roundHalfEven(x: number): number {
-  const floor = Math.floor(x)
-  const diff = x - floor
-  if (diff > 0.5) return floor + 1
-  if (diff < 0.5) return floor
-  return floor % 2 === 0 ? floor : floor + 1
+/**
+ * taxable × rate% rounded half-to-even in exact integer arithmetic,
+ * matching Square's order-tax rounding at any admin-entered rate
+ * (up to 5 decimal places of percent). Float division (e.g. (5500 * 0.7) /
+ * 100 === 38.49999999999999) would misclassify true half-cent cases at
+ * rates other than 8.9%, so the half comparison is done over integers.
+ */
+function taxCentsHalfEven(taxableCents: number, taxRatePercent: number): number {
+  const n = taxableCents * Math.round(taxRatePercent * 1e5)
+  const d = 1e7 // 100 (percent) × 1e5 (rate scaling)
+  const r = n % d
+  const q = (n - r) / d
+  if (r * 2 > d) return q + 1
+  if (r * 2 < d) return q
+  return q % 2 === 0 ? q : q + 1
 }
 
 export function computeTotals({ subtotalCents, discountCents, taxRatePercent }: TotalsInput): Totals {
   const taxableCents = Math.max(0, Math.round(subtotalCents) - Math.round(discountCents))
   const rate = Number.isFinite(taxRatePercent) && taxRatePercent > 0 ? taxRatePercent : 0
-  const taxCents = roundHalfEven((taxableCents * rate) / 100)
+  const taxCents = taxCentsHalfEven(taxableCents, rate)
   return { taxableCents, taxCents, totalCents: taxableCents + taxCents }
 }
 

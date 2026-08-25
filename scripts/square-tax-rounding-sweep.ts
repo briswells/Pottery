@@ -81,7 +81,7 @@ async function main() {
       console.log(`MISMATCH sub=${c.subtotalCents} disc=${c.discountCents} taxable=${ours.taxableCents}: square tax=${theirs.tax} total=${theirs.total} | ours tax=${ours.taxCents} total=${ours.totalCents}`)
     }
   }
-  console.log(mismatches === 0 ? `All ${cases.length} cases match — Square rounds half-up like computeTotals.` : `${mismatches}/${cases.length} cases mismatch.`)
+  console.log(mismatches === 0 ? `All ${cases.length} cases match — Square's rounding matches computeTotals.` : `${mismatches}/${cases.length} cases mismatch.`)
   process.exit(mismatches === 0 ? 0 : 1)
 }
 

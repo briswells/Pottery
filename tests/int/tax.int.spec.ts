@@ -9,10 +9,21 @@ describe('computeTotals', () => {
       .toEqual({ taxableCents: 2500, taxCents: 222, totalCents: 2722 }) // 222.5 rounds to even (222)
     expect(computeTotals({ subtotalCents: 1500, discountCents: 0, taxRatePercent: 8.9 }))
       .toEqual({ taxableCents: 1500, taxCents: 134, totalCents: 1634 }) // 133.5 rounds to even (134)
+    expect(computeTotals({ subtotalCents: 500, discountCents: 0, taxRatePercent: 8.9 }))
+      .toEqual({ taxableCents: 500, taxCents: 44, totalCents: 544 }) // 44.5 rounds to even (44)
     expect(computeTotals({ subtotalCents: 5000, discountCents: 1000, taxRatePercent: 8.9 }))
       .toEqual({ taxableCents: 4000, taxCents: 356, totalCents: 4356 }) // coupon reduces taxable
     expect(computeTotals({ subtotalCents: 1, discountCents: 0, taxRatePercent: 8.9 }))
       .toEqual({ taxableCents: 1, taxCents: 0, totalCents: 1 })
+  })
+
+  it('rounds half-to-even using exact integer arithmetic at non-8.9% rates', () => {
+    // (5500 * 0.7) / 100 === 38.49999999999999 in float — a true half-cent case
+    // (38.5) that float division would misclassify as rounding down outright
+    // instead of taking the even-check branch. Exact integer math must still
+    // land on the even neighbor, 38.
+    expect(computeTotals({ subtotalCents: 5500, discountCents: 0, taxRatePercent: 0.7 }))
+      .toEqual({ taxableCents: 5500, taxCents: 38, totalCents: 5538 })
   })
 
   it('rate 0 (or unset settings) reproduces pre-tax behavior exactly', () => {
