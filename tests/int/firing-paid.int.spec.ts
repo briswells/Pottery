@@ -18,6 +18,7 @@ function deps(overrides = {}) {
   return {
     charge: vi.fn(async () => ({ paymentId: 'pay_fp', status: 'COMPLETED' })),
     sendEmail: vi.fn(async () => {}),
+    createOrder: vi.fn(async () => 'order_test_1'),
     ...overrides,
   }
 }
@@ -274,6 +275,21 @@ describe('createPaidFiring', () => {
     } finally {
       await p.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 0 }, overrideAccess: true })
     }
+  })
+
+  it('itemizes the firing charge with a Square order', async () => {
+    const p = await getTestPayload()
+    const photo = await mkPhoto(p)
+    const d = deps()
+    await createPaidFiring({ payload: p, ...d }, baseInput({
+      photoIds: [photo.id], sourceId: 'cnon:x', customerEmail: 'fp-order@fptest.local',
+    }))
+    expect(d.createOrder).toHaveBeenCalledWith(expect.objectContaining({
+      itemName: expect.stringMatching(/^Firing: /),
+      expectedTotalCents: expect.any(Number),
+      referenceId: expect.stringMatching(/^firing-\d+$/),
+    }))
+    expect(d.charge).toHaveBeenCalledWith(expect.objectContaining({ orderId: 'order_test_1' }))
   })
 })
 

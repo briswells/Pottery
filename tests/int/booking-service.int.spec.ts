@@ -6,6 +6,7 @@ function deps(overrides = {}) {
   return {
     charge: vi.fn(async () => ({ paymentId: 'pay_123', status: 'COMPLETED' })),
     sendEmail: vi.fn(async () => {}),
+    createOrder: vi.fn(async () => 'order_test_1'),
     ...overrides,
   }
 }
@@ -172,7 +173,7 @@ describe('createPaidBooking', () => {
       const charge = vi.fn(async () => ({ paymentId: 'sq-tax-1', status: 'COMPLETED' }))
       const sendEmail = vi.fn(async () => {})
       const booking = await createPaidBooking(
-        { payload, charge, sendEmail },
+        { payload, charge, sendEmail, createOrder: vi.fn(async () => null) },
         { classInstanceId: inst.id, sourceId: 'tok', customerName: 'Tax Test', customerEmail: 'tax-test@example.com' },
       )
       expect(charge).toHaveBeenCalledWith(expect.objectContaining({ amountCents: 5445 }))
@@ -198,7 +199,7 @@ describe('createPaidBooking', () => {
       const inst = await makeInstance(payload, 5, 'published', 5000)
       const charge = vi.fn(async () => ({ paymentId: 'sq-tax-expected', status: 'COMPLETED' }))
       const booking = await createPaidBooking(
-        { payload, charge, sendEmail: vi.fn(async () => {}) },
+        { payload, charge, sendEmail: vi.fn(async () => {}), createOrder: vi.fn(async () => null) },
         {
           classInstanceId: inst.id, sourceId: 'tok', customerName: 'Expected Total', customerEmail: 'tax-expected@example.com',
           expectedTotalCents: 5445,
@@ -220,7 +221,7 @@ describe('createPaidBooking', () => {
       const inst = await makeInstance(payload, 5, 'published', 5000)
       const charge = vi.fn(async () => ({ paymentId: 'sq-tax-stale', status: 'COMPLETED' }))
       await expect(createPaidBooking(
-        { payload, charge, sendEmail: vi.fn(async () => {}) },
+        { payload, charge, sendEmail: vi.fn(async () => {}), createOrder: vi.fn(async () => null) },
         {
           classInstanceId: inst.id, sourceId: 'tok', customerName: 'Stale Total', customerEmail: 'tax-stale@example.com',
           expectedTotalCents: 5000,
@@ -241,7 +242,7 @@ describe('createPaidBooking', () => {
       const coupon = await mkFixedCoupon(payload, 1000)
       const charge = vi.fn(async () => ({ paymentId: 'sq-tax-2', status: 'COMPLETED' }))
       const booking = await createPaidBooking(
-        { payload, charge, sendEmail: vi.fn(async () => {}) },
+        { payload, charge, sendEmail: vi.fn(async () => {}), createOrder: vi.fn(async () => null) },
         {
           classInstanceId: inst.id, sourceId: 'tok', couponCode: coupon.code,
           customerName: 'Tax Coupon Test', customerEmail: 'tax-coupon-test@example.com',
@@ -256,5 +257,31 @@ describe('createPaidBooking', () => {
     } finally {
       await payload.updateGlobal({ slug: 'site-settings', data: { salesTaxPercent: 0 }, overrideAccess: true })
     }
+  })
+
+  it('itemizes the charge with a Square order and passes the orderId to charge', async () => {
+    const payload = await getTestPayload()
+    const inst = await makeInstance(payload, 5)
+    const d = deps()
+    await createPaidBooking({ payload, ...d }, {
+      classInstanceId: inst.id, sourceId: 'cnon:fake', customerName: 'Jo', customerEmail: 'jo@test.local',
+    })
+    expect(d.createOrder).toHaveBeenCalledWith(expect.objectContaining({
+      itemName: expect.stringMatching(/^Class: /), subtotalCents: 22000, discountCents: 0,
+      taxRatePercent: 0, expectedTotalCents: 22000, referenceId: expect.stringMatching(/^booking-\d+$/),
+    }))
+    expect(d.charge).toHaveBeenCalledWith(expect.objectContaining({ orderId: 'order_test_1' }))
+  })
+
+  it('still charges (unitemized) when order creation returns null', async () => {
+    const payload = await getTestPayload()
+    const inst = await makeInstance(payload, 5)
+    const d = deps({ createOrder: vi.fn(async () => null) })
+    const booking = await createPaidBooking({ payload, ...d }, {
+      classInstanceId: inst.id, sourceId: 'cnon:fake', customerName: 'Jo', customerEmail: 'jo2@test.local',
+    })
+    expect(booking.status).toBe('paid')
+    const chargeArg: any = (d.charge as any).mock.calls[0][0]
+    expect(chargeArg.orderId).toBeUndefined()
   })
 })

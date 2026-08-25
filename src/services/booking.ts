@@ -8,11 +8,13 @@ import { buildClassIcs } from '../lib/ics'
 import { upsertPersonByEmail } from './people'
 import { validateCoupon } from './coupons'
 import { computeTotals, getSalesTaxPercent } from '../lib/tax'
+import type { ItemizedOrderInput } from '../lib/square-order'
 
 export interface BookingDeps {
   payload: Payload
   charge: (input: ChargeInput) => Promise<ChargeResult>
   sendEmail: (input: EmailInput) => Promise<void>
+  createOrder: (input: ItemizedOrderInput) => Promise<string | null>
 }
 
 export interface BookingInput {
@@ -60,11 +62,8 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
 
   // Tax is applied AFTER the coupon (WA: seller discounts reduce the taxable
   // price). totalCents is what the card is charged.
-  const totals = computeTotals({
-    subtotalCents: priceCents,
-    discountCents,
-    taxRatePercent: await getSalesTaxPercent(payload),
-  })
+  const taxRatePercent = await getSalesTaxPercent(payload)
+  const totals = computeTotals({ subtotalCents: priceCents, discountCents, taxRatePercent })
   if (totals.totalCents > 0 && !input.sourceId) throw new Error('Payment information is required')
 
   if (
@@ -98,10 +97,23 @@ export async function createPaidBooking(deps: BookingDeps, input: BookingInput) 
 
   let charge: ChargeResult | null = null
   if (totals.totalCents > 0) {
+    // Best-effort itemization: a null orderId (API error or Square total
+    // mismatch) falls back to today's unitemized charge — the customer is
+    // always charged exactly totals.totalCents.
+    const orderId = await deps.createOrder({
+      itemName: `Class: ${cls.title}`,
+      subtotalCents: priceCents,
+      discountCents,
+      discountName: couponId != null ? `Coupon ${input.couponCode!.trim().toUpperCase()}` : undefined,
+      taxRatePercent,
+      expectedTotalCents: totals.totalCents,
+      referenceId: `booking-${pending.id}`,
+    })
     try {
       charge = await deps.charge({
         sourceId: input.sourceId!, amountCents: totals.totalCents,
         referenceId: `booking-${pending.id}`, note: `Class: ${cls.title}`,
+        ...(orderId ? { orderId } : {}),
       })
     } catch (e) {
       await payload.update({ collection: 'bookings', id: pending.id, overrideAccess: true, data: { status: 'cancelled' } })

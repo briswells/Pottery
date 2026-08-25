@@ -6,6 +6,7 @@ function deps(overrides = {}) {
   return {
     charge: vi.fn(async () => ({ paymentId: 'pay_cp', status: 'COMPLETED' })),
     sendEmail: vi.fn(async () => {}),
+    createOrder: vi.fn(async () => 'order_test_1'),
     ...overrides,
   }
 }
@@ -142,6 +143,31 @@ describe('createPaidBooking with coupons', () => {
     })
     const html2: string = (d2.sendEmail as any).mock.calls[0][0].html
     expect(html2).toContain(`Free with code ${free.code}.`)
+  })
+
+  it('describes the coupon on the Square order and skips the order for $0 totals', async () => {
+    const p = await getTestPayload()
+    // Partial coupon: order carries the discount line.
+    const { inst } = await makeInstance(p)
+    const coupon = await mkCoupon(p, { discountType: 'fixed', amountOffCents: 1000 })
+    const d = deps()
+    await createPaidBooking({ payload: p, ...d }, {
+      classInstanceId: inst.id, sourceId: 'cnon:x', couponCode: coupon.code,
+      customerName: 'Jo', customerEmail: 'co1@cptest.local',
+    })
+    expect(d.createOrder).toHaveBeenCalledWith(expect.objectContaining({
+      discountCents: 1000, discountName: `Coupon ${coupon.code}`,
+    }))
+
+    // 100% coupon → $0 total → no charge and no order.
+    const { inst: inst2 } = await makeInstance(p)
+    const full = await mkCoupon(p, { discountType: 'fixed', amountOffCents: 22000 })
+    const d2 = deps()
+    await createPaidBooking({ payload: p, ...d2 }, {
+      classInstanceId: inst2.id, couponCode: full.code, customerName: 'Jo', customerEmail: 'co2@cptest.local',
+    })
+    expect(d2.charge).not.toHaveBeenCalled()
+    expect(d2.createOrder).not.toHaveBeenCalled()
   })
 })
 

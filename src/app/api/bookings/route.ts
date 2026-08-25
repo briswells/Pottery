@@ -3,6 +3,7 @@ import config from '@payload-config'
 import { createPaidBooking } from '../../../services/booking'
 import { chargeCard } from '../../../lib/payments'
 import { sendEmail } from '../../../lib/email'
+import { createItemizedOrder } from '../../../lib/square-order'
 import { kitEnabled, createKitSubscriber } from '../../../lib/kit'
 
 export async function POST(req: Request) {
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
   const payload = await getPayload({ config: await config })
   try {
     const booking = await createPaidBooking(
-      { payload, charge: chargeCard, sendEmail },
+      { payload, charge: chargeCard, createOrder: createItemizedOrder, sendEmail },
       { classInstanceId, sourceId, couponCode, customerName, customerEmail, customerPhone, expectedTotalCents },
     )
     // Newsletter opt-in is best-effort: the booking is already paid, so a Kit

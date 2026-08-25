@@ -3,6 +3,7 @@ import config from '@payload-config'
 import { createPaidFiring } from '../../../services/firing'
 import { chargeCard } from '../../../lib/payments'
 import { sendEmail } from '../../../lib/email'
+import { createItemizedOrder } from '../../../lib/square-order'
 import { MAX_FIRING_PHOTOS, MAX_HALF_SHELVES, MAX_PHOTO_BYTES } from '../../../lib/firing-pricing'
 
 function num(v: FormDataEntryValue | null): number | undefined {
@@ -79,7 +80,7 @@ export async function POST(req: Request) {
 
   try {
     const firing = await createPaidFiring(
-      { payload, charge: chargeCard, sendEmail },
+      { payload, charge: chargeCard, createOrder: createItemizedOrder, sendEmail },
       {
         halfShelves: halfShelves as number,
         photoIds,

@@ -8,11 +8,13 @@ import { upsertPersonByEmail } from './people'
 import { validateCoupon } from './coupons'
 import { FIRING_HALF_SHELF_CENTS, MAX_HALF_SHELVES, MAX_FIRING_PHOTOS } from '../lib/firing-pricing'
 import { computeTotals, getSalesTaxPercent } from '../lib/tax'
+import type { ItemizedOrderInput } from '../lib/square-order'
 
 export interface FiringDeps {
   payload: Payload
   charge: (input: ChargeInput) => Promise<ChargeResult>
   sendEmail: (input: EmailInput) => Promise<void>
+  createOrder: (input: ItemizedOrderInput) => Promise<string | null>
 }
 
 export interface FiringInput {
@@ -66,11 +68,8 @@ export async function createPaidFiring(deps: FiringDeps, input: FiringInput) {
 
   // Tax is applied AFTER the coupon (WA: seller discounts reduce the taxable
   // price). totalCents is what the card is charged.
-  const totals = computeTotals({
-    subtotalCents: priceCents,
-    discountCents,
-    taxRatePercent: await getSalesTaxPercent(payload),
-  })
+  const taxRatePercent = await getSalesTaxPercent(payload)
+  const totals = computeTotals({ subtotalCents: priceCents, discountCents, taxRatePercent })
   if (totals.totalCents > 0 && !input.sourceId) throw new Error('Payment information is required')
 
   if (
@@ -95,10 +94,23 @@ export async function createPaidFiring(deps: FiringDeps, input: FiringInput) {
 
   let charge: ChargeResult | null = null
   if (totals.totalCents > 0) {
+    // Best-effort itemization: a null orderId (API error or Square total
+    // mismatch) falls back to today's unitemized charge — the customer is
+    // always charged exactly totals.totalCents.
+    const orderId = await deps.createOrder({
+      itemName: `Firing: ${input.halfShelves} half shelf(s)`,
+      subtotalCents: priceCents,
+      discountCents,
+      discountName: couponId != null ? `Coupon ${input.couponCode!.trim().toUpperCase()}` : undefined,
+      taxRatePercent,
+      expectedTotalCents: totals.totalCents,
+      referenceId: `firing-${pending.id}`,
+    })
     try {
       charge = await deps.charge({
         sourceId: input.sourceId!, amountCents: totals.totalCents,
         referenceId: `firing-${pending.id}`, note: `Firing: ${input.halfShelves} half shelf(s)`,
+        ...(orderId ? { orderId } : {}),
       })
     } catch (e) {
       await payload.update({ collection: 'firing-requests', id: pending.id, overrideAccess: true, data: { status: 'cancelled' } })

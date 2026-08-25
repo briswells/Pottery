@@ -6,6 +6,7 @@ export interface ChargeInput {
   amountCents: number
   referenceId?: string
   note?: string
+  orderId?: string
 }
 
 export interface ChargeResult {
@@ -59,6 +60,7 @@ export async function chargeCard(input: ChargeInput): Promise<ChargeResult> {
       autocomplete: true,
       referenceId: input.referenceId,
       note: input.note,
+      orderId: input.orderId,
     })
   } catch (e) {
     // Full detail server-side for diagnostics; customer gets the safe message.
