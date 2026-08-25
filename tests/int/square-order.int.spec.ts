@@ -62,7 +62,8 @@ describe('createItemizedOrder', () => {
   it('omits the tax line when the discount consumes the whole subtotal-adjacent taxable', async () => {
     // taxable 0 (100%-ish coupon but a positive total can't happen; this guards the boundary)
     ordersCreate.mockResolvedValue(squareOrderResponse(0))
-    await createItemizedOrder({ ...baseInput, discountCents: 5000, discountName: 'Coupon ALL', expectedTotalCents: 0 })
+    const id = await createItemizedOrder({ ...baseInput, discountCents: 5000, discountName: 'Coupon ALL', expectedTotalCents: 0 })
+    expect(id).toBe('order_abc')
     expect(ordersCreate.mock.calls[0][0].order.taxes).toBeUndefined()
   })
 

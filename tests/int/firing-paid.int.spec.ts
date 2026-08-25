@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
 import { getTestPayload } from './helpers'
 import { createPaidFiring } from '../../src/services/firing'
 import { createPaidBooking } from '../../src/services/booking'
+import { FIRING_HALF_SHELF_CENTS } from '../../src/lib/firing-pricing'
 
 async function mkPhoto(p: any) {
   // 1x1 png buffer — media create needs a real file
@@ -290,6 +291,31 @@ describe('createPaidFiring', () => {
       referenceId: expect.stringMatching(/^firing-\d+$/),
     }))
     expect(d.charge).toHaveBeenCalledWith(expect.objectContaining({ orderId: 'order_test_1' }))
+  })
+
+  it('still charges (unitemized) when order creation returns null', async () => {
+    const p = await getTestPayload()
+    const photo = await mkPhoto(p)
+    const d = deps({ createOrder: vi.fn(async () => null) })
+    const fr = await createPaidFiring({ payload: p, ...d }, baseInput({
+      photoIds: [photo.id], sourceId: 'cnon:x', customerEmail: 'fp-order-null@fptest.local',
+    }))
+    expect(fr.status).toBe('paid')
+    const chargeArg: any = (d.charge as any).mock.calls[0][0]
+    expect(chargeArg.orderId).toBeUndefined()
+  })
+
+  it('a coupon that zeroes the total skips both the charge and order creation', async () => {
+    const p = await getTestPayload()
+    const photo = await mkPhoto(p)
+    const c = await mkCoupon(p, { discountType: 'fixed', amountOffCents: FIRING_HALF_SHELF_CENTS * 2 })
+    const d = deps()
+    const fr = await createPaidFiring({ payload: p, ...d }, baseInput({
+      photoIds: [photo.id], couponCode: c.code, customerEmail: 'fp-order-zero@fptest.local',
+    }))
+    expect(fr.amountCents).toBe(0)
+    expect(d.charge).not.toHaveBeenCalled()
+    expect(d.createOrder).not.toHaveBeenCalled()
   })
 })
 

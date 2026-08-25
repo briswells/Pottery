@@ -51,7 +51,7 @@ export async function createItemizedOrder(input: ItemizedOrderInput): Promise<st
     const squareTotal = order?.totalMoney?.amount != null ? Number(order.totalMoney.amount) : null
     if (!order?.id || squareTotal !== input.expectedTotalCents) {
       console.error(
-        `SQUARE ORDER TOTAL MISMATCH (${input.referenceId}): square=${squareTotal} expected=${input.expectedTotalCents} — charging unitemized`,
+        `CRITICAL: SQUARE ORDER TOTAL MISMATCH OR MISSING ID (${input.referenceId}): square=${squareTotal} expected=${input.expectedTotalCents} — charging unitemized`,
       )
       return null
     }
