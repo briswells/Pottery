@@ -5,7 +5,9 @@ import type { Payload } from 'payload'
  * forms (display). One pure function, integer cents throughout — the number
  * the customer sees is the number the card is charged, by construction.
  * WA treatment: seller-funded coupons reduce the taxable price, so tax is
- * computed on (subtotal − discount).
+ * computed on (subtotal − discount). Tax-cent rounding matches Square's
+ * order-tax calculation (half-to-even), confirmed empirically by
+ * scripts/square-tax-rounding-sweep.ts.
  */
 
 export interface TotalsInput {
@@ -21,10 +23,19 @@ export interface Totals {
   totalCents: number
 }
 
+/** Round half-to-even, matching Square's order-tax rounding. */
+function roundHalfEven(x: number): number {
+  const floor = Math.floor(x)
+  const diff = x - floor
+  if (diff > 0.5) return floor + 1
+  if (diff < 0.5) return floor
+  return floor % 2 === 0 ? floor : floor + 1
+}
+
 export function computeTotals({ subtotalCents, discountCents, taxRatePercent }: TotalsInput): Totals {
   const taxableCents = Math.max(0, Math.round(subtotalCents) - Math.round(discountCents))
   const rate = Number.isFinite(taxRatePercent) && taxRatePercent > 0 ? taxRatePercent : 0
-  const taxCents = Math.round((taxableCents * rate) / 100)
+  const taxCents = roundHalfEven((taxableCents * rate) / 100)
   return { taxableCents, taxCents, totalCents: taxableCents + taxCents }
 }
 

@@ -6,7 +6,9 @@ describe('computeTotals', () => {
     expect(computeTotals({ subtotalCents: 5000, discountCents: 0, taxRatePercent: 8.9 }))
       .toEqual({ taxableCents: 5000, taxCents: 445, totalCents: 5445 })
     expect(computeTotals({ subtotalCents: 2500, discountCents: 0, taxRatePercent: 8.9 }))
-      .toEqual({ taxableCents: 2500, taxCents: 223, totalCents: 2723 }) // 222.5 rounds up
+      .toEqual({ taxableCents: 2500, taxCents: 222, totalCents: 2722 }) // 222.5 rounds to even (222)
+    expect(computeTotals({ subtotalCents: 1500, discountCents: 0, taxRatePercent: 8.9 }))
+      .toEqual({ taxableCents: 1500, taxCents: 134, totalCents: 1634 }) // 133.5 rounds to even (134)
     expect(computeTotals({ subtotalCents: 5000, discountCents: 1000, taxRatePercent: 8.9 }))
       .toEqual({ taxableCents: 4000, taxCents: 356, totalCents: 4356 }) // coupon reduces taxable
     expect(computeTotals({ subtotalCents: 1, discountCents: 0, taxRatePercent: 8.9 }))
