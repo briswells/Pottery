@@ -1,4 +1,6 @@
-onlyBuiltDependencies:
-  - esbuild
-  - sharp
-  - unrs-resolver
+# Native deps allowed to run their install scripts (pnpm 11 `allowBuilds`;
+# replaces the pre-11 `onlyBuiltDependencies` list, which pnpm 11 ignores).
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true

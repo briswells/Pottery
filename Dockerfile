@@ -2,9 +2,9 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 RUN corepack enable
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 # Allow native build scripts (sharp, esbuild) non-interactively in the trusted build context.
-RUN pnpm install --frozen-lockfile --config.dangerouslyAllowAllBuilds=true
+RUN pnpm install --frozen-lockfile
 
 # ---- build ----
 FROM node:22-alpine AS build
