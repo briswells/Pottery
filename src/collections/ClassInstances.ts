@@ -10,13 +10,13 @@ const timeValidate = (val: unknown) =>
   'Use 24-hour HH:MM, e.g. 18:00'
 
 /**
- * Read access: admins/editors see everything; an instructor sees only their own
- * instances (so the admin list IS their class list); the public sees published only.
+ * Read access: admins, editors, and instructors all see every instance (the
+ * All Classes / My Classes admin views do the "mine vs. everyone's" filtering);
+ * the public sees published only.
  */
 const readAccess: Access = ({ req: { user } }): boolean | Where => {
   if (user && user.collection === 'users') {
-    if (user.roles?.some((r) => r === 'admin' || r === 'editor')) return true
-    if (user.roles?.includes('instructor')) return { instructor: { equals: user.id } } satisfies Where
+    if (user.roles?.some((r) => r === 'admin' || r === 'editor' || r === 'instructor')) return true
   }
   return { status: { equals: 'published' } } satisfies Where
 }

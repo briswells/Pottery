@@ -13,7 +13,7 @@ describe('Instructor access scoping', () => {
     await payload.delete({ collection: 'classes', where: {} })
   })
 
-  it('an instructor reads only their own instances; public reads only published', async () => {
+  it('an instructor reads every instance (their own and others); public reads only published', async () => {
     const payload = await getTestPayload()
     const cls = await payload.create({ collection: 'classes', data: {
       title: `Acc ${Date.now()}`, defaultPriceCents: 5000, defaultCapacity: 5,
@@ -26,11 +26,15 @@ describe('Instructor access scoping', () => {
     } })
     const common = { class: cls.id, startTime: '18:00', endTime: '20:00' }
     const mineDraft = await payload.create({ collection: 'class-instances', data: { ...common, instructor: mine.id, startDate: '2026-07-07', status: 'draft' } })
-    await payload.create({ collection: 'class-instances', data: { ...common, instructor: other.id, startDate: '2026-07-08', status: 'published' } })
+    const otherPublished = await payload.create({ collection: 'class-instances', data: { ...common, instructor: other.id, startDate: '2026-07-08', status: 'published' } })
 
-    // Instructor "mine" sees only their own instance (including their draft).
+    // Instructor "mine" sees every instance, including other instructors' and drafts.
     const asMine = await payload.find({ collection: 'class-instances', overrideAccess: false, user: mine })
-    expect(asMine.docs.map((d) => d.id)).toEqual([mineDraft.id])
+    expect(asMine.docs.map((d) => d.id).sort()).toEqual([mineDraft.id, otherPublished.id].sort())
+
+    // findByID (what the roster view relies on) also succeeds for another instructor's instance.
+    const fetched = await payload.findByID({ collection: 'class-instances', id: otherPublished.id, overrideAccess: false, user: mine })
+    expect(fetched.id).toBe(otherPublished.id)
 
     // Public (no user) sees only published instances.
     const asPublic = await payload.find({ collection: 'class-instances', overrideAccess: false })

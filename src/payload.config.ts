@@ -53,7 +53,12 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
     components: {
-      beforeNavLinks: ['/admin/MembersNavLink#default', '/admin/MyClassesNavLink#default', '/admin/NewsletterNavLink#default'],
+      beforeNavLinks: [
+        '/admin/MembersNavLink#default',
+        '/admin/MyClassesNavLink#default',
+        '/admin/AllClassesNavLink#default',
+        '/admin/NewsletterNavLink#default',
+      ],
       views: {
         myClasses: {
           Component: '/admin/views/MyClasses#default',
@@ -63,6 +68,11 @@ export default buildConfig({
         myClassRoster: {
           Component: '/admin/views/MyClassRoster#default',
           path: '/my-classes/:id',
+        },
+        allClasses: {
+          Component: '/admin/views/AllClasses#default',
+          path: '/all-classes',
+          exact: true,
         },
         newsletterSubscribers: {
           Component: '/admin/views/Subscribers#default',

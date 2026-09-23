@@ -88,12 +88,7 @@ export default async function MyClassRoster({ initPageResult, params, searchPara
     instance = null
   }
 
-  // Defense in depth: only the assigned instructor may view this roster.
-  const instructorId =
-    instance && instance.instructor && typeof instance.instructor === 'object'
-      ? instance.instructor.id
-      : instance?.instructor
-  if (!instance || instructorId !== user.id) {
+  if (!instance) {
     return wrap(<p style={{ marginTop: 16 }}>Class not found.</p>)
   }
 
@@ -101,8 +96,8 @@ export default async function MyClassRoster({ initPageResult, params, searchPara
   const capacity = instance.capacity ?? 0
   const remaining = Math.max(0, capacity - occupied)
 
-  // Bookings read access is admin-only; we've already scoped to this instructor's
-  // own instance above, so overrideAccess is safe and required here.
+  // Bookings read access is admin-only; class-instances read access grants any
+  // instructor full read (My/All Classes), so overrideAccess is safe here too.
   const { docs: bookings } = await payload.find({
     collection: 'bookings',
     where: { and: [{ classInstance: { equals: instance.id } }, { status: { in: ['paid', 'pending'] } }] },
